@@ -1,9 +1,10 @@
-// 1. Sign Up Validation
 function validateForm() {
-    // Validate Role
+    // Get the selected role
     var role = document.getElementById("role").value;
+
+    // Validate Role
     if (role === "--select option--") {
-        alert("You must select a valid role (Customer or Lender.");
+        alert("You must select a valid role (Customer or Lender).");
         return false;
     }
 
@@ -39,78 +40,11 @@ function validateForm() {
         return false;
     }
 
-    // Validate Address
+    // Validate Address (Common for both roles)
     var address = document.getElementById("address").value;
     if (address === "") {
         alert("Please enter your Address.");
         document.getElementById("address").focus();
-        return false;
-    }
-
-    // Validate Date of Birth
-    var date = document.getElementById("dob").value;
-    if (date.indexOf("-") === -1) {
-        alert("Date must be entered and of the format (dd-mm-yyyy).");
-        document.getElementById("dob").focus();
-        return false;
-    }
-
-    var comps = date.split("-");
-    if (comps.length !== 3 || comps[0].length !== 2 || comps[1].length !== 2 || comps[2].length !== 4) {
-        alert("Date must be of the format (dd-mm-yyyy).");
-        document.getElementById("dob").focus();
-        return false;
-    }
-
-    var day = parseInt(comps[0], 10);
-    var month = parseInt(comps[1], 10);
-    var year = parseInt(comps[2], 10);
-
-    if (isNaN(day) || isNaN(month) || isNaN(year)) {
-        alert("Date components must be integers.");
-        document.getElementById("dob").focus();
-        return false;
-    }
-
-    if (month < 1 || month > 12) {
-        alert("Month must be between 1 and 12.");
-        document.getElementById("dob").focus();
-        return false;
-    }
-
-    if (day < 1 || day > 31) {
-        alert("Day must be between 1 and 31.");
-        document.getElementById("dob").focus();
-        return false;
-    }
-
-    if (year < 1900 || year > new Date().getFullYear()) {
-        alert("Year must be a valid year (1900 or later).");
-        document.getElementById("dob").focus();
-        return false;
-    }
-
-    var today = new Date();
-    var givenDate = new Date(year, month - 1, day);
-    if (givenDate > today) {
-        alert("Date of Birth cannot be greater than today.");
-        document.getElementById("dob").focus();
-        return false;
-    }
-
-    // Validate National ID
-    var nationalId = document.getElementById("nationalId").value;
-    if (nationalId === "" || isNaN(nationalId)) {
-        alert("Please enter a valid National ID.");
-        document.getElementById("nationalId").focus();
-        return false;
-    }
-
-    // Validate Account Number
-    var accountNumber = document.getElementById("accountNumber").value;
-    if (accountNumber === "" || isNaN(accountNumber)) {
-        alert("Please enter a valid Account Number.");
-        document.getElementById("accountNumber").focus();
         return false;
     }
 
@@ -131,7 +65,76 @@ function validateForm() {
         return false;
     }
 
-    alert("Registered Successfully!");
+    // Role-specific validation to enable validation with hidden fields 
+    //(Only for Customer)
+    if (role === "Customer") {
+        // Validate Date of Birth
+        var date = document.getElementById("dob").value;
+        if (date.indexOf("-") === -1) {
+            alert("Date must be entered and of the format (dd-mm-yyyy).");
+            document.getElementById("dob").focus();
+            return false;
+        }
+
+        var comps = date.split("-");
+        if (comps.length !== 3 || comps[0].length !== 2 || comps[1].length !== 2 || comps[2].length !== 4) {
+            alert("Date must be of the format (dd-mm-yyyy).");
+            document.getElementById("dob").focus();
+            return false;
+        }
+
+        var day = parseInt(comps[0], 10);
+        var month = parseInt(comps[1], 10);
+        var year = parseInt(comps[2], 10);
+
+        if (isNaN(day) || isNaN(month) || isNaN(year)) {
+            alert("Date components must be integers.");
+            document.getElementById("dob").focus();
+            return false;
+        }
+
+        if (month < 1 || month > 12) {
+            alert("Month must be between 1 and 12.");
+            document.getElementById("dob").focus();
+            return false;
+        }
+
+        if (day < 1 || day > 31) {
+            alert("Day must be between 1 and 31.");
+            document.getElementById("dob").focus();
+            return false;
+        }
+
+        if (year < 1900 || year > new Date().getFullYear()) {
+            alert("Year must be a valid year (1900 or later).");
+            document.getElementById("dob").focus();
+            return false;
+        }
+
+        var today = new Date();
+        var givenDate = new Date(year, month - 1, day);
+        if (givenDate > today) {
+            alert("Date of Birth cannot be greater than today.");
+            document.getElementById("dob").focus();
+            return false;
+        }
+
+        // Validate National ID
+        var nationalId = document.getElementById("nationalId").value;
+        if (nationalId === "" || isNaN(nationalId)) {
+            alert("Please enter a valid National ID.");
+            document.getElementById("nationalId").focus();
+            return false;
+        }
+
+        // Validate Account Number
+        var accountNumber = document.getElementById("accountNumber").value;
+        if (accountNumber === "" || isNaN(accountNumber)) {
+            alert("Please enter a valid Account Number.");
+            document.getElementById("accountNumber").focus();
+            return false;
+        }
+    }
     return true;
 }
 

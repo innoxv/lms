@@ -10,7 +10,7 @@
     <div class="container">
         <label class="header-label">Sign Up</label>
         <div class="content">
-            <form action="" method="post" onsubmit="return validateForm()">
+            <form action="signup.php" method="post" onsubmit="return validateForm()">
                 <table>
                     <tr>
                         <td><label>Register as?</label></td>
@@ -33,12 +33,14 @@
                         <td><label for="phone">Phone</label></td>
                         <td><input type="text" id="phone" name="phone"></td>
                     </tr>
-                    <!-- Fields relevant to customers only -->
-                    <tr id="customerFields" class="hidden">
+                    
+                    <tr>
                         <td><label for="address">Address</label></td>
                         <td><input type="text" id="address" name="address"></td>
-                        <td><label for="dob">Date of Birth</label></td>
-                        <td><input type="text" id="dob" name="dob"></td>
+                        <!-- Fields only relevant to customers are in class hidden -->
+
+                        <td id="customerFields" class="hidden"><label for="dob">Date of Birth</label></td>
+                        <td id="customerFields" class="hidden"><input type="text" id="dob" name="dob"></td>                    
                     </tr>
                
                     <tr id="customerFields" class="hidden">
@@ -66,11 +68,28 @@
             </form>
         </div>
     </div>
-    <!-- Showing only necessary fields for each role -->
+    <!-- Showing only necessary fields for each role and submitting required fields -->
     <script>
         const roleDropdown = document.getElementById('role');
         const customerFields = document.querySelectorAll('#customerFields');
-
+    
+        // Function to disable hidden fields before submission
+        function disableHiddenFields() {
+            if (roleDropdown.value === 'Lender') {
+                customerFields.forEach(field => {
+                    const inputs = field.querySelectorAll('input');
+                    inputs.forEach(input => input.disabled = true);
+                });
+            }
+        }
+    
+        // Add event listener to the form's submit event
+        document.querySelector('form').addEventListener('submit', function (e) {
+            disableHiddenFields(); // Disable hidden fields before submission
+            return validateForm(); // Call your existing validation function
+        });
+    
+        // Show/hide fields based on role selection
         roleDropdown.addEventListener('change', function () {
             if (roleDropdown.value === 'Lender') {
                 customerFields.forEach(field => field.classList.add('hidden'));
@@ -78,12 +97,12 @@
                 customerFields.forEach(field => field.classList.remove('hidden'));
             }
         });
-
+    
         // Initialize visibility on page load
         window.onload = function () {
             if (roleDropdown.value === '--select option--') {
                 customerFields.forEach(field => field.classList.remove('hidden'));
-            } 
+            }
         };
     </script>
     <script src="../js/validinput.js"></script>
