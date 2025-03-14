@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="centered-page"> <!--centers page -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,67 +7,69 @@
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-    <div class="container">
-        <label class="header-label">Sign Up</label>
-        <div class="content">
-            <form action="signup.php" method="post" onsubmit="return validateForm()">
-                <table>
-                    <tr>
-                        <td><label>Register as?</label></td>
-                        <td> <select name="role" id="role" class="select">
-                            <option value="--select option--" selected>--select option--</option>
-                            <option value="Customer">Customer</option>
-                            <option value="Lender">Lender</option>
-                        </select>
-                    </td>
-                    </tr>
-                    <tr>
-                        <td><label for="firstName">First Name</label></td>
-                        <td><input type="text" id="firstName" name="firstName"></td>
-                        <td><label for="secondName">Second Name</label></td>
-                        <td><input type="text" id="secondName" name="secondName"></td>
-                    </tr>
-                    <tr>
-                        <td><label for="email">Email</label></td>
-                        <td><input type="text" id="email" name="email"></td>
-                        <td><label for="phone">Phone</label></td>
-                        <td><input type="text" id="phone" name="phone"></td>
-                    </tr>
-                    
-                    <tr>
-                        <td><label for="address">Address</label></td>
-                        <td><input type="text" id="address" name="address"></td>
-                        <!-- Fields only relevant to customers are in class hidden -->
-
-                        <td id="customerFields" class="hidden"><label for="dob">Date of Birth</label></td>
-                        <td id="customerFields" class="hidden"><input type="text" id="dob" name="dob"></td>                    
-                    </tr>
-               
-                    <tr id="customerFields" class="hidden">
-                        <td><label for="nationalId">National ID</label></td>
-                        <td><input type="text" id="nationalId" name="nationalId"></td>
-                        <td><label for="accountNumber">Account Number</label></td>
-                        <td><input type="text" id="accountNumber" name="accountNumber"></td>
-                    </tr>
+  
+        <div class="container">
+            <label class="header-label">Sign Up</label>
+            <div class="content">
+                <form action="signup.php" method="post" onsubmit="return validateForm()">
+                    <table>
+                        <tr>
+                            <td><label>Register as?</label></td>
+                            <td> <select name="role" id="role" class="select">
+                                <option value="--select option--" selected>--select option--</option>
+                                <option value="Customer">Customer</option>
+                                <option value="Lender">Lender</option>
+                            </select>
+                        </td>
+                        </tr>
+                        <tr>
+                            <td><label for="firstName">First Name</label></td>
+                            <td><input type="text" id="firstName" name="firstName"></td>
+                            <td><label for="secondName">Second Name</label></td>
+                            <td><input type="text" id="secondName" name="secondName"></td>
+                        </tr>
+                        <tr>
+                            <td><label for="email">Email</label></td>
+                            <td><input type="text" id="email" name="email"></td>
+                            <td><label for="phone">Phone</label></td>
+                            <td><input type="text" id="phone" name="phone"></td>
+                        </tr>
+                        
+                        <tr>
+                            <td><label for="address">Address</label></td>
+                            <td><input type="text" id="address" name="address"></td>
+                            <!-- Fields only relevant to customers are in class hidden -->
+    
+                            <td id="customerFields" class="hidden"><label for="dob">Date of Birth</label></td>
+                            <td id="customerFields" class="hidden"><input type="text" id="dob" name="dob"></td>                    
+                        </tr>
                 
-                    <tr>
-                        <td><label for="password">Password</label></td>
-                        <td><input type="password" id="password" name="password"></td>
-                    </tr>
-                    <tr>
-                        <td><label for="confPassword">Confirm Password</label></td>
-                        <td><input type="password" id="confPassword" name="confPassword"></td>
-                    </tr>
-                    <tr class="submit-action">
-                            <td><button type="submit" name="submit">CREATE ACCOUNT</button></td>
-                            <td>
-                                <div class="alt">already have an account?<button type="button"><a href="./signin.html">LOG IN</a></button></div>
-                            </td>
-                    </tr>
-                </table>
-            </form>
+                        <tr id="customerFields" class="hidden">
+                            <td><label for="nationalId">National ID</label></td>
+                            <td><input type="text" id="nationalId" name="nationalId"></td>
+                            <td><label for="accountNumber">Account Number</label></td>
+                            <td><input type="text" id="accountNumber" name="accountNumber"></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><label for="password">Password</label></td>
+                            <td><input type="password" id="password" name="password"></td>
+                        </tr>
+                        <tr>
+                            <td><label for="confPassword">Confirm Password</label></td>
+                            <td><input type="password" id="confPassword" name="confPassword"></td>
+                        </tr>
+                        <tr class="submit-action">
+                                <td><button type="submit" name="submit">CREATE ACCOUNT</button></td>
+                                <td>
+                                    <div class="alt">already have an account?<button type="button"><a href="./signin.html">LOG IN</a></button></div>
+                                </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
         </div>
-    </div>
+    
     <!-- Showing only necessary fields for each role and submitting required fields -->
     <script>
         const roleDropdown = document.getElementById('role');
