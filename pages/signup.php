@@ -1,7 +1,12 @@
 <?php
-// ini_set('display_errors', 1);
-// ini_set('display_startup_errors', 1);
-// error_reporting(E_ALL);
+// Enable error reporting for debugging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Start the session
+session_start();
+
 // Database connection
 $myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
 
@@ -46,6 +51,12 @@ if (isset($_POST['submit'])) {
             // Get the ID of the newly inserted user
             $userId = mysqli_insert_id($myconn);
 
+            // Store user data in the session
+            $_SESSION['user_id'] = $userId;
+            $_SESSION['email'] = $email;
+            $_SESSION['role'] = $role;
+            $_SESSION['user_name'] = $userName;
+
             if ($role === 'Customer') {
                 // Fetch Customer-specific fields
                 $dob = $_POST['dob']; // Date in DD-MM-YYYY format
@@ -77,9 +88,9 @@ if (isset($_POST['submit'])) {
             if (mysqli_query($myconn, $sql)) {
                 // Redirect based on role
                 if ($role === 'Customer') {
-                    header("Location: customerDashboard.html");
+                    header("Location: customerDashboard.php");
                 } elseif ($role === 'Lender') {
-                    header("Location: lenderDashboard.html");
+                    header("Location: lenderDashboard.php");
                 }
                 exit();
             } else {
