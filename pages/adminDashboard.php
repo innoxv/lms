@@ -59,7 +59,6 @@ mysqli_close($myconn);
                 <ul class="nav-split">
                     <div class="top">
                         <li><a href="#dashboard">Dashboard</a></li>
-                        <li><a href="#applyLoan">Apply for Loan</a></li>
                         <li><a href="#loanHistory">Loan History</a></li>
                         <li><a href="#financialSummary">Financial Summary</a></li>
                         <li><a href="#notifications">Notifications</a></li>
