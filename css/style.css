@@ -90,11 +90,19 @@ button{
     /* width: 100%; */
     padding: 0.7em;
     border-radius: .5em;
-    border: 1px solid #74C0FC ;
-    background: transparent;
-    color: #74C0FC;
+    border: none;
+    background: #74C0FC;
+    color: #1D1E20;
     cursor: pointer;
+    font-weight: 700;
     
+}
+button:hover{
+    color: #74C0FC;
+    background: transparent;
+    outline: 1px solid #74C0FC;
+    transition: .2s ease-in-out;
+
 }
 .alt{
     color: lightgray;
@@ -105,10 +113,18 @@ button{
 }
 .alt button{
     border: none;
+    background: transparent;
+    font-weight: unset;
+}
+.alt button:hover{
+    outline: none;
+    background: transparent;
+    font-weight: 700;
+    transition: .2s ease-in-out;
 }
 a{
     text-decoration: none;
-    color: lightgray;
+    color: #74C0FC;
 }
 
 /* Landingpage */
@@ -126,6 +142,7 @@ main{
 }
 .logo{
     color: #74C0FC;
+    font-weight: 900;
 }
 .header2{
     display: flex;
@@ -133,12 +150,27 @@ main{
     align-items: center;
 }
 
-.header2 ul, .header3 ul{
+.header2 ul, .header3 ul, .header4 ul{
     list-style: none;
     display: flex;
 }
 .header2 ul li{
     margin-inline: 2em;
+}
+.header4{
+    /* outline: 1px solid red; */
+    width: 84%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+.header4 li a{
+    color: whitesmoke;
+    transition: .2s ease-in-out;
+
+}
+.header4 li a:hover{
+    color: #74C0FC;
 }
 .header3 ul li{
     margin-inline: .5em;
@@ -148,6 +180,15 @@ main{
 }
 .header3 .no-col{
     color: whitesmoke;
+}
+.header3 .no-col:hover{
+    color: #74C0FC;
+    transition: .2s ease-in-out;
+}
+.header3 li a:hover{
+    color: whitesmoke;
+    transition: .2s ease-in-out;
+
 }
 .hero-section{
     align-items: center;
@@ -178,6 +219,10 @@ main{
     font-size: 1em;
     margin-top: 2em;
 }
+.left button:hover{
+    color: #1D1E20;
+    background-color: #74C0FC;
+}
 img{
     height: 65vh;
 }
@@ -197,16 +242,15 @@ img{
     width:15%;
     outline: 1px solid #74C0FC;
     align-self: flex-start;
-    border-radius: 1em 0 0 1em;
+    border-radius: .8em 0 0 .8em;
 }
 .display{
     align-self: flex-start;
     height: 100%;
-    width: 83%;
+    width: 84%;
     outline: 1px solid gray;
     background-color: rgba(0, 0, 0, 0.4);
-
-    border-radius: 0 1em 1em 0;
+    border-radius: 0 .8em .8em 0;
 }
 
 .nav ul{
@@ -232,18 +276,58 @@ img{
 .display > div {
     display: none; /* Hide all content sections by default */
 }
-
+.top li a{
+    color: lightgray;
+}
 .bottom li a{
     color: #74C0FC;
+}
+.top li a:hover{
+    color: #74C0FC;
+    transition: .2s ease-in-out;
+}
+.bottom li a:hover{
+    color: lightgray;
+    transition: .2s ease-in-out;
+
 }
 /* Show the Dashboard section by default */
 #dashboard {
     display: block;
     margin: 0 1em;
     height: 100%;
+    /* outline: 1px solid red; */
+}
+#applyLoan{
+    height: 100%;
+}
+/* Scrollbar Track */
+::-webkit-scrollbar {
+    width: .6em; 
+}
+
+
+/* Scrollbar Track (background) */
+::-webkit-scrollbar-track {
+    background: lightgray; 
+    border-radius: .2em; 
+    margin: 2em 0;
+}
+
+/* Scrollbar Thumb (the draggable part) */
+::-webkit-scrollbar-thumb {
+    background: #74C0FC; 
+    border-radius: .2em;
+    border: none; 
+}
+
+/* Scrollbar Thumb on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #4DA8F8; /* Slightly darker blue on hover */
 }
 .margin{
-    margin: 1em;
+    margin: 0 1em;
+    overflow-y: auto;
 }
 /* Show the targeted content section */
 .display > div:target {
@@ -269,6 +353,7 @@ img{
     display: flex;
     width: 100%;
     justify-content: space-between;
+    
 }
 .greeting p{
     color: #74C0FC;
@@ -279,10 +364,16 @@ img{
     font-weight: bold;
     font-size: 1.2em;
 }
+.display-content{
+    margin-top: 1em;
+    height: 80%;
+    overflow-y: auto;
+}
 .metrics{
-    height: 30%;
+    height: 35%;
     width: 100%;
     /* outline: 1px solid red; */
+    margin: .2em 0;
     display: flex;
     justify-content: space-around;
 }
@@ -315,4 +406,34 @@ img{
     justify-content: space-evenly;
     align-items: center;
     text-align: center;
+}
+.loan-right{
+    height: 70%;
+    outline: 1px solid red;
+    display: flex;
+    flex-direction: row;
+
+}
+.loan-filter{
+    height: 40%;
+
+}
+
+/* Lender Dashboard */
+#createLoan{
+    height: 100%;
+    /* outline: 1px solid red; */
+}
+.marg3{
+    margin-top: 2em;
+}
+.loan-message {
+    background-color: lightgray; 
+    color: #1D1E20; 
+    padding: .5em;
+    margin:  0;
+    border: 1px solid #f5c6cb;
+    border-radius: .2em;
+    text-align: center;
+    transition: opacity 0.2s ease; 
 }
