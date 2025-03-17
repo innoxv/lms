@@ -50,7 +50,7 @@ mysqli_close($myconn);
             </div>
             <div class="header3">
                 <ul>
-                    <li><a href="logoutbtn.php" class="no-col">Log Out</a></li>
+                    <li><a href="logoutbtn.php" id="logout"class="no-col">Log Out</a></li>
                 </ul>
             </div>
         </div>
@@ -76,8 +76,19 @@ mysqli_close($myconn);
             <div class="display">
                 <!-- Apply for Loan -->
                 <div id="applyLoan" class="margin">
-                    <h1>Apply for Loan</h1>
-                    <p>Fill out the form to apply for a new loan.</p>
+                    <div>
+                        <h1>Apply for Loan</h1>
+                        <p>Find a suitable Lender and fill out the form to apply for a new loan.</p>
+                    </div>
+                    <div class="loan-right">
+                        <div class="loan-filter">
+                            
+                        </div>
+                        <div class="loan-forn">
+
+                        </div>
+                    </div>
+                    
                 </div>
 
                 <!-- Loan History -->
@@ -148,76 +159,53 @@ mysqli_close($myconn);
                             </p>
                         </div>
                     </div>
-                    <div class="metrics">
-                        <div>
-                            <p>Active Loans</p>
-                            <span class="span-2">0</span>
-                        </div>
-                        <div>
-                            <p>Loan Amounts</p>
-                            <span class="span-2">0</span>
-                        </div>
-                        <div>
-                            <p>Interest Rates</p>
-                            <span class="span-2">0</span>
-                        </div>
-                        <div>
-                            <p>Outstanding Balance</p>
-                            <span class="span-2">0</span>
-                        </div>
-                    </div>
-                    <div class="visuals">
-                        <div>
-                        <canvas id="barChart" width="400" height="200"></canvas>
-                        <p>dummy bar graph</p>
-                        </div>
-                        <div>
-                             <canvas id="pieChart" width="400" height="200"></canvas>
-                             <p>dummy pie chart</p>
-                            
-                        </div>
-                    
+                    <div class="display-content">
 
- 
+                    
+                        <div class="metrics">
+                            <div>
+                                <p>Active Loans</p>
+                                <span class="span-2">0</span>
+                            </div>
+                            <div>
+                                <p>Loan Amounts</p>
+                                <span class="span-2">0</span>
+                            </div>
+                            <div>
+                                <p>Interest Rates</p>
+                                <span class="span-2">0</span>
+                            </div>
+                            <div>
+                                <p>Outstanding Balance</p>
+                                <span class="span-2">0</span>
+                            </div>
+                        </div>
+                        <div class="visuals">
+                            <div>
+                                <canvas id="barChart" width="400" height="200"></canvas>
+                                <p>dummy bar graph</p>
+                            </div>
+                            <div>
+                                <canvas id="pieChart" width="400" height="200"></canvas>
+                                <p>dummy pie chart</p>
+                            </div>
+                        </div>
+                        <div class="visuals">
+                            <div>
+                                <canvas id="barChart" width="400" height="200"></canvas>
+                                <p>dummy bar graph</p>
+                            </div>
+                            <div>
+                                <canvas id="pieChart" width="400" height="200"></canvas>
+                                <p>dummy pie chart</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
-    <script>
-        // Function to handle the active state of sections
-function setActiveSection() {
-    // Get all the sections
-    const sections = document.querySelectorAll('.display > div');
-    // Get the current target (the section being displayed)
-    const currentTarget = window.location.hash;
 
-    // Remove the active class from all sections
-    sections.forEach(section => {
-        section.classList.remove('active-section');
-    });
-
-    // Add the active class to the current target section
-    if (currentTarget) {
-        const activeSection = document.querySelector(currentTarget);
-        if (activeSection) {
-            activeSection.classList.add('active-section');
-        }
-    } else {
-        // If no target, make the dashboard active
-        const dashboard = document.getElementById('dashboard');
-        if (dashboard) {
-            dashboard.classList.add('active-section');
-        }
-    }
-}
-
-// Call the function when the page loads
-window.addEventListener('load', setActiveSection);
-
-// Call the function when the hash changes (e.g., when a link is clicked)
-window.addEventListener('hashchange', setActiveSection);
-    </script>
     <script>
 
         //dummy bar graph

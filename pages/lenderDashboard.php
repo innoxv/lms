@@ -8,6 +8,13 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: signin.html");
     exit();
 }
+// Check if there's a loan message to display
+if (isset($_SESSION['loan_message'])) {
+    $loan_message = $_SESSION['loan_message'];
+    unset($_SESSION['loan_message']); // Clear the message after displaying it
+} else {
+    $loan_message = null;
+}
 
 // Database connection
 $myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
@@ -17,7 +24,7 @@ if (!$myconn) {
     die("Connection failed: " . mysqli_connect_error());
 }
 
-// Fetch user data from the database (if needed)
+// Fetch user data from the database
 $userId = $_SESSION['user_id'];
 $query = "SELECT user_name FROM users WHERE user_id = '$userId'";
 $result = mysqli_query($myconn, $query);
@@ -48,18 +55,29 @@ mysqli_close($myconn);
             <div class="header2">
                 <div class="logo">LMS</div>
             </div>
-            <div class="header3">
+            <div class="header4">
+                <div>
+                <?php if ($loan_message): ?>
+                <div id="loan-message" class="loan-message <?php echo (strpos($loan_message, 'success') !== false) ? 'success' : ''; ?>">
+                    <?php echo htmlspecialchars($loan_message); ?>
+                </div>
+            <?php endif; ?>
+                </div>
+                <div>
                 <ul>
                     <li><a href="logoutbtn.php" class="no-col">Log Out</a></li>
                 </ul>
+                </div>
+                
             </div>
+            
         </div>
         <div class="customer-content">
             <div class="nav">
                 <ul class="nav-split">
                     <div class="top">
                         <li><a href="#dashboard">Dashboard</a></li>
-                        <li><a href="#applyLoan">Apply for Loan</a></li>
+                        <li><a href="#createLoan">Create a Loan</a></li>
                         <li><a href="#loanHistory">Loan History</a></li>
                         <li><a href="#financialSummary">Financial Summary</a></li>
                         <li><a href="#notifications">Notifications</a></li>
@@ -73,9 +91,47 @@ mysqli_close($myconn);
             </div>
             <div class="display">
                 <!-- Apply for Loan -->
-                <div id="applyLoan" class="margin">
-                    <h1>Apply for Loan</h1>
-                    <p>Fill out the form to apply for a new loan.</p>
+                <div id="createLoan" class="margin">
+                    <div>
+                        <h1>Create a Loan Offer</h1>
+                        <p>Fill out the form to create a new loan offer.</p>
+                    </div>
+                    <div class="marg3">
+                        <form action="createLoan.php" method="post" onsubmit="return validateFormLoans()">
+                            <table>
+                                <tr>
+                                <td><label>Loan Type</label></td>
+                                <td>
+                                    <select name="type" id="type" class="select">
+                                        <option value="--select option--" selected>--select option--</option>
+                                        <option value="Personal Loan">Personal Loan</option>
+                                        <option value="Business Loan">Business Loan</option>
+                                        <option value="Mortgage Loan">Mortgage Loan</option>
+                                        <option value="MicroFinance Loan">MicroFinance Loan</option>
+                                        <option value="Student Loan">Student Loan</option>
+                                        <option value="Construction Loan">Construction Loan</option>
+                                        <option value="Green Loan">Green Loan</option>
+                                        <option value="Medical Loan">Medical Loan</option>
+                                        <option value="Startup Loan">Startup Loan</option>
+                                        <option value="Agricultural Loan">Agricultural Loan</option>
+                                    </select>
+                                </td>
+                                </tr>
+                                <tr>
+                                    <td><label for="interestRate">Interest Rate</label></td>
+                                    <td><input type="text" id="interestRate" name="interestRate"></td>
+                                </tr>
+                                <tr>
+                                    <td><label for="maxDuration">Maximum Duration <br>(in months)</label></td>
+                                    <td><input type="text" id="maxDuration" name="maxDuration"></td>
+                                </tr>
+                                <tr class="submit-action">
+                                    <td><button type="submit" name="submit">SUBMIT</button></td>
+                            </tr>
+                            </table>
+                        </form>
+                    </div>
+                    
                 </div>
 
                 <!-- Loan History -->
@@ -126,6 +182,8 @@ mysqli_close($myconn);
                                 <code>
                                 <!-- Greeting based on time -->
                                 <?php
+                                    // Set the timezone to Nairobi, Kenya
+                                    date_default_timezone_set('Africa/Nairobi');
                                     $currentTime = date("H");
                                     $message = "";
 
@@ -147,19 +205,19 @@ mysqli_close($myconn);
                     </div>
                     <div class="metrics">
                         <div>
-                            <p>Active Loans</p>
+                            <p>Total Loans Disbursed</p>
                             <span class="span-2">0</span>
                         </div>
                         <div>
-                            <p>Loan Amounts</p>
+                            <p>Total Loan Amounts Disbursed</p>
                             <span class="span-2">0</span>
                         </div>
                         <div>
-                            <p>Interest Rates</p>
+                            <p>Total Active Loans</p>
                             <span class="span-2">0</span>
                         </div>
                         <div>
-                            <p>Outstanding Balance</p>
+                            <p>Average Interest Rate</p>
                             <span class="span-2">0</span>
                         </div>
                     </div>
@@ -181,6 +239,25 @@ mysqli_close($myconn);
             </div>
         </div>
     </main>
+    <script src="../js/validinput.js"></script>
+
+    <script>
+        // Function to hide the loan message after 2 seconds
+        function hideLoanMessage() {
+            const loanMessage = document.getElementById('loan-message');
+            if (loanMessage) {
+                setTimeout(() => {
+                    loanMessage.style.opacity = '0'; // Fade out the message
+                    setTimeout(() => {
+                        loanMessage.style.display = 'none'; // Hide the message after fading out
+                    }, 500); // Wait for the transition to complete
+                }, 1500); // 1500 milliseconds = 1.5 seconds
+            }
+        }
+
+        // Call the function when the page loads
+        window.onload = hideLoanMessage;
+    </script>
     <script>
         
         //dummy bar graph
