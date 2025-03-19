@@ -422,10 +422,9 @@ img{
 /* Lender Dashboard */
 #createLoan{
     height: 100%;
+    width: 100%;
     /* outline: 1px solid red; */
-}
-.marg3{
-    margin-top: 2em;
+   
 }
 .loan-message {
     background-color: lightgray; 
@@ -436,4 +435,60 @@ img{
     border-radius: .2em;
     text-align: center;
     transition: opacity 0.2s ease; 
+}
+.loan-split{
+    display: flex;
+    flex-direction: row;
+    height: 90%;
+    width: 100%;
+    /* outline: 1px solid blue; */
+    justify-content: space-between;
+
+}
+
+.loan-slot{
+    /* outline: 1px solid green; */
+    height: 100%;
+    width: 60%;
+    margin-top: 1em;
+}
+.loan-slot table{
+    border-spacing: .5em;
+    /* border-collapse: collapse;  */
+    width: 100%;
+}
+.loan-slot h3{
+    color: whitesmoke;
+}
+.loan-slot th{
+    color: whitesmoke;
+    text-align: start;
+    border-right: 1px solid #4DA8F8;
+
+}
+.loan-slot td{
+    color: lightgray;
+    text-align: start;
+    border-right: 1px solid #74C0FC;
+
+}
+.loan-slot th:last-child, .loan-slot td:last-child {
+    border-right: none; /* Removes the border from the last column */
+  }
+.loan-slot .mid, .mid th{
+    text-align: center;
+}
+.loan-slot form{
+    display: inline;
+}
+
+
+.del button{
+    background: tomato;
+}
+.del button:hover{
+    background: transparent;
+    color: tomato;
+    outline: 1px solid tomato;
+    transition: .2s ease-in-out;
 }

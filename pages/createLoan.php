@@ -1,21 +1,14 @@
 <?php
-// Start the session
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 session_start();
 
-// Check if the user is logged in
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['loan_message'] = "You must be logged in to create a loan.";
     header("Location: lenderDashboard.php#createLoan");
     exit();
 }
 
-// Database connection
 $myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
 
-// Check connection
 if (!$myconn) {
     $_SESSION['loan_message'] = "Connection failed: " . mysqli_connect_error();
     header("Location: lenderDashboard.php#createLoan");
@@ -43,26 +36,26 @@ $loan_type = $_POST['type'];
 $interest_rate = floatval($_POST['interestRate']);
 $max_duration = intval($_POST['maxDuration']);
 
-// Check if the loan type already exists
-$checkQuery = "SELECT loan_id FROM loans WHERE loan_type = '$loan_type'";
+// Check if the loan type already exists for the logged-in lender
+$checkQuery = "SELECT loan_id FROM loans WHERE loan_type = '$loan_type' AND lender_id = '$lender_id'";
 $checkResult = mysqli_query($myconn, $checkQuery);
 
 if (mysqli_num_rows($checkResult) > 0) {
-    $_SESSION['loan_message'] = "$loan_type already exists.";
+    $_SESSION['loan_message'] = "$loan_type already exists for your account!";
     header("Location: lenderDashboard.php#createLoan");
     exit();
 }
 
-// Insert the loan type into the loans table
-$sql = "INSERT INTO loans (lender_id, loan_type, interest_rate, max_duration, available) 
-        VALUES ('$lender_id', '$loan_type', '$interest_rate', '$max_duration', TRUE)";
+// Insert the initial loan type into the loans table
+$sql = "INSERT INTO loans (lender_id, loan_type, interest_rate, max_duration, customer_id) 
+        VALUES ('$lender_id', '$loan_type', '$interest_rate', '$max_duration', NULL)";
 
 if (mysqli_query($myconn, $sql)) {
-    // Generate 4 extra slots for the new loan type
+    // Insert 4 additional slots for the loan type
     for ($i = 0; $i < 4; $i++) {
-        $slotQuery = "INSERT INTO loans (lender_id, loan_type, interest_rate, max_duration, available) 
-                      VALUES ('$lender_id', '$loan_type', '$interest_rate', '$max_duration', TRUE)";
-        mysqli_query($myconn, $slotQuery);
+        $insertQuery = "INSERT INTO loans (lender_id, loan_type, interest_rate, max_duration, customer_id) 
+                        VALUES ('$lender_id', '$loan_type', '$interest_rate', '$max_duration', NULL)";
+        mysqli_query($myconn, $insertQuery);
     }
 
     $_SESSION['loan_message'] = "$loan_type created successfully with 5 slots!";
