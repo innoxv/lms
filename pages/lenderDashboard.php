@@ -250,14 +250,22 @@ mysqli_close($myconn);
                     loanMessage.style.opacity = '0'; // Fade out the message
                     setTimeout(() => {
                         loanMessage.style.display = 'none'; // Hide the message after fading out
-                    }, 500); // Wait for the transition to complete
-                }, 1500); // 1500 milliseconds = 1.5 seconds
+                    }, 700); // Wait for the transition to complete
+                }, 2000); // 2000 milliseconds = 2seconds
             }
         }
 
         // Call the function when the page loads
         window.onload = hideLoanMessage;
     </script>
+
+
+
+
+
+
+
+    <!-- Dummy Data - Should actually analyze data from the database -->
     <script>
         
         //dummy bar graph
