@@ -1,31 +1,20 @@
 <?php
-// Start the session
 session_start();
 
-// Check if the user is logged in
 if (!isset($_SESSION['user_id'])) {
-    // Redirect to the login page if the user is not logged in
     header("Location: signin.html");
     exit();
 }
-// Check if there's a loan message to display
-if (isset($_SESSION['loan_message'])) {
-    $loan_message = $_SESSION['loan_message'];
-    unset($_SESSION['loan_message']); // Clear the message after displaying it
-} else {
-    $loan_message = null;
-}
 
-// Database connection
 $myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
 
-// Check connection
 if (!$myconn) {
     die("Connection failed: " . mysqli_connect_error());
 }
 
-// Fetch user data from the database
 $userId = $_SESSION['user_id'];
+
+// Fetch user data from the database
 $query = "SELECT user_name FROM users WHERE user_id = '$userId'";
 $result = mysqli_query($myconn, $query);
 
@@ -33,13 +22,43 @@ if ($result && mysqli_num_rows($result) > 0) {
     $user = mysqli_fetch_assoc($result);
     $_SESSION['user_name'] = $user['user_name']; // Update the session with the latest data
 } else {
-    // Handle error if user data is not found
     $_SESSION['user_name'] = "Guest";
 }
 
+// Fetch lender_id from the lenders table
+$lenderQuery = "SELECT lender_id FROM lenders WHERE user_id = '$userId'";
+$lenderResult = mysqli_query($myconn, $lenderQuery);
+
+if (mysqli_num_rows($lenderResult) > 0) {
+    $lender = mysqli_fetch_assoc($lenderResult);
+    $_SESSION['lender_id'] = $lender['lender_id']; // Store lender_id in the session
+} else {
+    $_SESSION['loan_message'] = "You are not registered as a lender.";
+    header("Location: lenderDashboard.php");
+    exit();
+}
+
+// Fetch loan slot information for the logged-in lender
+$lender_id = $_SESSION['lender_id'];
+$slotQuery = "SELECT loan_type, COUNT(*) AS total_slots, SUM(customer_id IS NULL) AS available_slots 
+              FROM loans 
+              WHERE lender_id = '$lender_id' 
+              GROUP BY loan_type";
+$slotResult = mysqli_query($myconn, $slotQuery);
+$slotData = mysqli_fetch_all($slotResult, MYSQLI_ASSOC);
+
 // Close the database connection
 mysqli_close($myconn);
+
+// Check if there's a loan message to display
+if (isset($_SESSION['loan_message'])) {
+    $loan_message = $_SESSION['loan_message'];
+    unset($_SESSION['loan_message']); // Clear the message after displaying it
+} else {
+    $loan_message = null;
+}
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -92,46 +111,88 @@ mysqli_close($myconn);
             <div class="display">
                 <!-- Apply for Loan -->
                 <div id="createLoan" class="margin">
-                    <div>
-                        <h1>Create a Loan Offer</h1>
-                        <p>Fill out the form to create a new loan offer.</p>
-                    </div>
-                    <div class="marg3">
-                        <form action="createLoan.php" method="post" onsubmit="return validateFormLoans()">
+                    <div class="loan-split">
+                        <div class="loan-split-left">
+                            <div>
+                                <h1>Create a Loan Offer</h1>
+                                <p>Fill out the form to create a new loan offer.</p>
+                            </div>         
+                            <div>
+                                <form action="createLoan.php" method="post" onsubmit="return validateFormLoans()">
+                                    <table>
+                                        <tr>
+                                        <td><label>Loan Type</label></td>
+                                        <td>
+                                            <select name="type" id="type" class="select">
+                                                <option value="--select option--" selected>--select option--</option>
+                                                <option value="Personal Loan">Personal Loan</option>
+                                                <option value="Business Loan">Business Loan</option>
+                                                <option value="Mortgage Loan">Mortgage Loan</option>
+                                                <option value="MicroFinance Loan">MicroFinance Loan</option>
+                                                <option value="Student Loan">Student Loan</option>
+                                                <option value="Construction Loan">Construction Loan</option>
+                                                <option value="Green Loan">Green Loan</option>
+                                                <option value="Medical Loan">Medical Loan</option>
+                                                <option value="Startup Loan">Startup Loan</option>
+                                                <option value="Agricultural Loan">Agricultural Loan</option>
+                                            </select>
+                                        </td>
+                                        </tr>
+                                        <tr>
+                                            <td><label for="interestRate">Interest Rate</label></td>
+                                            <td><input type="text" id="interestRate" name="interestRate"></td>
+                                        </tr>
+                                        <tr>
+                                            <td><label for="maxDuration">Maximum Duration <br>(in months)</label></td>
+                                            <td><input type="text" id="maxDuration" name="maxDuration"></td>
+                                        </tr>
+                                        <tr class="submit-action">
+                                            <td><button type="submit" name="submit">SUBMIT</button></td>
+                                        </tr>
+                                    </table>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="loan-slot">
+                            <h3>Loan Slot Information</h3>
                             <table>
-                                <tr>
-                                <td><label>Loan Type</label></td>
-                                <td>
-                                    <select name="type" id="type" class="select">
-                                        <option value="--select option--" selected>--select option--</option>
-                                        <option value="Personal Loan">Personal Loan</option>
-                                        <option value="Business Loan">Business Loan</option>
-                                        <option value="Mortgage Loan">Mortgage Loan</option>
-                                        <option value="MicroFinance Loan">MicroFinance Loan</option>
-                                        <option value="Student Loan">Student Loan</option>
-                                        <option value="Construction Loan">Construction Loan</option>
-                                        <option value="Green Loan">Green Loan</option>
-                                        <option value="Medical Loan">Medical Loan</option>
-                                        <option value="Startup Loan">Startup Loan</option>
-                                        <option value="Agricultural Loan">Agricultural Loan</option>
-                                    </select>
-                                </td>
-                                </tr>
-                                <tr>
-                                    <td><label for="interestRate">Interest Rate</label></td>
-                                    <td><input type="text" id="interestRate" name="interestRate"></td>
-                                </tr>
-                                <tr>
-                                    <td><label for="maxDuration">Maximum Duration <br>(in months)</label></td>
-                                    <td><input type="text" id="maxDuration" name="maxDuration"></td>
-                                </tr>
-                                <tr class="submit-action">
-                                    <td><button type="submit" name="submit">SUBMIT</button></td>
-                            </tr>
+                                <thead>
+                                    <tr>
+                                        <th>Loan Type</th>
+                                        <th>Total Slots</th>
+                                        <th>Available Slots</th>
+                                        <th class="mid">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($slotData as $slot): ?>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars($slot['loan_type']); ?></td>
+                                            <td class="mid"><?php echo htmlspecialchars($slot['total_slots']); ?></td>
+                                            <td class="mid"><?php echo htmlspecialchars($slot['available_slots']); ?></td>
+                                            <td>
+                                                <!-- Add Slot Form -->
+                                                <form action="addSlot.php" method="post" >
+                                                    <input type="hidden" name="loan_type" value="<?php echo htmlspecialchars($slot['loan_type']); ?>">
+                                                    <button type="submit">Add Slot</button>
+                                                </form>
+                                                <!-- Delete Slot Form -->
+                                                <form action="deleteSlot.php" method="post" >
+                                                    <input type="hidden" name="loan_type" value="<?php echo htmlspecialchars($slot['loan_type']); ?>">
+                                                    <button type="submit">Delete Slot</button>
+                                                </form>
+                                                <!-- Delete Loan Type Form -->
+                                                <form action="deleteLoanType.php" method="post" class="del">
+                                                    <input type="hidden" name="loan_type" value="<?php echo htmlspecialchars($slot['loan_type']); ?>">
+                                                    <button type="submit">Delete Loan Type</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
                             </table>
-                        </form>
-                    </div>
-                    
+                        </div>
+                    </div>   
                 </div>
 
                 <!-- Loan History -->
