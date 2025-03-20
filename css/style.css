@@ -514,7 +514,7 @@ img{
     color: #74C0FC;
 }
 .copyright a:hover{
-    text-decoration: none;
+    text-decoration: dotted;
     color: white;
     transition: .2s ease-in-out;
 }
