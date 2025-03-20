@@ -55,6 +55,7 @@ body{
 label{
     color: lightgray;
     font-size: 1em;
+    font-weight: 700;
 }
 input{
     padding: .7em;
@@ -66,6 +67,11 @@ input{
     font-size: 1.1em;
     margin: .2em 1em;
 
+}
+input::placeholder{
+    color:lightgray;
+    font-size: .9em;
+    text-align: end;
 }
 .select{
     padding: .7em;
@@ -370,7 +376,7 @@ img{
     overflow-y: auto;
 }
 .metrics{
-    height: 35%;
+    height: 30%;
     width: 100%;
     /* outline: 1px solid red; */
     margin: .2em 0;
@@ -397,15 +403,17 @@ img{
     
 }
 .visuals{
-    margin: .6em 0;
+    margin: .6em 0 0 0;
     height: 50%;
     width: 100%;
     /* outline: 1px solid blue; */
     display: flex;
-    flex-direction: row-reverse;
-    justify-content: space-evenly;
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
-    text-align: center;
+    /* text-align: center; */
+    /* overflow-y: auto; */
+
 }
 .loan-right{
     height: 70%;
@@ -482,7 +490,9 @@ img{
     display: inline;
 }
 
-
+.act button, .del button{
+    padding: 0.5em;
+}
 .del button{
     background: tomato;
 }
@@ -490,5 +500,21 @@ img{
     background: transparent;
     color: tomato;
     outline: 1px solid tomato;
+    transition: .2s ease-in-out;
+}
+.copyright{
+    width: 100%;
+    text-align: center;
+    color: lightgray;
+    margin-top: 1%;
+    font-weight: 800;
+}
+.copyright a{
+    text-decoration: underline;
+    color: #74C0FC;
+}
+.copyright a:hover{
+    text-decoration: none;
+    color: white;
     transition: .2s ease-in-out;
 }

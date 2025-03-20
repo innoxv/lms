@@ -6,11 +6,8 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-
-if (!$myconn) {
-    die("Connection failed: " . mysqli_connect_error());
-}
 
 $userId = $_SESSION['user_id'];
 
@@ -32,10 +29,43 @@ $lenderResult = mysqli_query($myconn, $lenderQuery);
 if (mysqli_num_rows($lenderResult) > 0) {
     $lender = mysqli_fetch_assoc($lenderResult);
     $_SESSION['lender_id'] = $lender['lender_id']; // Store lender_id in the session
+    
 } else {
     $_SESSION['loan_message'] = "You are not registered as a lender.";
     header("Location: lenderDashboard.php");
     exit();
+}
+
+// Define all possible loan types
+$allLoanTypes = [
+    "Personal Loan",
+    "Business Loan",
+    "Mortgage Loan",
+    "MicroFinance Loan",
+    "Student Loan",
+    "Construction Loan",
+    "Green Loan",
+    "Medical Loan",
+    "Startup Loan",
+    "Agricultural Loan"
+];
+
+
+// Fetch loan type information for the logged-in lender
+$lender_id = $_SESSION['lender_id'];
+$loanQuery = "SELECT loan_type, COUNT(*) AS loan_count 
+              FROM loans 
+              WHERE lender_id = '$lender_id' 
+              GROUP BY loan_type";
+$loanResult = mysqli_query($myconn, $loanQuery);
+$loanData = mysqli_fetch_all($loanResult, MYSQLI_ASSOC);
+
+// Initialize an array to hold loan counts for all types
+$loanCounts = array_fill_keys($allLoanTypes, 0);
+
+// Populate the loan counts with data from the database
+foreach ($loanData as $loan) {
+    $loanCounts[$loan['loan_type']] = (int)$loan['loan_count'];
 }
 
 // Fetch loan slot information for the logged-in lender
@@ -47,9 +77,6 @@ $slotQuery = "SELECT loan_type, COUNT(*) AS total_slots, SUM(customer_id IS NULL
 $slotResult = mysqli_query($myconn, $slotQuery);
 $slotData = mysqli_fetch_all($slotResult, MYSQLI_ASSOC);
 
-// Close the database connection
-mysqli_close($myconn);
-
 // Check if there's a loan message to display
 if (isset($_SESSION['loan_message'])) {
     $loan_message = $_SESSION['loan_message'];
@@ -57,6 +84,9 @@ if (isset($_SESSION['loan_message'])) {
 } else {
     $loan_message = null;
 }
+
+// Close the database connection
+mysqli_close($myconn);
 ?>
 
 
@@ -172,12 +202,12 @@ if (isset($_SESSION['loan_message'])) {
                                             <td class="mid"><?php echo htmlspecialchars($slot['available_slots']); ?></td>
                                             <td>
                                                 <!-- Add Slot Form -->
-                                                <form action="addSlot.php" method="post" >
+                                                <form action="addSlot.php" method="post" class="act">
                                                     <input type="hidden" name="loan_type" value="<?php echo htmlspecialchars($slot['loan_type']); ?>">
                                                     <button type="submit">Add Slot</button>
                                                 </form>
                                                 <!-- Delete Slot Form -->
-                                                <form action="deleteSlot.php" method="post" >
+                                                <form action="deleteSlot.php" method="post" class="act">
                                                     <input type="hidden" name="loan_type" value="<?php echo htmlspecialchars($slot['loan_type']); ?>">
                                                     <button type="submit">Delete Slot</button>
                                                 </form>
@@ -270,7 +300,7 @@ if (isset($_SESSION['loan_message'])) {
                             <span class="span-2">0</span>
                         </div>
                         <div>
-                            <p>Total Loan Amounts Disbursed</p>
+                            <p>Total Amount Disbursed</p>
                             <span class="span-2">0</span>
                         </div>
                         <div>
@@ -284,12 +314,14 @@ if (isset($_SESSION['loan_message'])) {
                     </div>
                     <div class="visuals">
                         <div>
-                        <canvas id="barChart" width="400" height="200"></canvas>
-                        <p>dummy bar graph</p>
+                        <p>Number of loans created per loan type</p>
+                        <canvas id="barChart" width="800" height="300"></canvas>
+                        
                         </div>
                         <div>
-                             <canvas id="pieChart" width="400" height="200"></canvas>
-                             <p>dummy pie chart</p>
+                            <p>Dummy Interest Rates</p>
+                            <canvas id="pieChart" width="400" height="200"></canvas>
+                             
                             
                         </div>
                     
@@ -299,6 +331,17 @@ if (isset($_SESSION['loan_message'])) {
                 </div>
             </div>
         </div>
+
+
+                <!-- Copyright -->
+                <div class="copyright">
+                    <p><?php
+                        $currentYear = date("Y");
+                        echo "&copy; $currentYear";
+                        ?>
+                        <a href="mailto:innocentmukabwa@gmail.com">dev</a>
+                    </p>
+                </div>
     </main>
     <script src="../js/validinput.js"></script>
 
@@ -320,48 +363,96 @@ if (isset($_SESSION['loan_message'])) {
         window.onload = hideLoanMessage;
     </script>
 
+    <script>
+        // Pass the loan counts from PHP to JavaScript
+        const loanCounts = <?php echo json_encode($loanCounts); ?>;
 
+        // Get the canvas element and context
+        const barCanvas = document.getElementById('barChart');
+        const barCtx = barCanvas.getContext('2d');
 
+        // Define all loan types
+        const loanTypes = Object.keys(loanCounts);
+        const counts = Object.values(loanCounts);
 
+        // Abbreviate labels (first 2 letters)
+        const abbreviatedLabels = loanTypes.map(label => label.substring(0, 2).toUpperCase());
+
+        // Define chart dimensions
+        const barWidth = 30; // Width of each bar
+        const barSpacing = 20; // Spacing between bars
+        const startX = 50; // Starting X position for the first bar (reduced margin)
+        const startY = barCanvas.height - 80; // Starting Y position (bottom of the chart)
+        const axisPadding = 5; // Reduced padding for the Y-axis
+
+        // Calculate the maximum value for the Y-axis scale
+        const maxCount = Math.max(...counts);
+        const yAxisMax = Math.ceil(maxCount / 5) * 5; // Round up to the nearest multiple of 5
+
+        // Draw the bars
+        counts.forEach((value, index) => {
+            const x = startX + (barWidth + barSpacing) * index;
+            const y = startY - (value / yAxisMax) * (startY - 20); // Scale bar height to fit Y-axis
+            barCtx.fillStyle = '#74C0FC'; // Bar color
+            barCtx.fillRect(x, y, barWidth, startY - y); // Draw the bar
+        });
+
+        // Draw the X-axis labels (abbreviated)
+        barCtx.fillStyle = 'white'; // Label color
+        barCtx.font = '14px Trebuchet MS'; // Label font
+        barCtx.textAlign = 'center'; // Center-align the text
+        abbreviatedLabels.forEach((label, index) => {
+            const x = startX + (barWidth + barSpacing) * index + barWidth / 2;
+            barCtx.fillText(label, x, startY + 20); // Draw the label below the bar
+        });
+
+        // Draw the Y-axis
+        barCtx.beginPath();
+        barCtx.moveTo(startX - axisPadding, startY);
+        barCtx.lineTo(startX - axisPadding, 20);
+        barCtx.strokeStyle = 'white'; // Y-axis color
+        barCtx.stroke();
+
+        // Draw Y-axis labels and grid lines (steps of 2 for better readability)
+        barCtx.fillStyle = 'whitesmoke';
+        barCtx.font = '14px Trebuchet MS';
+        barCtx.textAlign = 'right'; // Right-align Y-axis labels
+        barCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; // Grid line color
+
+        for (let i = 0; i <= yAxisMax; i += 2) { // Steps of 2 for better readability
+            const y = startY - (i / yAxisMax) * (startY - 20); // Scale Y-axis labels
+
+            // Draw Y-axis labels
+            barCtx.fillText(i, startX - axisPadding - 5, y + 5);
+
+            // Draw horizontal grid lines
+            barCtx.beginPath();
+            barCtx.moveTo(startX - axisPadding, y);
+            barCtx.lineTo(barCanvas.width - 250, y); // Extend grid line across the chart
+            barCtx.stroke();
+        }
+
+        // Draw the legend (key) on the side
+        const legendX = barCanvas.width - 250; // X position for the legend
+        const legendY = 50; // Y position for the legend
+        const legendSpacing = 20; // Spacing between legend items
+
+        barCtx.font = '16px Trebuchet MS';
+        barCtx.textAlign = 'left'; // Left-align legend text
+        loanTypes.forEach((label, index) => {
+            
+
+            // Draw the label text
+            barCtx.fillStyle = 'lightgray';
+            barCtx.fillText(`${abbreviatedLabels[index]}: ${label}`, legendX + 20, legendY + index * legendSpacing + 12);
+        });
+    </script>
 
 
 
     <!-- Dummy Data - Should actually analyze data from the database -->
     <script>
         
-        //dummy bar graph
-        // Get the canvas element and context
-        const barCanvas = document.getElementById('barChart');
-        const barCtx = barCanvas.getContext('2d');
-
-        // Data for the bar chart
-        const data = [30, 60, 90, 120, 150, 180];
-        const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
-        const barWidth = 40;
-        const barSpacing = 20;
-        const startX = 50;
-        const startY = barCanvas.height - 50;
-
-        // Draw the bars
-        data.forEach((value, index) => {
-        const x = startX + (barWidth + barSpacing) * index;
-        const y = startY - value;
-        barCtx.fillStyle = 'rgba(75, 192, 192, 0.6)';
-        barCtx.fillRect(x, y, barWidth, value);
-        });
-
-        // Draw the X-axis labels
-        barCtx.fillStyle = 'whitesmoke';
-        labels.forEach((label, index) => {
-        const x = startX + (barWidth + barSpacing) * index + barWidth / 2;
-        barCtx.fillText(label, x, startY + 20);
-        });
-
-        // Draw the Y-axis
-        barCtx.beginPath();
-        barCtx.moveTo(startX - 10, startY);
-        barCtx.lineTo(startX - 10, 20);
-        barCtx.stroke();
 
         // dummy pie chart
         // Get the canvas element and context
