@@ -204,6 +204,16 @@ mysqli_close($myconn);
                 </div>
             </div>
         </div>
+
+        <!-- Copyright -->
+        <div class="copyright">
+                    <p><?php
+                        $currentYear = date("Y");
+                        echo "&copy; $currentYear";
+                        ?>
+                        <a href="mailto:innocentmukabwa@gmail.com">dev</a>
+                    </p>
+                </div>
     </main>
 
     <script>
