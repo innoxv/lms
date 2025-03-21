@@ -1,8 +1,8 @@
 <?php
 // Enable error reporting for debugging
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// ini_set('display_errors', 1);
+// ini_set('display_startup_errors', 1);
+// error_reporting(E_ALL);
 
 // Start the session
 session_start();
@@ -40,11 +40,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $_SESSION['role'] = $user['role'];
                 $_SESSION['user_name'] = $user['user_name']; // Store the user's name in the session
 
-                // Debug session variables
-                // echo "<pre>";
-                // print_r($_SESSION);
-                // echo "</pre>";
-                // exit();
 
                 // Redirect based on role
                 if ($user['role'] == 'Admin') {

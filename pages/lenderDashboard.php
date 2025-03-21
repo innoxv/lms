@@ -6,7 +6,6 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
 
 $userId = $_SESSION['user_id'];
@@ -35,6 +34,27 @@ if (mysqli_num_rows($lenderResult) > 0) {
     header("Location: lenderDashboard.php");
     exit();
 }
+// Declaring Lender ID from session
+$lender_id = $_SESSION['lender_id'];
+
+// Fetch total number of loans created by the lender
+$totalLoansQuery = "SELECT COUNT(*) AS total_loans FROM loans WHERE lender_id = '$lender_id'";
+$totalLoansResult = mysqli_query($myconn, $totalLoansQuery);
+$totalLoansData = mysqli_fetch_assoc($totalLoansResult);
+$totalLoans = $totalLoansData['total_loans'];
+
+// Fetch average interest rate of loans created by the lender
+$avgInterestQuery = "SELECT AVG(interest_rate) AS avg_interest_rate FROM loans WHERE lender_id = '$lender_id'";
+$avgInterestResult = mysqli_query($myconn, $avgInterestQuery);
+$avgInterestData = mysqli_fetch_assoc($avgInterestResult);
+$avgInterestRate = $avgInterestData['avg_interest_rate'];
+
+// Format the average interest rate to 2 decimal places
+$avgInterestRate = number_format($avgInterestRate, 2);
+
+// Update the average_interest_rate in the lenders table
+$updateAvgInterestQuery = "UPDATE lenders SET average_interest_rate = '$avgInterestRate' WHERE lender_id = '$lender_id'";
+mysqli_query($myconn, $updateAvgInterestQuery);
 
 // Define all possible loan types
 $allLoanTypes = [
@@ -52,7 +72,6 @@ $allLoanTypes = [
 
 
 // Fetch loan type information for the logged-in lender
-$lender_id = $_SESSION['lender_id'];
 $loanQuery = "SELECT loan_type, COUNT(*) AS loan_count 
               FROM loans 
               WHERE lender_id = '$lender_id' 
@@ -69,7 +88,6 @@ foreach ($loanData as $loan) {
 }
 
 // Fetch loan slot information for the logged-in lender
-$lender_id = $_SESSION['lender_id'];
 $slotQuery = "SELECT loan_type, COUNT(*) AS total_slots, SUM(customer_id IS NULL) AS available_slots 
               FROM loans 
               WHERE lender_id = '$lender_id' 
@@ -296,8 +314,8 @@ mysqli_close($myconn);
                     </div>
                     <div class="metrics">
                         <div>
-                            <p>Total Loans Disbursed</p>
-                            <span class="span-2">0</span>
+                            <p>Total Loans Created</p>
+                            <span class="span-2"><?php echo $totalLoans; ?></span>
                         </div>
                         <div>
                             <p>Total Amount Disbursed</p>
@@ -309,7 +327,7 @@ mysqli_close($myconn);
                         </div>
                         <div>
                             <p>Average Interest Rate</p>
-                            <span class="span-2">0</span>
+                            <span class="span-2"><?php echo $avgInterestRate; ?>%</span>
                         </div>
                     </div>
                     <div class="visuals">

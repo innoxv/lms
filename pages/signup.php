@@ -56,12 +56,13 @@ if (isset($_POST['submit'])) {
             $_SESSION['email'] = $email;
             $_SESSION['role'] = $role;
             $_SESSION['user_name'] = $userName;
+            $address = $_POST['address'];
+
 
             if ($role === 'Customer') {
                 // Fetch Customer-specific fields
                 $dob = $_POST['dob']; // Date in DD-MM-YYYY format
                 $nationalId = $_POST['nationalId'];
-                $address = $_POST['address'];
                 $bankAccount = $_POST['accountNumber'];
 
                 // Convert date from DD-MM-YYYY to YYYY-MM-DD
@@ -76,8 +77,6 @@ if (isset($_POST['submit'])) {
                 $sql = "INSERT INTO customers (user_id, name, email, phone, password, dob, national_id, address, status, registration_date, bank_account) 
                         VALUES ('$userId', '$userName', '$email', '$phone', '$hashedPassword', '$dobFormatted', '$nationalId', '$address', '$status', '$registrationDate', '$bankAccount')";
             } elseif ($role === 'Lender') {
-                // Fetch Lender-specific fields
-                $address = $_POST['address'];
 
                 // Insert into lenders table
                 $sql = "INSERT INTO lenders (user_id, name, email, phone, password, address, status, registration_date, total_loans, average_interest_rate) 
