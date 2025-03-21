@@ -337,7 +337,7 @@ mysqli_close($myconn);
                         
                         </div>
                         <div>
-                            <p>Dummy Interest Rates</p>
+                            <p>Loan Status (dummy data)</p>
                             <canvas id="pieChart" width="400" height="200"></canvas>
                              
                             
@@ -452,7 +452,7 @@ mysqli_close($myconn);
 
         // Draw the legend (key) on the side
         const legendX = barCanvas.width - 250; // X position for the legend
-        const legendY = 50; // Y position for the legend
+        const legendY = 40; // Y position for the legend
         const legendSpacing = 20; // Spacing between legend items
 
         barCtx.font = '16px Trebuchet MS';
@@ -470,43 +470,56 @@ mysqli_close($myconn);
 
     <!-- Dummy Data - Should actually analyze data from the database -->
     <script>
-        
+    // Get the canvas element and context
+    const pieCanvas = document.getElementById('pieChart');
+    const pieCtx = pieCanvas.getContext('2d');
 
-        // dummy pie chart
-        // Get the canvas element and context
-        const pieCanvas = document.getElementById('pieChart');
-        const pieCtx = pieCanvas.getContext('2d');
-        
-        // Data for the pie chart
-        const pieData = [30, 20, 15, 10, 25]; // Values for each slice
-        const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
-        const total = pieData.reduce((sum, value) => sum + value, 0);
-        
-        // Draw the pie chart
-        let startAngle = 0;
-        const centerX = pieCanvas.width / 2;
-        const centerY = pieCanvas.height / 2;
-        const radius = 80;
-        
-        pieData.forEach((value, index) => {
+    // Define dummy data
+    const pieData = {
+        labels: ['Pending', 'Approved', 'Rejected'],
+        values: [50, 30, 20], // Percentages for each status
+    };
+
+    // Define colors for each status
+    const statusColors = {
+        'Pending': 'white', 
+        'Approved': 'lightgreen', 
+        'Rejected': 'tomato',
+    };
+
+    // Extract labels and values from pieData
+    const labels = pieData.labels;
+    const values = pieData.values;
+
+    // Calculate the total for percentage calculations
+    const total = values.reduce((sum, value) => sum + value, 0);
+
+    // Draw the pie chart
+    let startAngle = 0;
+    const centerX = pieCanvas.width / 3;
+    const centerY = pieCanvas.height / 2;
+    const radius = 80;
+
+    values.forEach((value, index) => {
         const sliceAngle = (2 * Math.PI * value) / total;
         pieCtx.beginPath();
         pieCtx.moveTo(centerX, centerY);
         pieCtx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
         pieCtx.closePath();
-        pieCtx.fillStyle = colors[index];
+        pieCtx.fillStyle = statusColors[labels[index]]; // Use color based on status
         pieCtx.fill();
         startAngle += sliceAngle;
-        });
-        
-        // Optional: Add a legend
-        pieCtx.font = '12px Arial';
-        pieData.forEach((value, index) => {
-        pieCtx.fillStyle = colors[index];
+    });
+
+    // Add a legend
+    pieCtx.font = '14px Trebuchet MS';
+    values.forEach((value, index) => {
+        const percentage = ((value / total) * 100).toFixed(2);
+        pieCtx.fillStyle = statusColors[labels[index]];
         pieCtx.fillRect(centerX + radius + 20, 20 + index * 20, 15, 15);
         pieCtx.fillStyle = 'whitesmoke';
-        pieCtx.fillText(`${Math.round((value / total) * 100)}%`, centerX + radius + 40, 32 + index * 20);
-        });
-    </script>
+        pieCtx.fillText(`${labels[index]}: ${value}%`, centerX + radius + 40, 32 + index * 20);
+    });
+</script>
 </body>
 </html>

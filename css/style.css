@@ -445,6 +445,7 @@ img{
     text-align: center;
     transition: opacity 0.2s ease; 
 }
+
 .loan-split{
     display: flex;
     flex-direction: row;
