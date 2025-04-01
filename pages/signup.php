@@ -8,14 +8,17 @@
 session_start();
 
 // Database connection
+// $myconn is a global variable that creates a connection to MySQL database using mysqli_connect() function that opens a new connection to the MySQL server
+// Parameters: server, username, password, database 
 $myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
 
 // Check connection
 if (!$myconn) {
-    die("Connection failed: " . mysqli_connect_error());
+    die("Connection failed");
 }
 
-if (isset($_POST['submit'])) {
+// checks if form was submitted (POST request exists) and the specific submit button was clicked
+if (isset($_POST['submit'])) {  // isset is a PHP function that determines if a variable is considered set
     // Fetch common fields
     $role = $_POST['role'];
     $firstName = $_POST['firstName'];
@@ -28,15 +31,15 @@ if (isset($_POST['submit'])) {
     $userName = $firstName . " " . $secondName;
 
     // Hash the password
-    $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+    $hashedPassword = password_hash($password, PASSWORD_BCRYPT); // password_hash() is a PHP function that creates a password hash with PASSWORD_BCRYPT algorithm
 
     // Check if the email already exists in either table
     $checkEmailQuery = "SELECT email FROM customers WHERE email = '$email'
                         UNION
                         SELECT email FROM lenders WHERE email = '$email'";
-    $result = mysqli_query($myconn, $checkEmailQuery);
+    $result = mysqli_query($myconn, $checkEmailQuery); //mysqli_query() is a PHP function that performs a query on the database
 
-    if (mysqli_num_rows($result) > 0) {
+    if (mysqli_num_rows($result) > 0) { //mysqli_num_rows() is a PHP function that returns the number of rows in the result set
         // Email already exists, show an error message
         echo "<script>alert('Email already exists. Please use a different email.'); window.location.href = 'signup.html';</script>";
     } else {
@@ -49,7 +52,7 @@ if (isset($_POST['submit'])) {
                             VALUES ('$userName', '$email', '$phone', '$hashedPassword', '$role')";
         if (mysqli_query($myconn, $insertUserQuery)) {
             // Get the ID of the newly inserted user
-            $userId = mysqli_insert_id($myconn);
+            $userId = mysqli_insert_id($myconn);    //mysqli_insert_id() is a PHP function that returns the value generated for an AUTO_INCREMENT column by the last query
 
             // Store user data in the session
             $_SESSION['user_id'] = $userId;
@@ -66,7 +69,7 @@ if (isset($_POST['submit'])) {
                 $bankAccount = $_POST['accountNumber'];
 
                 // Convert date from DD-MM-YYYY to YYYY-MM-DD
-                $dateObj = DateTime::createFromFormat('d-m-Y', $dob);
+                $dateObj = DateTime::createFromFormat('d-m-Y', $dob);   //DateTime::createFromFormat() is a static function that parses a time string according to a specified format
                 if (!$dateObj) {
                     echo "<script>alert('Invalid date of birth. Please use the format DD-MM-YYYY.'); window.location.href = 'signup.html';</script>";
                     exit();

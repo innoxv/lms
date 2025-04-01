@@ -4,9 +4,10 @@ $myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
 
 // Check connection
 if (!$myconn) {
-    die("Connection failed: " . mysqli_connect_error());
+    die("Connection failed");
 }
 
+//Determine if session variables are considered set
 if (isset($_POST['submit'])) {
     // Fetch data from the form and store in variables
     $role = $_POST['role'];

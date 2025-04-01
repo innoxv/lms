@@ -2,7 +2,7 @@
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    $_SESSION['loan_message'] = "You must be logged in to create a loan.";
+    $_SESSION['loan_message'] = "You must be logged in to create a loan product.";
     header("Location: lenderDashboard.php#createLoan");
     exit();
 }
@@ -31,42 +31,51 @@ if (mysqli_num_rows($lenderResult) === 0) {
 $lender = mysqli_fetch_assoc($lenderResult);
 $lender_id = $lender['lender_id'];
 
-// Get form data
-$loan_type = $_POST['type'];
+// Get form data with validation
+$loan_type = mysqli_real_escape_string($myconn, $_POST['type']);
 $interest_rate = floatval($_POST['interestRate']);
+$max_amount = floatval($_POST['maxAmount']);
 $max_duration = intval($_POST['maxDuration']);
 
-// Check if the loan type already exists for the logged-in lender
-$checkQuery = "SELECT loan_id FROM loans WHERE loan_type = '$loan_type' AND lender_id = '$lender_id'";
+
+// Check if the loan type already exists in loan_products for this lender
+$checkQuery = "SELECT product_id FROM loan_products 
+              WHERE loan_type = '$loan_type' AND lender_id = '$lender_id'";
 $checkResult = mysqli_query($myconn, $checkQuery);
 
 if (mysqli_num_rows($checkResult) > 0) {
-    $_SESSION['loan_message'] = "$loan_type already exists for your account!";
+    $_SESSION['loan_message'] = "$loan_type already exists in your loan products!";
     header("Location: lenderDashboard.php#createLoan");
     exit();
 }
 
-// Insert the initial loan type into the loans table
-$sql = "INSERT INTO loans (lender_id, loan_type, interest_rate, max_duration, customer_id) 
-        VALUES ('$lender_id', '$loan_type', '$interest_rate', '$max_duration', NULL)";
+// Insert into loan_products table
+$sql = "INSERT INTO loan_products 
+        (lender_id, loan_type, interest_rate, max_amount, max_duration)
+        VALUES 
+        ('$lender_id', '$loan_type', '$interest_rate', '$max_amount', '$max_duration')";
 
 if (mysqli_query($myconn, $sql)) {
-    // Insert 4 additional slots for the loan type
-    for ($i = 0; $i < 4; $i++) {
-        $insertQuery = "INSERT INTO loans (lender_id, loan_type, interest_rate, max_duration, customer_id) 
-                        VALUES ('$lender_id', '$loan_type', '$interest_rate', '$max_duration', NULL)";
-        mysqli_query($myconn, $insertQuery);
-    }
+    // Calculate new average interest rate
+    $avgQuery = "SELECT AVG(interest_rate) AS new_avg 
+                FROM loan_products 
+                WHERE lender_id = '$lender_id'";
+    $avgResult = mysqli_query($myconn, $avgQuery);
+    $avgData = mysqli_fetch_assoc($avgResult);
+    $newAverage = $avgData['new_avg'];
 
-    $_SESSION['loan_message'] = "$loan_type created successfully with 5 slots!";
+    // Update lenders table
+    $updateLender = "UPDATE lenders 
+                    SET average_interest_rate = '$newAverage' 
+                    WHERE lender_id = '$lender_id'";
+    mysqli_query($myconn, $updateLender);
+
+    $_SESSION['loan_message'] = "$loan_type created successfully!";
 } else {
-    $_SESSION['loan_message'] = "Error: " . mysqli_error($myconn);
+    $_SESSION['loan_message'] = "Error creating loan product: " . mysqli_error($myconn);
 }
 
-// Close the database connection
 mysqli_close($myconn);
-
-// Redirect back to the lender dashboard
 header("Location: lenderDashboard.php#createLoan");
 exit();
 ?>

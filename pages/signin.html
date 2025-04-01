@@ -11,15 +11,16 @@
             <label class="header-label">Sign In</label>
             <div class="content-2">
                 <form action="signin.php" method="post" onsubmit="return validateForm2()">
+                    <div><label style="font-size: 1.5em;">Welcome Back!</label></div>
+                    <div id="error" style="color: tomato;font-weight:700"></div>
                     <table>
-                        <tr><td><label>Welcome Back!</label></td></tr>
-                        <tr>
-                            <td><label for="email">Email</label></td>
-                            <td><input type="text" id="email" name="email" placeholder="you@example.com"></td>
+                        <tr>  
+                            <td><label for="signinEmail">Email</label></td>
+                            <td><input type="text" id="signinEmail" name="signinEmail" placeholder="you@example.com"></td>
                         </tr>
                         <tr>
-                            <td><label for="password">Password</label></td>
-                            <td><input type="password" id="password" name="password" placeholder="your password"></td>
+                            <td><label for="signinPassword">Password</label></td>
+                            <td><input type="password" id="signinPassword" name="signinPassword" placeholder="your password"></td>
                         </tr>
                         <tr class="submit-action">
                             <td><button type="submit" name="submit">LOG IN</button></td>
@@ -33,5 +34,6 @@
         </div>
     
         <script src="../js/validinput.js"></script>
+        
 </body>
 </html>
