@@ -233,6 +233,8 @@ img{
     height: 65vh;
 }
 
+
+
 /* Customer DashBoard */
 .customer-content{
     align-items: center;
@@ -284,9 +286,12 @@ img{
 }
 .top li a{
     color: lightgray;
+    font-weight: 700;
 }
 .bottom li a{
     color: #74C0FC;
+    font-weight: 700;
+
 }
 .top li a:hover{
     color: #74C0FC;
@@ -385,10 +390,10 @@ img{
 }
 .metrics > div{
     width: 20%;
-    height: 80%;
+    height: 70%;
     outline: 1px solid gray;
     border-radius: 1em;
-    margin-inline: 1em;
+    margin-inline: .5em;
     text-align: center; 
     
 }
@@ -398,11 +403,20 @@ img{
  
 }
 .metrics span{
-    font-size: 5em;
+    font-size: 3.5em;
     color: #74C0FC;
     font-weight: 900;
+    padding: .2em;
+    /* overflow-wrap: break-word; */
+   
     
 }
+
+.metrics .span-3 .percentage{
+    color: lightgray;
+    font-weight: 100;
+}
+
 .visuals{
     margin: .6em 0 0 0;
     height: 50%;
@@ -417,15 +431,124 @@ img{
 
 }
 .loan-right{
-    height: 70%;
-    outline: 1px solid red;
+    height: 80%;
+    /* outline: 1px solid red; */
     display: flex;
     flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
 
 }
 .loan-filter{
-    height: 40%;
+    height: 90%;
+    /* outline: 1px solid blue; */
+    /* background: transparent; */
+    width: 15%;
+    margin-block: -1em;
+    margin-left: .1em;
 
+}
+.loan-filter > form > div{
+    /* outline: 1px solid green; */
+    margin-block: -1.5em;
+
+    
+
+}
+.loan-filter > form > div > ul{
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+    
+}
+
+.loan-filter ul li{
+    display: flex;
+    flex-direction: column;
+    color: lightgray;
+}
+
+.loan-filter ul li p{
+    color: whitesmoke;
+    font-weight: 500;
+
+}
+.range input{
+    padding: 0;
+    margin: .5em 0;
+    width: 4.5em;
+    display: flex;
+    flex-direction: row;
+    text-align: center;
+    font-size: 1em;
+}
+.range input::placeholder{
+    color: gray;
+    font-size: 1em;
+}
+.range > div{
+    padding: 0;
+    /* width: 100%; */
+    display: flex;
+    flex-direction: row;
+}
+.range span{
+    font-size: 1.5em;
+    font-weight: 700;
+    color: #74C0FC;
+}
+
+.quick-amounts button{
+    margin: .5em 0;
+    padding: .5em .4em;
+}
+.sub{
+    margin: .5em 0;
+}
+.res{
+    background: transparent;
+    color: lightgray
+}
+li p{
+    margin: 1em 0 .5em 0;
+}
+.loan-lenders{
+    height: 100%;
+    outline: 1px solid gray;
+    width: 83.5%;
+    border-radius: .2em;
+    padding: .2em;
+
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15%, 1fr));
+    grid-auto-rows: 30%; 
+    gap: .8em .6em ;
+    overflow-y: auto; /
+
+}
+.lender{
+    /* height: 35%; */
+    width: 100%;
+    outline: 2px solid gray;
+    border-radius: .2em;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.lender > div{
+    display: flex;
+    flex-direction: column;
+}
+.lender span{
+    color: lightgray;
+}
+.lender a{
+    color: #74C0FC;
+}
+.lender button{
+    width: 96%;
+    margin: .2em;
 }
 
 /* Lender Dashboard */
@@ -492,18 +615,95 @@ img{
     display: inline;
 }
 
-.act button, .del button{
-    padding: 0.5em;
+.act button{
+    padding: 0.5em .8em;
+
 }
-.del button{
+.del-form .del-btn{
     background: tomato;
+    padding: 0.7em .8em;
+
 }
-.del button:hover{
+.del-form .del-btn:hover{
     background: transparent;
     color: tomato;
     outline: 1px solid tomato;
     transition: .2s ease-in-out;
 }
+
+
+/* Popup Overlay */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    z-index: 1000;
+}
+
+/* Popup Container */
+.edit-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #28282B;
+    padding: 1.5em;
+    width: 20%;
+    border-radius: 1em;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    display: none;
+    z-index: 1001;
+}
+.edit-popup h3{
+    color: whitesmoke;
+}
+/* Form Elements */
+.edit-popup span {
+    width: 90%;
+    color: #74C0FC;
+    font-weight: 700;
+    font: 2em;
+    margin: 1.5em 1em;
+
+}
+.ltype{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 1em;
+    
+}
+.ltype span{
+    margin-bottom: 3em;
+}
+.edit-form input {
+    width: 90%;
+    padding: 8px;
+    margin: 0;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+.edit-form label {
+    font-weight: 700;
+}
+.edit-form .del{
+    background: tomato;
+    padding: 0.7em .8em;
+
+}
+.edit-form .del:hover{
+    background: transparent;
+    color: tomato;
+    outline: 1px solid tomato;
+    transition: .2s ease-in-out;
+}
+
 .copyright{
     width: 100%;
     text-align: center;

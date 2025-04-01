@@ -73,22 +73,18 @@ mysqli_close($myconn);
 
             <!-- Dynamic display enabled by CSS -->
             <div class="display">
-                <!-- Apply for Loan -->
-                <div id="applyLoan" class="margin">
-                    <h1>Apply for Loan</h1>
-                    <p>Fill out the form to apply for a new loan.</p>
-                </div>
+                
 
                 <!-- Loan History -->
                 <div id="loanHistory" class="margin">
                     <h1>Loan History</h1>
-                    <p>View your past loans and their status.</p>
+                    <p>View past loans and their status.</p>
                 </div>
 
                 <!-- Financial Summary -->
                 <div id="financialSummary" class="margin">
                     <h1>Financial Summary</h1>
-                    <p>Charts and graphs summarizing your financial data.</p>
+                    <p>Charts and graphs summarizing financial data.</p>
                 </div>
 
                 <!-- Notifications -->
@@ -227,77 +223,6 @@ window.addEventListener('load', setActiveSection);
 // Call the function when the hash changes (e.g., when a link is clicked)
 window.addEventListener('hashchange', setActiveSection);
     </script>
-    <script>
 
-        //dummy bar graph
-        // Get the canvas element and context
-        const barCanvas = document.getElementById('barChart');
-        const barCtx = barCanvas.getContext('2d');
-
-        // Data for the bar chart
-        const data = [30, 60, 90, 120, 150, 180];
-        const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
-        const barWidth = 40;
-        const barSpacing = 20;
-        const startX = 50;
-        const startY = barCanvas.height - 50;
-
-        // Draw the bars
-        data.forEach((value, index) => {
-        const x = startX + (barWidth + barSpacing) * index;
-        const y = startY - value;
-        barCtx.fillStyle = 'rgba(75, 192, 192, 0.6)';
-        barCtx.fillRect(x, y, barWidth, value);
-        });
-
-        // Draw the X-axis labels
-        barCtx.fillStyle = 'whitesmoke';
-        labels.forEach((label, index) => {
-        const x = startX + (barWidth + barSpacing) * index + barWidth / 2;
-        barCtx.fillText(label, x, startY + 20);
-        });
-
-        // Draw the Y-axis
-        barCtx.beginPath();
-        barCtx.moveTo(startX - 10, startY);
-        barCtx.lineTo(startX - 10, 20);
-        barCtx.stroke();
-
-        // dummy pie chart
-        // Get the canvas element and context
-        const pieCanvas = document.getElementById('pieChart');
-        const pieCtx = pieCanvas.getContext('2d');
-        
-        // Data for the pie chart
-        const pieData = [30, 20, 15, 10, 25]; // Values for each slice
-        const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
-        const total = pieData.reduce((sum, value) => sum + value, 0);
-        
-        // Draw the pie chart
-        let startAngle = 0;
-        const centerX = pieCanvas.width / 2;
-        const centerY = pieCanvas.height / 2;
-        const radius = 80;
-        
-        pieData.forEach((value, index) => {
-        const sliceAngle = (2 * Math.PI * value) / total;
-        pieCtx.beginPath();
-        pieCtx.moveTo(centerX, centerY);
-        pieCtx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
-        pieCtx.closePath();
-        pieCtx.fillStyle = colors[index];
-        pieCtx.fill();
-        startAngle += sliceAngle;
-        });
-        
-        // Optional: Add a legend
-        pieCtx.font = '12px Arial';
-        pieData.forEach((value, index) => {
-        pieCtx.fillStyle = colors[index];
-        pieCtx.fillRect(centerX + radius + 20, 20 + index * 20, 15, 15);
-        pieCtx.fillStyle = 'whitesmoke';
-        pieCtx.fillText(`${Math.round((value / total) * 100)}%`, centerX + radius + 40, 32 + index * 20);
-        });
-    </script>
 </body>
 </html>

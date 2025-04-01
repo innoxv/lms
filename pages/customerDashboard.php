@@ -82,10 +82,374 @@ mysqli_close($myconn);
                     </div>
                     <div class="loan-right">
                         <div class="loan-filter">
-                            
+                            <p style="color: whitesmoke; font-weight: 900;">Filters</p>
+                            <form method="GET" action="">
+                                <div>
+                                    <ul>
+                                    <li>
+                                        <p>Loan Type</p>
+                                        <span>
+                                        <input type="checkbox" name="loan_type" value="personal" id="personal">
+                                        <label for="personal">Personal</label>
+                                        </span>
+                                        <span>
+                                        <input type="checkbox" name="loan_type" value="business" id="business">
+                                        <label for="business">Business</label>
+                                        </span>
+                                        <span>
+                                        <input type="checkbox" name="loan_type" value="mortgage" id="mortgage">
+                                        <label for="mortgage">Mortgage</label>
+                                        </span>
+                                        <span>
+                                        <input type="checkbox" name="loan_type" value="microfinance" id="microfinance">
+                                        <label for="microfinance">MicroFinance</label>
+                                        </span>
+                                        <span>
+                                        <input type="checkbox" name="loan_type" value="student" id="student">
+                                        <label for="student">Student</label>
+                                        </span>
+                                        <span>
+                                        <input type="checkbox" name="loan_type" value="construction" id="construction">
+                                        <label for="construction">Construction</label>
+                                        </span>
+                                        <span>
+                                        <input type="checkbox" name="loan_type" value="green" id="green">
+                                        <label for="green">Green</label>
+                                        </span>
+                                        <span>
+                                        <input type="checkbox" name="loan_type" value="medical" id="medical">
+                                        <label for="medical">Medical</label>
+                                        </span>
+                                        <span>
+                                        <input type="checkbox" name="loan_type" value="startup" id="startup">
+                                        <label for="startup">Startup</label>
+                                        </span>
+                                        <span>
+                                        <input type="checkbox" name="loan_type" value="agricultural" id="agricultural">
+                                        <label for="agricultural">Agricultural</label>
+                                        </span>
+                                    </li>
+                                    <li>
+                                        <p>Amount Range (sh)</p>
+                                        <span class="range">
+                                        <div>
+                                            <input type="number" name="min_amount" placeholder="500" min="500" >
+                                            <span>-</span>
+                                            <input type="number" name="max_amount" placeholder="100000" min="500" >
+                                        </div>
+                                        <div>
+                                            <div class="quick-amounts">
+                                            <button type="button" data-min="1000" data-max="5000">1k-5k</button>
+                                            <button type="button" data-min="5000" data-max="20000">5k-20k</button>
+                                            <button type="button" data-min="20000" data-max="50000">20k-50k</button>
+                                            </div>
+                                        </div>
+                                        </span>
+                                    </li>
+                                    <li>
+                                        <p>Interest Rates</p>
+                                        <span>
+                                        <input type="checkbox" name="interest_range[]" value="0-5" id="0-5">
+                                        <label for="0-5">0 - 5%</label>
+                                        </span>
+                                        <span>
+                                        <input type="checkbox" name="interest_range[]" value="5-10" id="5-10">
+                                        <label for="5-10">5 - 10%</label>
+                                        </span>
+                                        <span>
+                                        <input type="checkbox" name="interest_range[]" value="10+" id="10+">
+                                        <label for="10+">10% +</label>
+                                        </span>
+                                    </li>
+                                    <li>
+                                        <button class="sub" type="submit">Apply Filters</button>
+                                        <button class="res" type="reset">Reset</button>
+                                    </li>
+                                    </ul>
+                                </div>
+                                </form>
                         </div>
-                        <div class="loan-forn">
-
+                        <div class="loan-lenders">
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
+                            <div class="lender">
+                                <div>
+                                    <span>Lender Name</span>
+                                    <span>Loan Type</span>
+                                    <span>Interest Rate</span>
+                                    <span>Maximum Duration</span>
+                                    <span>Maximum Amount</span>
+                                    <a href="alert.html" >More info</a>
+                                </div>
+                                <div>
+                                    <button>Apply Now</button>
+                                </div>
+                                
+                            </div>
                         </div>
                     </div>
                     
@@ -159,49 +523,40 @@ mysqli_close($myconn);
                             </p>
                         </div>
                     </div>
-                    <div class="display-content">
-
-                    
-                        <div class="metrics">
-                            <div>
-                                <p>Active Loans</p>
-                                <span class="span-2">0</span>
-                            </div>
-                            <div>
-                                <p>Loan Amounts</p>
-                                <span class="span-2">0</span>
-                            </div>
-                            <div>
-                                <p>Interest Rates</p>
-                                <span class="span-2">0</span>
-                            </div>
-                            <div>
-                                <p>Outstanding Balance</p>
-                                <span class="span-2">0</span>
-                            </div>
+                    <div class="metrics">
+                        <div>
+                            <p>Active Loans</p>
+                            <span class="span-2">0</span>
                         </div>
-                        <div class="visuals">
-                            <div>
-                                <canvas id="barChart" width="400" height="200"></canvas>
-                                <p>dummy bar graph</p>
-                            </div>
-                            <div>
-                                <canvas id="pieChart" width="400" height="200"></canvas>
-                                <p>dummy pie chart</p>
-                            </div>
+                        <div>
+                            <p>Loan Amounts</p>
+                            <span class="span-2">0</span>
                         </div>
-                        <div class="visuals">
-                            <div>
-                                <canvas id="barChart" width="400" height="200"></canvas>
-                                <p>dummy bar graph</p>
-                            </div>
-                            <div>
-                                <canvas id="pieChart" width="400" height="200"></canvas>
-                                <p>dummy pie chart</p>
-                            </div>
+                        <div>
+                            <p>Interest Rates</p>
+                            <span class="span-2">0</span>
+                        </div>
+                        <div>
+                            <p>Outstanding Balance</p>
+                            <span class="span-2">0</span>
                         </div>
                     </div>
+                    <div class="visuals">
+                        <div>
+                        <canvas id="barChart" width="400" height="200"></canvas>
+                        <p>dummy bar graph</p>
+                        </div>
+                        <div>
+                             <canvas id="pieChart" width="400" height="200"></canvas>
+                             <p>dummy pie chart</p>
+                            
+                        </div>
+                    
+
+ 
+                    </div>
                 </div>
+
             </div>
         </div>
 
@@ -216,77 +571,15 @@ mysqli_close($myconn);
                 </div>
     </main>
 
+<!-- Range -->
     <script>
-
-        //dummy bar graph
-        // Get the canvas element and context
-        const barCanvas = document.getElementById('barChart');
-        const barCtx = barCanvas.getContext('2d');
-
-        // Data for the bar chart
-        const data = [30, 60, 90, 120, 150, 180];
-        const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
-        const barWidth = 40;
-        const barSpacing = 20;
-        const startX = 50;
-        const startY = barCanvas.height - 50;
-
-        // Draw the bars
-        data.forEach((value, index) => {
-        const x = startX + (barWidth + barSpacing) * index;
-        const y = startY - value;
-        barCtx.fillStyle = 'rgba(75, 192, 192, 0.6)';
-        barCtx.fillRect(x, y, barWidth, value);
+        document.querySelectorAll('.quick-amounts button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelector('[name="min_amount"]').value = btn.dataset.min;
+            document.querySelector('[name="max_amount"]').value = btn.dataset.max;
         });
-
-        // Draw the X-axis labels
-        barCtx.fillStyle = 'whitesmoke';
-        labels.forEach((label, index) => {
-        const x = startX + (barWidth + barSpacing) * index + barWidth / 2;
-        barCtx.fillText(label, x, startY + 20);
-        });
-
-        // Draw the Y-axis
-        barCtx.beginPath();
-        barCtx.moveTo(startX - 10, startY);
-        barCtx.lineTo(startX - 10, 20);
-        barCtx.stroke();
-
-        // dummy pie chart
-        // Get the canvas element and context
-        const pieCanvas = document.getElementById('pieChart');
-        const pieCtx = pieCanvas.getContext('2d');
-        
-        // Data for the pie chart
-        const pieData = [30, 20, 15, 10, 25]; // Values for each slice
-        const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
-        const total = pieData.reduce((sum, value) => sum + value, 0);
-        
-        // Draw the pie chart
-        let startAngle = 0;
-        const centerX = pieCanvas.width / 2;
-        const centerY = pieCanvas.height / 2;
-        const radius = 80;
-        
-        pieData.forEach((value, index) => {
-        const sliceAngle = (2 * Math.PI * value) / total;
-        pieCtx.beginPath();
-        pieCtx.moveTo(centerX, centerY);
-        pieCtx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
-        pieCtx.closePath();
-        pieCtx.fillStyle = colors[index];
-        pieCtx.fill();
-        startAngle += sliceAngle;
-        });
-        
-        // Optional: Add a legend
-        pieCtx.font = '12px Arial';
-        pieData.forEach((value, index) => {
-        pieCtx.fillStyle = colors[index];
-        pieCtx.fillRect(centerX + radius + 20, 20 + index * 20, 15, 15);
-        pieCtx.fillStyle = 'whitesmoke';
-        pieCtx.fillText(`${Math.round((value / total) * 100)}%`, centerX + radius + 40, 32 + index * 20);
         });
     </script>
+
 </body>
 </html>

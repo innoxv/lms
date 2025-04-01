@@ -7,103 +7,100 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-
 $userId = $_SESSION['user_id'];
 
-// Fetch user data from the database
+// Fetch user data
 $query = "SELECT user_name FROM users WHERE user_id = '$userId'";
 $result = mysqli_query($myconn, $query);
 
 if ($result && mysqli_num_rows($result) > 0) {
     $user = mysqli_fetch_assoc($result);
-    $_SESSION['user_name'] = $user['user_name']; // Update the session with the latest data
+    $_SESSION['user_name'] = $user['user_name'];
 } else {
     $_SESSION['user_name'] = "Guest";
 }
 
-// Fetch lender_id from the lenders table
+// Fetch lender_id
 $lenderQuery = "SELECT lender_id FROM lenders WHERE user_id = '$userId'";
 $lenderResult = mysqli_query($myconn, $lenderQuery);
 
 if (mysqli_num_rows($lenderResult) > 0) {
     $lender = mysqli_fetch_assoc($lenderResult);
-    $_SESSION['lender_id'] = $lender['lender_id']; // Store lender_id in the session
-    
+    $_SESSION['lender_id'] = $lender['lender_id'];
 } else {
     $_SESSION['loan_message'] = "You are not registered as a lender.";
     header("Location: lenderDashboard.php");
     exit();
 }
-// Declaring Lender ID from session
+
 $lender_id = $_SESSION['lender_id'];
 
-// Fetch total number of loans created by the lender
-$totalLoansQuery = "SELECT COUNT(*) AS total_loans FROM loans WHERE lender_id = '$lender_id'";
-$totalLoansResult = mysqli_query($myconn, $totalLoansQuery);
-$totalLoansData = mysqli_fetch_assoc($totalLoansResult);
-$totalLoans = $totalLoansData['total_loans'];
+// Get loan products count
+$totalProductsQuery = "SELECT COUNT(*) AS total_products FROM loan_products WHERE lender_id = '$lender_id'";
+$totalProductsResult = mysqli_query($myconn, $totalProductsQuery);
+$totalProductsData = mysqli_fetch_assoc($totalProductsResult);
+$totalProducts = $totalProductsData['total_products'];
 
-// Fetch average interest rate of loans created by the lender
-$avgInterestQuery = "SELECT AVG(interest_rate) AS avg_interest_rate FROM loans WHERE lender_id = '$lender_id'";
+// Get average interest rate from loan products
+$avgInterestQuery = "SELECT AVG(interest_rate) AS avg_interest_rate FROM loan_products WHERE lender_id = '$lender_id'";
 $avgInterestResult = mysqli_query($myconn, $avgInterestQuery);
 $avgInterestData = mysqli_fetch_assoc($avgInterestResult);
-$avgInterestRate = $avgInterestData['avg_interest_rate'];
+$avgInterestRate = number_format($avgInterestData['avg_interest_rate'], 2);
 
-// Format the average interest rate to 2 decimal places
-$avgInterestRate = number_format($avgInterestRate, 2);
+// Get total loan capacity
+$capacityQuery = "SELECT SUM(max_amount) AS total_capacity FROM loan_products WHERE lender_id = '$lender_id'";
+$capacityResult = mysqli_query($myconn, $capacityQuery);
+$capacityData = mysqli_fetch_assoc($capacityResult);
+$totalCapacity = number_format($capacityData['total_capacity']);
 
-// Update the average_interest_rate in the lenders table
-$updateAvgInterestQuery = "UPDATE lenders SET average_interest_rate = '$avgInterestRate' WHERE lender_id = '$lender_id'";
-mysqli_query($myconn, $updateAvgInterestQuery);
+// Get total active loans (approved but not completed)
+$activeLoansQuery = "SELECT COUNT(*) AS active_loans FROM loans 
+                    WHERE lender_id = '$lender_id' 
+                    AND status IN ('approved', 'disbursed', 'active')";
+$activeLoansResult = mysqli_query($myconn, $activeLoansQuery);
+$activeLoansData = mysqli_fetch_assoc($activeLoansResult);
+$activeLoans = $activeLoansData['active_loans'];
 
-// Define all possible loan types
+// Get total amount disbursed
+$disbursedQuery = "SELECT SUM(amount) AS total_disbursed FROM loans 
+                  WHERE lender_id = '$lender_id' 
+                  AND status IN ('disbursed', 'active', 'completed')";
+$disbursedResult = mysqli_query($myconn, $disbursedQuery);
+$disbursedData = mysqli_fetch_assoc($disbursedResult);
+$totalDisbursed = number_format($disbursedData['total_disbursed']);
+
+// Get loan products for display
+$productsQuery = "SELECT * FROM loan_products WHERE lender_id = '$lender_id'";
+$productsResult = mysqli_query($myconn, $productsQuery);
+$productsData = mysqli_fetch_all($productsResult, MYSQLI_ASSOC);
+
+// Prepare data for charts
 $allLoanTypes = [
-    "Personal Loan",
-    "Business Loan",
-    "Mortgage Loan",
-    "MicroFinance Loan",
-    "Student Loan",
-    "Construction Loan",
-    "Green Loan",
-    "Medical Loan",
-    "Startup Loan",
-    "Agricultural Loan"
+    "Personal Loan", "Business Loan", "Mortgage Loan", 
+    "MicroFinance Loan", "Student Loan", "Construction Loan",
+    "Green Loan", "Medical Loan", "Startup Loan", "Agricultural Loan"
 ];
 
-
-// Fetch loan type information for the logged-in lender
-$loanQuery = "SELECT loan_type, COUNT(*) AS loan_count 
-              FROM loans 
-              WHERE lender_id = '$lender_id' 
-              GROUP BY loan_type";
-$loanResult = mysqli_query($myconn, $loanQuery);
-$loanData = mysqli_fetch_all($loanResult, MYSQLI_ASSOC);
-
-// Initialize an array to hold loan counts for all types
 $loanCounts = array_fill_keys($allLoanTypes, 0);
-
-// Populate the loan counts with data from the database
-foreach ($loanData as $loan) {
-    $loanCounts[$loan['loan_type']] = (int)$loan['loan_count'];
+foreach ($productsData as $product) {
+    $loanCounts[$product['loan_type']] = 1;
 }
 
-// Fetch loan slot information for the logged-in lender
-$slotQuery = "SELECT loan_type, COUNT(*) AS total_slots, SUM(customer_id IS NULL) AS available_slots 
-              FROM loans 
-              WHERE lender_id = '$lender_id' 
-              GROUP BY loan_type";
-$slotResult = mysqli_query($myconn, $slotQuery);
-$slotData = mysqli_fetch_all($slotResult, MYSQLI_ASSOC);
+// Get loan status distribution for pie chart
+$statusQuery = "SELECT status, COUNT(*) as count FROM loans 
+               WHERE lender_id = '$lender_id' 
+               GROUP BY status";
+$statusResult = mysqli_query($myconn, $statusQuery);
+$statusData = mysqli_fetch_all($statusResult, MYSQLI_ASSOC);
 
-// Check if there's a loan message to display
+// Check for messages
 if (isset($_SESSION['loan_message'])) {
     $loan_message = $_SESSION['loan_message'];
-    unset($_SESSION['loan_message']); // Clear the message after displaying it
+    unset($_SESSION['loan_message']);
 } else {
     $loan_message = null;
 }
 
-// Close the database connection
 mysqli_close($myconn);
 ?>
 
@@ -124,11 +121,11 @@ mysqli_close($myconn);
             </div>
             <div class="header4">
                 <div>
-                <?php if ($loan_message): ?>
-                <div id="loan-message" class="loan-message <?php echo (strpos($loan_message, 'success') !== false) ? 'success' : ''; ?>">
-                    <?php echo htmlspecialchars($loan_message); ?>
-                </div>
-            <?php endif; ?>
+                    <?php if ($loan_message): ?>
+                        <div id="loan-message" class="loan-message">
+                            <?php echo htmlspecialchars($loan_message); ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
                 <div>
                 <ul>
@@ -167,8 +164,10 @@ mysqli_close($myconn);
                             </div>         
                             <div>
                                 <form action="createLoan.php" method="post" onsubmit="return validateFormLoans()">
-                                    <table>
+                                <div id="error" style="color: tomato; font-weight:700"></div>
+                                <table>
                                         <tr>
+                                            
                                         <td><label>Loan Type</label></td>
                                         <td>
                                             <select name="type" id="type" class="select">
@@ -191,6 +190,10 @@ mysqli_close($myconn);
                                             <td><input type="text" id="interestRate" name="interestRate"></td>
                                         </tr>
                                         <tr>
+                                            <td><label for="maxAmount">Maximum Amount <br>(in shillings)</label></td>
+                                            <td><input type="text" id="maxAmount" name="maxAmount"></td>
+                                        </tr>
+                                        <tr>
                                             <td><label for="maxDuration">Maximum Duration <br>(in months)</label></td>
                                             <td><input type="text" id="maxDuration" name="maxDuration"></td>
                                         </tr>
@@ -202,46 +205,84 @@ mysqli_close($myconn);
                             </div>
                         </div>
                         <div class="loan-slot">
-                            <h3>Loan Slot Information</h3>
+                            <h3>Loan Products Information</h3>
                             <table>
                                 <thead>
                                     <tr>
                                         <th>Loan Type</th>
-                                        <th>Total Slots</th>
-                                        <th>Available Slots</th>
+                                        <th class="mid">Interest Rate</th>
+                                        <th class="mid">Max Amount</th>
+                                        <th class="mid">Max Duration</th>
                                         <th class="mid">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($slotData as $slot): ?>
-                                        <tr>
-                                            <td><?php echo htmlspecialchars($slot['loan_type']); ?></td>
-                                            <td class="mid"><?php echo htmlspecialchars($slot['total_slots']); ?></td>
-                                            <td class="mid"><?php echo htmlspecialchars($slot['available_slots']); ?></td>
-                                            <td>
-                                                <!-- Add Slot Form -->
-                                                <form action="addSlot.php" method="post" class="act">
-                                                    <input type="hidden" name="loan_type" value="<?php echo htmlspecialchars($slot['loan_type']); ?>">
-                                                    <button type="submit">Add Slot</button>
-                                                </form>
-                                                <!-- Delete Slot Form -->
-                                                <form action="deleteSlot.php" method="post" class="act">
-                                                    <input type="hidden" name="loan_type" value="<?php echo htmlspecialchars($slot['loan_type']); ?>">
-                                                    <button type="submit">Delete Slot</button>
-                                                </form>
-                                                <!-- Delete Loan Type Form -->
-                                                <form action="deleteLoanType.php" method="post" class="del">
-                                                    <input type="hidden" name="loan_type" value="<?php echo htmlspecialchars($slot['loan_type']); ?>">
-                                                    <button type="submit">Delete Loan Type</button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
+                                <?php foreach ($productsData as $product): ?>
+                                    <tr>        
+                                        <td><?php echo htmlspecialchars($product['loan_type']); ?></td>
+                                        <td class="mid"><?php echo htmlspecialchars($product['interest_rate']); ?>%</td>
+                                        <td class="mid"><?php echo number_format(htmlspecialchars($product['max_amount'])); ?></td>
+                                        <td class="mid"><?php echo htmlspecialchars($product['max_duration']); ?> months</td>
+                                        <td class="action-buttons">
+                                            <!-- Edit Button-->
+                                            <button class="act edit-btn" 
+                                                    data-product-id="<?= $product['product_id'] ?>" 
+                                                    data-loan-type="<?= htmlspecialchars($product['loan_type']) ?>" 
+                                                    data-interest-rate="<?= $product['interest_rate'] ?>" 
+                                                    data-max-amount="<?= $product['max_amount'] ?>" 
+                                                    data-max-duration="<?= $product['max_duration'] ?>">
+                                                Edit
+                                            </button>
+                                            
+                                            <!-- Delete Form-->
+                                            <form action="deleteLoan.php" method="post" class="del-form">
+                                                <input type="hidden" name="product_id" value="<?= $product['product_id'] ?>">
+                                                <button type="submit" class="del-btn">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
                                 </tbody>
                             </table>
                         </div>
                     </div>   
                 </div>
+
+                <!-- Edit Loan Functionality -->
+                <div class="popup-overlay" id="popupOverlay"></div>
+
+                <div class="edit-popup" id="editPopup">
+                    <h3>Edit Loan Product</h3>
+                    <form class="edit-form" id="editForm" method="post" action="editLoan.php">
+                        <input type="hidden" name="product_id" id="editProductId">
+                        
+                        <div class="ltype">
+                           <div><label for="editLoanType">Loan Type:</label></div> 
+                            <div><span id="editLoanType"></span></div>
+                        </div>
+                        
+                        <div>
+                            <label for="editInterestRate">Interest Rate (%):</label>
+                            <input type="number" step="0.01" name="interest_rate" id="editInterestRate">
+                        </div>
+                        
+                        <div>
+                            <label for="editMaxAmount">Max Amount (shillings):</label>
+                            <input type="number" name="max_amount" id="editMaxAmount">
+                        </div>
+                        
+                        <div>
+                            <label for="editMaxDuration">Max Duration (months):</label>
+                            <input type="number" name="max_duration" id="editMaxDuration">
+                        </div>
+                        
+                        <div class="edit-act">
+                            <button type="button" class="del" onclick="hideEditPopup()">Cancel</button>
+                            <button type="submit" class="act">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+
 
                 <!-- Loan History -->
                 <div id="loanHistory" class="margin">
@@ -291,7 +332,7 @@ mysqli_close($myconn);
                                 <code>
                                 <!-- Greeting based on time -->
                                 <?php
-                                    // Set the timezone to Nairobi, Kenya
+                                    // Set the timezone to local Nairobi, Kenya
                                     date_default_timezone_set('Africa/Nairobi');
                                     $currentTime = date("H");
                                     $message = "";
@@ -314,25 +355,29 @@ mysqli_close($myconn);
                     </div>
                     <div class="metrics">
                         <div>
-                            <p>Total Loans Created</p>
-                            <span class="span-2"><?php echo $totalLoans; ?></span>
+                            <p>Loan Products Offered</p>
+                            <span class="span-2"><?php echo $totalProducts; ?></span>
                         </div>
                         <div>
-                            <p>Total Amount Disbursed</p>
-                            <span class="span-2">0</span>
+                            <p>Total Loan Capacity</p>
+                            <span class="span-2"><?php echo $totalCapacity; ?></span>
                         </div>
                         <div>
-                            <p>Total Active Loans</p>
-                            <span class="span-2">0</span>
+                            <p>Active Loans</p>
+                            <span class="span-2"><?php echo $activeLoans; ?></span>
                         </div>
                         <div>
-                            <p>Average Interest Rate</p>
-                            <span class="span-2"><?php echo $avgInterestRate; ?>%</span>
+                            <p>Amount Disbursed</p>
+                            <span class="span-2"><?php echo $totalDisbursed; ?></span>
+                        </div>
+                        <div>
+                            <p>Avg Interest Rate</p>
+                            <div class="span-3"><span class="avg"><?php echo $avgInterestRate; ?></span><span class="percentage">%</span></div>
                         </div>
                     </div>
                     <div class="visuals">
                         <div>
-                        <p>Number of loans created per loan type</p>
+                        <p>Number of Active Loans per Loan Type (in production)</p>
                         <canvas id="barChart" width="800" height="300"></canvas>
                         
                         </div>
@@ -381,9 +426,117 @@ mysqli_close($myconn);
         window.onload = hideLoanMessage;
     </script>
 
+    <!-- Pop Up Overlay -->
+    <script>
+    // Store original values
+    let originalValues = {};
+
+    // Show popup with product data
+    function showEditPopup(productId, loanType, interestRate, maxAmount, maxDuration) {
+        // Store original values
+        originalValues = {
+            interest_rate: interestRate,
+            max_amount: maxAmount,
+            max_duration: maxDuration
+        };
+
+        // Set form values
+        document.getElementById('editProductId').value = productId;
+        document.getElementById('editLoanType').textContent = loanType; // Display only
+        document.getElementById('editInterestRate').value = interestRate;
+        document.getElementById('editMaxAmount').value = maxAmount;
+        document.getElementById('editMaxDuration').value = maxDuration;
+        
+        // Show popup
+        document.getElementById('popupOverlay').style.display = 'block';
+        document.getElementById('editPopup').style.display = 'block';
+    }
+    
+    // Hide popup
+    function hideEditPopup() {
+        document.getElementById('popupOverlay').style.display = 'none';
+        document.getElementById('editPopup').style.display = 'none';
+    }
+    
+    // Handle form submission
+    function handleFormSubmit(e) {
+        e.preventDefault();
+        
+        // Create hidden form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'editLoan.php';
+        
+        // Add product ID
+        const productIdInput = document.createElement('input');
+        productIdInput.type = 'hidden';
+        productIdInput.name = 'product_id';
+        productIdInput.value = document.getElementById('editProductId').value;
+        form.appendChild(productIdInput);
+        
+        // Only add changed fields
+        const currentInterest = document.getElementById('editInterestRate').value;
+        if (currentInterest !== originalValues.interest_rate) {
+            const interestInput = document.createElement('input');
+            interestInput.type = 'hidden';
+            interestInput.name = 'interest_rate';
+            interestInput.value = currentInterest;
+            form.appendChild(interestInput);
+        }
+        
+        const currentAmount = document.getElementById('editMaxAmount').value;
+        if (currentAmount !== originalValues.max_amount) {
+            const amountInput = document.createElement('input');
+            amountInput.type = 'hidden';
+            amountInput.name = 'max_amount';
+            amountInput.value = currentAmount;
+            form.appendChild(amountInput);
+        }
+        
+        const currentDuration = document.getElementById('editMaxDuration').value;
+        if (currentDuration !== originalValues.max_duration) {
+            const durationInput = document.createElement('input');
+            durationInput.type = 'hidden';
+            durationInput.name = 'max_duration';
+            durationInput.value = currentDuration;
+            form.appendChild(durationInput);
+        }
+        
+        // Submit form
+        document.body.appendChild(form);
+        form.submit();
+    }
+    
+    // Initialize edit buttons and form
+    document.addEventListener('DOMContentLoaded', function() {
+    // Attach to only edit buttons (not all .act buttons)
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevent any default behavior
+            showEditPopup(
+                this.dataset.productId,
+                this.dataset.loanType,
+                this.dataset.interestRate,
+                this.dataset.maxAmount,
+                this.dataset.maxDuration
+            );
+        });
+    });
+
+        // Close when clicking overlay
+        document.getElementById('popupOverlay').addEventListener('click', hideEditPopup);
+        
+        // Attach form submission handler
+        document.getElementById('editForm').addEventListener('submit', handleFormSubmit);
+    });
+</script>
+
+    <!-- barchart -->
+     
     <script>
         // Pass the loan counts from PHP to JavaScript
-        const loanCounts = <?php echo json_encode($loanCounts); ?>;
+        // uncomment getting data from PHP
+        const loanCounts = <?php echo json_encode($loanCounts); ?>;  
 
         // Get the canvas element and context
         const barCanvas = document.getElementById('barChart');
@@ -467,7 +620,7 @@ mysqli_close($myconn);
     </script>
 
 
-
+    <!-- pie chart -->
     <!-- Dummy Data - Should actually analyze data from the database -->
     <script>
     // Get the canvas element and context
@@ -520,6 +673,6 @@ mysqli_close($myconn);
         pieCtx.fillStyle = 'whitesmoke';
         pieCtx.fillText(`${labels[index]}: ${value}%`, centerX + radius + 40, 32 + index * 20);
     });
-</script>
+    </script>
 </body>
 </html>

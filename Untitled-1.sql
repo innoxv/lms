@@ -122,40 +122,35 @@ VALUES
 (20, 22, 59, 19000.00, 4.85, 6, 3166.67, 'Insurance Policy', 11000.00);
 
 
--- Populating the activities table
+-- Populating the activities table (latest)
 
-INSERT INTO activity (user_id, activity, activity_time, activity_type)
-VALUES
-(9, 'Customer logged in', '2025-01-10 08:30:00', 'Login'),
-(10, 'Loan application submitted for loan ID 3', '2025-01-11 09:00:00', 'Application'),
-(11, 'Loan application submitted for loan ID 4', '2025-01-12 10:15:00', 'Application'),
-(12, 'Customer logged in', '2025-01-14 11:45:00', 'Login'),
-(13, 'Loan application submitted for loan ID 5', '2025-01-15 12:00:00', 'Application'),
-(14, 'Loan application submitted for loan ID 6', '2025-01-17 13:30:00', 'Application'),
-(15, 'Loan application submitted for loan ID 7', '2025-01-18 14:30:00', 'Application'),
-(16, 'Loan application submitted for loan ID 8', '2025-01-20 15:00:00', 'Application'),
-(17, 'Loan application submitted for loan ID 9', '2025-01-22 16:30:00', 'Application'),
-(18, 'Customer logged in', '2025-01-23 17:45:00', 'Login'),
-(19, 'Loan application submitted for loan ID 10', '2025-01-25 18:30:00', 'Application'),
-(20, 'Loan application submitted for loan ID 11', '2025-01-27 19:00:00', 'Application'),
-(21, 'Loan application submitted for loan ID 12', '2025-01-28 20:15:00', 'Application'),
-(22, 'Customer logged in', '2025-01-30 21:45:00', 'Login'),
-(29, 'Lender 1 logged in', '2025-02-01 22:00:00', 'Login'),
-(29, 'Loan approved for loan ID 3', '2025-02-03 08:30:00', 'Approval'),
-(30, 'Lender 2 logged in', '2025-02-05 09:15:00', 'Login'),
-(30, 'Loan approved for loan ID 4', '2025-02-06 10:30:00', 'Approval'),
-(31, 'Lender 3 logged in', '2025-02-07 11:00:00', 'Login'),
-(31, 'Loan approved for loan ID 5', '2025-02-08 12:00:00', 'Approval'),
-(32, 'Lender 4 logged in', '2025-02-09 13:00:00', 'Login'),
-(32, 'Loan approved for loan ID 6', '2025-02-10 14:00:00', 'Approval'),
-(33, 'Lender 5 logged in', '2025-02-11 15:30:00', 'Login'),
-(33, 'Loan approved for loan ID 7', '2025-02-12 16:00:00', 'Approval'),
-(34, 'Lender 6 logged in', '2025-02-13 17:15:00', 'Login'),
-(34, 'Loan approved for loan ID 8', '2025-02-14 18:00:00', 'Approval'),
-(35, 'Lender 7 logged in', '2025-02-15 19:00:00', 'Login'),
-(35, 'Loan approved for loan ID 9', '2025-02-16 20:00:00', 'Approval'),
-(36, 'Lender 8 logged in', '2025-02-17 21:00:00', 'Login'),
-(36, 'Loan approved for loan ID 10', '2025-02-18 22:30:00', 'Approval');
+INSERT INTO activity (user_id, activity, activity_time, activity_type) VALUES
+(53, 'Logged into the admin dashboard', '2025-03-01 09:15:00', 'Login'),
+(54, 'Applied for a business loan', '2025-03-02 14:30:00', 'Loan Application'),
+(55, 'Updated profile information', '2025-03-03 10:45:00', 'Profile Update'),
+(56, 'Logged into the customer portal', '2025-03-04 08:00:00', 'Login'),
+(57, 'Created a new loan offer', '2025-03-05 16:20:00', 'Loan Creation'),
+(58, 'Applied for a personal loan', '2025-03-06 11:10:00', 'Loan Application'),
+(59, 'Logged into the customer portal', '2025-03-07 07:55:00', 'Login'),
+(61, 'Updated profile information', '2025-03-08 13:25:00', 'Profile Update'),
+(62, 'Applied for a student loan', '2025-03-09 15:40:00', 'Loan Application'),
+(63, 'Logged into the customer portal', '2025-03-10 09:05:00', 'Login'),
+(64, 'Applied for a medical loan', '2025-03-11 12:50:00', 'Loan Application'),
+(65, 'Updated profile information', '2025-03-12 17:30:00', 'Profile Update'),
+(66, 'Logged into the customer portal', '2025-03-13 08:20:00', 'Login'),
+(67, 'Applied for a green loan', '2025-03-14 14:15:00', 'Loan Application'),
+(68, 'Created a new loan offer', '2025-03-15 10:00:00', 'Loan Creation'),
+(69, 'Logged into the lender dashboard', '2025-03-16 09:45:00', 'Login'),
+(70, 'Applied for a startup loan', '2025-03-17 11:35:00', 'Loan Application'),
+(71, 'Logged into the customer portal', '2025-03-18 07:10:00', 'Login'),
+(72, 'Created a new loan offer', '2025-03-19 16:50:00', 'Loan Creation'),
+(73, 'Logged into the lender dashboard', '2025-03-20 08:25:00', 'Login'),
+(74, 'Applied for a construction loan', '2025-03-21 13:40:00', 'Loan Application'),
+(75, 'Created a new loan offer', '2025-03-22 14:55:00', 'Loan Creation'),
+(76, 'Logged into the lender dashboard', '2025-03-23 09:30:00', 'Login'),
+(77, 'Updated profile information', '2025-03-24 12:05:00', 'Profile Update'),
+(79, 'Created a new loan offer', '2025-03-25 15:20:00', 'Loan Creation'),
+(80, 'Logged into the customer portal', '2025-03-26 10:10:00', 'Login');
 
 
 
