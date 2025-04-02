@@ -82,50 +82,50 @@ mysqli_close($myconn);
                     </div>
                     <div class="loan-right">
                         <div class="loan-filter">
-                            <p style="color: whitesmoke; font-weight: 900;">Filters</p>
-                            <form method="GET" action="">
+                            <p style="color: whitesmoke; font-weight: 900; line-height: 1;">Filters</p>
+                            <form method="GET" action="fetchLenders.php">
                                 <div>
                                     <ul>
                                     <li>
                                         <p>Loan Type</p>
                                         <span>
-                                        <input type="checkbox" name="loan_type" value="personal" id="personal">
+                                        <input type="checkbox" name="loan_type[]" value="Personal Loan" id="personal">
                                         <label for="personal">Personal</label>
                                         </span>
                                         <span>
-                                        <input type="checkbox" name="loan_type" value="business" id="business">
+                                        <input type="checkbox" name="loan_type[]" value="Business Loan" id="business">
                                         <label for="business">Business</label>
                                         </span>
                                         <span>
-                                        <input type="checkbox" name="loan_type" value="mortgage" id="mortgage">
+                                        <input type="checkbox" name="loan_type[]" value="Mortgage Loan" id="mortgage">
                                         <label for="mortgage">Mortgage</label>
                                         </span>
                                         <span>
-                                        <input type="checkbox" name="loan_type" value="microfinance" id="microfinance">
+                                        <input type="checkbox" name="loan_type[]" value="MicroFinance Loan" id="microfinance">
                                         <label for="microfinance">MicroFinance</label>
                                         </span>
                                         <span>
-                                        <input type="checkbox" name="loan_type" value="student" id="student">
+                                        <input type="checkbox" name="loan_type[]" value="Student Loan" id="student">
                                         <label for="student">Student</label>
                                         </span>
                                         <span>
-                                        <input type="checkbox" name="loan_type" value="construction" id="construction">
+                                        <input type="checkbox" name="loan_type[]" value="Construction Loan" id="construction">
                                         <label for="construction">Construction</label>
                                         </span>
                                         <span>
-                                        <input type="checkbox" name="loan_type" value="green" id="green">
+                                        <input type="checkbox" name="loan_type[]" value="Green Loan" id="green">
                                         <label for="green">Green</label>
                                         </span>
                                         <span>
-                                        <input type="checkbox" name="loan_type" value="medical" id="medical">
+                                        <input type="checkbox" name="loan_type[]" value="Medical Loan" id="medical">
                                         <label for="medical">Medical</label>
                                         </span>
                                         <span>
-                                        <input type="checkbox" name="loan_type" value="startup" id="startup">
+                                        <input type="checkbox" name="loan_type[]" value="Startup Loan" id="startup">
                                         <label for="startup">Startup</label>
                                         </span>
                                         <span>
-                                        <input type="checkbox" name="loan_type" value="agricultural" id="agricultural">
+                                        <input type="checkbox" name="loan_type[]" value="Agricultural Loan" id="agricultural">
                                         <label for="agricultural">Agricultural</label>
                                         </span>
                                     </li>
@@ -141,7 +141,7 @@ mysqli_close($myconn);
                                             <div class="quick-amounts">
                                             <button type="button" data-min="1000" data-max="5000">1k-5k</button>
                                             <button type="button" data-min="5000" data-max="20000">5k-20k</button>
-                                            <button type="button" data-min="20000" data-max="50000">20k-50k</button>
+                                            <button type="button" data-min="20000" data-max="100000">20k-100k</button>
                                             </div>
                                         </div>
                                         </span>
@@ -169,289 +169,75 @@ mysqli_close($myconn);
                                 </div>
                                 </form>
                         </div>
-                        <div class="loan-lenders">
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
-                                </div>
-                                
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
+                        <!-- Loan Lenders display and filter functionality -->
+                        <div class="loan-lenders" id="lendersContainer">
+                            <!-- Content will be loaded dynamically -->
+                                <div class="loading"></div>
+                                <div class="error"></div>
+                        </div>
+
+                        <!-- Loan Application Popup -->
+                    <div class="popup-overlay2" id="loanPopup">
+                        <div class="popup-content">
+                            <h2>Loan Application</h2>
+                            <form id="loanApplicationForm">
+                                <div class="form-group">
+                                    <label for="lenderName">Lender:</label>
+                                    <input type="text" id="lenderName" readonly>
                                 </div>
                                 
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
+                                <div class="form-group">
+                                    <label for="interestRate">Interest Rate (%):</label>
+                                    <input type="text" id="interestRate" readonly>
                                 </div>
                                 
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
+                                <div class="form-group">
+                                    <label for="maxDuration">Maximum Duration (months):</label>
+                                    <input type="text" id="maxDuration" readonly>
                                 </div>
                                 
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
+                                <div class="form-group">
+                                    <label for="maxAmount">Maximum Amount (KES):</label>
+                                    <input type="text" id="maxAmount" readonly>
                                 </div>
                                 
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
+                                <div class="form-group">
+                                    <label for="amountNeeded">Amount Needed (KES):*</label>
+                                    <input type="number" id="amountNeeded" required>
                                 </div>
                                 
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
+                                <div class="form-group">
+                                    <label for="duration">Duration (months):*</label>
+                                    <input type="number" id="duration" required >
                                 </div>
                                 
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
+                                <div class="form-group">
+                                    <label for="installments">Monthly Installment (KES):</label>
+                                    <input type="text" id="installments" readonly>
                                 </div>
                                 
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
+                                <div class="form-group">
+                                    <label for="collateralValue">Collateral Value (KES):*</label>
+                                    <input type="number" id="collateralValue" required min="1">
                                 </div>
                                 
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
+                                <div class="form-group">
+                                    <label for="collateralDesc">Collateral Description:*</label>
+                                    <textarea id="collateralDesc" required  style="padding: 1.5em 3.5em; margin-right: .5em;"></textarea>
                                 </div>
                                 
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
-                                </div>
                                 
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
-                                </div>
                                 
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
+                                <div class="form-actions">
+                                    <button type="button" class="cancel-btn" id="cancelBtn">Cancel</button>
+                                    <button type="submit" class="submit-btn">Submit Application</button>
                                 </div>
-                                <div>
-                                    <button>Apply Now</button>
-                                </div>
-                                
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
-                                </div>
-                                
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
-                                </div>
-                                
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
-                                </div>
-                                
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
-                                </div>
-                                
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
-                                </div>
-                                
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
-                                </div>
-                                
-                            </div>
-                            <div class="lender">
-                                <div>
-                                    <span>Lender Name</span>
-                                    <span>Loan Type</span>
-                                    <span>Interest Rate</span>
-                                    <span>Maximum Duration</span>
-                                    <span>Maximum Amount</span>
-                                    <a href="alert.html" >More info</a>
-                                </div>
-                                <div>
-                                    <button>Apply Now</button>
-                                </div>
-                                
-                            </div>
+                            </form>
                         </div>
                     </div>
+                        
+                    </div>
+
                     
                 </div>
 
@@ -571,15 +357,189 @@ mysqli_close($myconn);
                 </div>
     </main>
 
-<!-- Range -->
-    <script>
-        document.querySelectorAll('.quick-amounts button').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelector('[name="min_amount"]').value = btn.dataset.min;
-            document.querySelector('[name="max_amount"]').value = btn.dataset.max;
+<!-- Filter, Lenders Display and Application Popup Logic -->
+<script>
+    let loadingStartTime;
+
+function loadLenders() {
+    const container = document.getElementById('lendersContainer');
+    container.innerHTML = '<div class="loading">loading ...</div>';
+    loadingStartTime = Date.now();
+    
+    const formData = new FormData(document.querySelector('.loan-filter form'));
+    const params = new URLSearchParams();
+    
+    formData.getAll('loan_type[]').forEach(type => params.append('loan_type[]', type));
+    formData.getAll('interest_range[]').forEach(range => params.append('interest_range[]', range));
+    if (formData.get('min_amount')) params.append('min_amount', formData.get('min_amount'));
+    if (formData.get('max_amount')) params.append('max_amount', formData.get('max_amount'));
+
+    fetch(`fetchLenders.php?${params.toString()}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(result => {
+            const elapsed = Date.now() - loadingStartTime;
+            const remainingDelay = Math.max(0, 1000 - elapsed); //1000ms
+            
+            setTimeout(() => {
+                if (!result.success) throw new Error(result.error || 'Unknown error');
+                if (!Array.isArray(result.data)) throw new Error('Invalid data format');
+                renderLenders(result.data);
+            }, remainingDelay);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            container.innerHTML = `<div class="error">${error.message}</div>`;
         });
+}
+
+function renderLenders(lenders) {
+    const container = document.getElementById('lendersContainer');
+    
+    if (!lenders || !Array.isArray(lenders)) {
+        container.innerHTML = '<div class="error">No lenders data available</div>';
+        return;
+    }
+    
+    if (lenders.length === 0) {
+        container.innerHTML = '<div class="no-lenders">No results matching your filters</div>';
+        return;
+    }
+    
+    container.innerHTML = lenders.map(lender => `
+        <div class="lender">
+            <div class="lender-info">
+                <span>${lender.name}</span>
+                <span>${lender.type}</span>
+                <span>Rate: ${lender.rate}%</span>
+                <span>MD: ${lender.duration} months</span>
+                <span>MA: ${lender.amount.toLocaleString()} KES</span>
+                <a href="alert.html">More Info</a>
+            </div>
+            <button class="applynow" 
+                    data-id="${lender.id}"
+                    data-name="${lender.name}"
+                    data-rate="${lender.rate}"
+                    data-duration="${lender.duration}"
+                    data-amount="${lender.amount}">
+                Apply Now
+            </button>
+        </div>
+    `).join('');
+}
+
+// Show loan popup with lender data
+function showLoanPopup(button) {
+    const lenderData = {
+        name: button.dataset.name,
+        rate: button.dataset.rate,
+        maxDuration: button.dataset.duration,
+        maxAmount: button.dataset.amount
+    };
+    
+    document.getElementById('lenderName').value = lenderData.name;
+    document.getElementById('interestRate').value = lenderData.rate;
+    document.getElementById('maxDuration').value = lenderData.maxDuration;
+    document.getElementById('maxAmount').value = parseFloat(lenderData.maxAmount).toLocaleString();
+    
+    // Reset form fields
+    document.getElementById('amountNeeded').value = '';
+    document.getElementById('duration').value = '';
+    document.getElementById('installments').value = '';
+    document.getElementById('collateralDesc').value = '';
+    document.getElementById('collateralValue').value = '';
+    
+    // Set max values
+    document.getElementById('amountNeeded').max = lenderData.maxAmount;
+    document.getElementById('duration').max = lenderData.maxDuration;
+    
+    // Show popup
+    document.getElementById('loanPopup').style.display = 'flex';
+}
+
+// Calculate monthly installments
+function calculateInstallments() {
+    const amount = parseFloat(document.getElementById('amountNeeded').value) || 0;
+    const duration = parseInt(document.getElementById('duration').value) || 1;
+    const interestRate = parseFloat(document.getElementById('interestRate').value) || 0;
+    
+    if (amount > 0 && duration > 0) {
+        const monthlyRate = interestRate / 100 / 12;
+        const numerator = amount * monthlyRate * Math.pow(1 + monthlyRate, duration);
+        const denominator = Math.pow(1 + monthlyRate, duration) - 1;
+        const monthlyInstallment = numerator / denominator;
+        
+        document.getElementById('installments').value = monthlyInstallment.toFixed(2);
+    } else {
+        document.getElementById('installments').value = '';
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadLenders();
+    
+    // Filter form submission
+    document.querySelector('.sub').addEventListener('click', function(e) {
+        e.preventDefault();
+        loadLenders();
+    });
+    
+    // Reset button
+    document.querySelector('.res').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelector('.loan-filter form').reset();
+        loadLenders();
+    });
+    
+    // Quick amount buttons
+    document.querySelectorAll('.quick-amounts button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelector('[name="min_amount"]').value = this.dataset.min;
+            document.querySelector('[name="max_amount"]').value = this.dataset.max;
+            loadLenders();
         });
-    </script>
+    });
+    
+    // Apply Now button click
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('applynow')) {
+            showLoanPopup(e.target);
+        }
+    });
+    
+    // Cancel button
+    document.getElementById('cancelBtn').addEventListener('click', function() {
+        document.getElementById('loanPopup').style.display = 'none';
+    });
+    
+    // Calculate installments
+    document.getElementById('amountNeeded').addEventListener('input', calculateInstallments);
+    document.getElementById('duration').addEventListener('input', calculateInstallments);
+    
+    // Form submission
+    document.getElementById('loanApplicationForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            lenderName: document.getElementById('lenderName').value,
+            interestRate: document.getElementById('interestRate').value,
+            amountNeeded: document.getElementById('amountNeeded').value,
+            duration: document.getElementById('duration').value,
+            monthlyInstallment: document.getElementById('installments').value,
+            collateralDesc: document.getElementById('collateralDesc').value,
+            collateralValue: document.getElementById('collateralValue').value
+        };
+        
+        // Here you would send the data to your server
+        console.log('Loan application submitted:', formData);
+        alert('Loan application submitted successfully!');
+        document.getElementById('loanPopup').style.display = 'none';
+    });
+});
+</script>
 
 </body>
 </html>

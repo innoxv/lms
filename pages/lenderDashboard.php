@@ -286,8 +286,8 @@ mysqli_close($myconn);
 
                 <!-- Loan History -->
                 <div id="loanHistory" class="margin">
-                    <h1>Loan History</h1>
-                    <p>View your past loans and their status.</p>
+                    <h1>Loan Requests</h1>
+                    <p>View and approve loan requests.</p>
                 </div>
 
                 <!-- Financial Summary -->
@@ -356,25 +356,39 @@ mysqli_close($myconn);
                     <div class="metrics">
                         <div>
                             <p>Loan Products Offered</p>
-                            <span class="span-2"><?php echo $totalProducts; ?></span>
+                            <div class="metric-value-container">
+                                <span class="span-2"><?php echo $totalProducts; ?></span>
+                            </div>
                         </div>
                         <div>
                             <p>Total Loan Capacity</p>
-                            <span class="span-2"><?php echo $totalCapacity; ?></span>
+                            <div class="metric-value-container">
+                                <span class="span-2"><?php echo $totalCapacity; ?></span>
+                            </div>
                         </div>
                         <div>
                             <p>Active Loans</p>
-                            <span class="span-2"><?php echo $activeLoans; ?></span>
+                            <div class="metric-value-container">
+                                <span class="span-2"><?php echo $activeLoans; ?></span>
+                            </div>
                         </div>
                         <div>
                             <p>Amount Disbursed</p>
-                            <span class="span-2"><?php echo $totalDisbursed; ?></span>
+                            <div class="metric-value-container">
+                                <span class="span-2"><?php echo $totalDisbursed; ?></span>
+                            </div>
                         </div>
                         <div>
-                            <p>Avg Interest Rate</p>
-                            <div class="span-3"><span class="avg"><?php echo $avgInterestRate; ?></span><span class="percentage">%</span></div>
+                            <p>Average Interest Rate</p>
+                            <div class="metric-value-container">
+                                <div class="span-2">
+                                    <span class="avg"><?php echo $avgInterestRate; ?></span>
+                                    <span class="percentage">%</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    
                     <div class="visuals">
                         <div>
                         <p>Number of Active Loans per Loan Type (in production)</p>
@@ -425,6 +439,39 @@ mysqli_close($myconn);
         // Call the function when the page loads
         window.onload = hideLoanMessage;
     </script>
+
+    <!-- Container metrics overflow handling  -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const metricValues = document.querySelectorAll('.metrics .span-2');
+            
+            function adjustSizes() {
+                metricValues.forEach(span => {
+                    // Reset to default size for measurement
+                    span.style.fontSize = '';
+                    
+                    const container = span.closest('.metrics > div');
+                    const containerWidth = container.offsetWidth;
+                    const textWidth = span.scrollWidth;
+                    
+                    // Only scale if text overflows (with 5px buffer)
+                    if (textWidth > containerWidth - 10) {
+                        const scaleRatio = (containerWidth - 10) / textWidth;
+                        const newSize = Math.max(2, 4 * scaleRatio); // Never below 2em
+                        span.style.fontSize = `${newSize}em`;
+                    } else {
+                        span.style.fontSize = '4em'; // Reset to original if fits
+                    }
+                });
+            }
+        
+            // Run on load and resize
+            adjustSizes();
+            window.addEventListener('resize', adjustSizes);
+        });
+        </script>
+
+
 
     <!-- Pop Up Overlay -->
     <script>
