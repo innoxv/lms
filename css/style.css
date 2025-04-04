@@ -751,6 +751,7 @@ li p{
     background-color: #f8d7da;
     color: #721c24;
     border: 1px solid #f5c6cb;
+    font-size: 1em;
 }
 
 .alert.info {
@@ -824,7 +825,16 @@ li p{
     color: whitesmoke;
 }
 
-  
+.popup-content3 .delete-btn{
+    background-color: tomato;
+}
+.popup-content3 .delete-btn:hover{
+    background: transparent;
+    color: tomato;
+    outline: 1px solid tomato;
+    transition: .2s ease-in-out;
+}
+
 
 /* Lender Dashboard */
 #createLoan{
@@ -994,4 +1004,69 @@ li p{
     text-decoration: none;
     color: white;
     transition: .2s ease-in-out;
+}
+
+#loanRequests{
+    width: 95%;
+    overflow-y: auto;
+    height: 90%;
+
+
+}
+
+.loan-requests-table table{
+    width: 100%;
+    border: none;
+    border-collapse: collapse;
+
+}
+.loan-requests-table thead th {
+    position: sticky;
+    top: 0;
+    background: #3A3A3A;
+    z-index: 10;
+    padding: .5em 0;
+    text-align: left;
+    color: whitesmoke;
+}
+.loan-requests-table td{
+    color: lightgray;
+    text-align: left;
+
+}
+.loan-requests-table .action-buttons{
+    display: flex;
+    justify-content: center;
+}
+.loan-requests-table .action-buttons button{
+    margin-inline-start: .5em;
+}
+
+.loan-requests-table .action-buttons .btn-reject{
+    background-color: tomato;
+}
+.loan-requests-table .action-buttons .btn-reject:hover{
+    background: transparent;
+    color: tomato;
+    outline: 1px solid tomato;
+}
+
+
+/* Style for disabled buttons */
+.loan-requests-table .action-buttons button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Specific styles for disabled approve/reject buttons */
+.loan-requests-table .action-buttons .btn-approve:disabled {
+    background-color: #d4edda;
+    /* color: #155724;
+    border: 1px solid #c3e6cb; */
+}
+
+.loan-requests-table .action-buttons .btn-reject:disabled {
+    background-color: #f8d7da;
+    /* color: #721c24;
+    border: 1px solid #f5c6cb; */
 }
