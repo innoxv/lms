@@ -17,7 +17,7 @@ if (!$myconn) {
     die("Connection failed: " . mysqli_connect_error());
 }
 
-// Fetch user data from the database (if needed)
+// Fetch user data from the database
 $userId = $_SESSION['user_id'];
 $query = "SELECT user_name FROM users WHERE user_id = '$userId'";
 $result = mysqli_query($myconn, $query);
@@ -29,6 +29,28 @@ if ($result && mysqli_num_rows($result) > 0) {
     // Handle error if user data is not found
     $_SESSION['user_name'] = "Guest";
 }
+
+// Loan History
+
+$userId = $_SESSION['user_id'];
+$loansQuery = "SELECT 
+    loans.loan_id,
+    loan_products.loan_type,
+    loans.amount,
+    loans.interest_rate,
+    loans.status,
+    loans.created_at
+FROM loans
+JOIN loan_products ON loans.product_id = loan_products.product_id
+JOIN customers ON loans.customer_id = customers.customer_id
+WHERE customers.user_id = ?
+ORDER BY loans.created_at DESC";
+
+$stmt = $myconn->prepare($loansQuery);
+$stmt->bind_param("i", $userId);
+$stmt->execute();
+$loans = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
 
 // Close the database connection
 mysqli_close($myconn);
@@ -59,8 +81,8 @@ mysqli_close($myconn);
                 <ul class="nav-split">
                     <div class="top">
                         <li><a href="#dashboard">Dashboard</a></li>
-                        <li><a href="#applyLoan">Apply for Loan</a></li>
-                        <li><a href="#loanHistory">Loan History</a></li>
+                        <li><a href="#applyLoan" id="applyLoanLink">Apply for Loan</a></li>
+                        <li><a href="#loanHistory" id="loanHistoryLink">Loan History</a></li>
                         <li><a href="#financialSummary">Financial Summary</a></li>
                         <li><a href="#notifications">Notifications</a></li>
                         <li><a href="#profile">Profile</a></li>
@@ -162,91 +184,130 @@ mysqli_close($myconn);
                                         </span>
                                     </li>
                                     <li>
+                                        <div class="subres">
                                         <button class="sub" type="submit">Apply Filters</button>
                                         <button class="res" type="reset">Reset</button>
+                                        </div>
+                                        
                                     </li>
                                     </ul>
                                 </div>
                                 </form>
                         </div>
+                        
                         <!-- Loan Lenders display and filter functionality -->
                         <div class="loan-lenders" id="lendersContainer">
-                            <!-- Content will be loaded dynamically -->
+                            <!-- Content will be loaded dynamically - Javascript and Css--> 
                                 <div class="loading"></div>
                                 <div class="error"></div>
                         </div>
 
                         <!-- Loan Application Popup -->
-                    <div class="popup-overlay2" id="loanPopup">
-                        <div class="popup-content">
-                            <h2>Loan Application</h2>
+                        <div class="popup-overlay2" id="loanPopup">
+                            <div class="popup-content">
+                                <h2>Loan Application</h2>
+                            
+                                <!-- Message Reporting -->
+                                <div id="loanMessage" class="message-container">
+                                    <?php if (isset($_SESSION['loan_message'])): ?>
+                                        <div class="alert <?= $_SESSION['message_type'] ?? 'info' ?>">
+                                            <?= htmlspecialchars($_SESSION['loan_message']) ?>
+                                        </div>
+                                        <?php 
+                                            // Immediately unset after displaying
+                                            unset($_SESSION['loan_message']);
+                                            unset($_SESSION['message_type']);
+                                        ?>
+                                    <?php endif; ?>
+                                </div>
+                                
+                            <!-- Loan Application Form -->
                             <form id="loanApplicationForm">
+                                <!-- Hidden fields for submission -->
                                 <div class="form-group">
-                                    <label for="lenderName">Lender:</label>
-                                    <input type="text" id="lenderName" readonly>
+                                        <input type="hidden" id="productId" name="product_id">
+                                        <input type="hidden" id="lenderId" name="lender_id">
+                                        <input type="hidden" id="interestRate" name="interest_rate">
+                                </div>
+                                <!-- Visible lender information -->
+                                <div class="form-group2">
+                                    <label>Lender:</label>
+                                    <div id="displayLenderName" class="display-info"></div>
                                 </div>
                                 
-                                <div class="form-group">
-                                    <label for="interestRate">Interest Rate (%):</label>
-                                    <input type="text" id="interestRate" readonly>
+                                <div class="form-group2">
+                                    <label>Interest Rate:</label>
+                                    <div id="displayInterestRate" class="display-info"></div>
                                 </div>
                                 
-                                <div class="form-group">
-                                    <label for="maxDuration">Maximum Duration (months):</label>
-                                    <input type="text" id="maxDuration" readonly>
+                                <div class="form-group2">
+                                    <label>Maximum Amount:</label>
+                                    <div id="displayMaxAmount" class="display-info"></div>
                                 </div>
                                 
-                                <div class="form-group">
-                                    <label for="maxAmount">Maximum Amount (KES):</label>
-                                    <input type="text" id="maxAmount" readonly>
+                                <div class="form-group2">
+                                    <label>Maximum Duration:</label>
+                                    <div id="displayMaxDuration" class="display-info"></div>
                                 </div>
                                 
+                                <!-- User input fields -->
                                 <div class="form-group">
                                     <label for="amountNeeded">Amount Needed (KES):*</label>
-                                    <input type="number" id="amountNeeded" required>
+                                    <input type="number" id="amountNeeded" name="amount" required>
                                 </div>
                                 
                                 <div class="form-group">
                                     <label for="duration">Duration (months):*</label>
-                                    <input type="number" id="duration" required >
+                                    <input type="number" id="duration" name="duration" required>
                                 </div>
                                 
                                 <div class="form-group">
                                     <label for="installments">Monthly Installment (KES):</label>
-                                    <input type="text" id="installments" readonly>
+                                    <input type="text" id="installments" name="installments" placeholder="auto-calculated" readonly>
                                 </div>
                                 
                                 <div class="form-group">
                                     <label for="collateralValue">Collateral Value (KES):*</label>
-                                    <input type="number" id="collateralValue" required min="1">
+                                    <input type="number" id="collateralValue" name="collateral_value" required >
                                 </div>
                                 
                                 <div class="form-group">
                                     <label for="collateralDesc">Collateral Description:*</label>
-                                    <textarea id="collateralDesc" required  style="padding: 1.5em 3.5em; margin-right: .5em;"></textarea>
+                                    <textarea id="collateralDesc" name="collateral_description" placeholder="enter a short description" required></textarea>
                                 </div>
-                                
-                                
                                 
                                 <div class="form-actions">
                                     <button type="button" class="cancel-btn" id="cancelBtn">Cancel</button>
                                     <button type="submit" class="submit-btn">Submit Application</button>
                                 </div>
                             </form>
-                        </div>
-                    </div>
-                        
-                    </div>
-
-                    
+                            </div>
+                        </div>   
+                    </div>   
                 </div>
 
+                
                 <!-- Loan History -->
+                                
                 <div id="loanHistory" class="margin">
                     <h1>Loan History</h1>
-                    <p>View your past loans and their status.</p>
+                    <p>View your loan history</p>
+                    <div class="loanhistory" id="loanHistoryContainer">
+                        <!-- Content will be loaded dynamically -->
+                        <div class="loading">loading...</div>
+                    </div>
                 </div>
 
+                <!-- Loan Details Popup (hidden by default) -->
+                <div id="loanDetailsPopup" class="popup-overlay3" style="display: none;">
+                <div class="popup-content3">
+                    <h2>Loan Details for ID <span id="popupLoanId"></span></h2>
+                    <button id="closePopupBtn" class="close-btn">&times;</button>
+                    <div id="loanDetailsContent" class="popup-body"></div>
+                </div>
+                </div>
+                
+        
                 <!-- Financial Summary -->
                 <div id="financialSummary" class="margin">
                     <h1>Financial Summary</h1>
@@ -337,14 +398,11 @@ mysqli_close($myconn);
                              <p>dummy pie chart</p>
                             
                         </div>
-                    
-
- 
                     </div>
                 </div>
-
             </div>
         </div>
+        
 
         <!-- Copyright -->
         <div class="copyright">
@@ -355,16 +413,76 @@ mysqli_close($myconn);
                         <a href="mailto:innocentmukabwa@gmail.com">dev</a>
                     </p>
                 </div>
+
+
     </main>
 
 <!-- Filter, Lenders Display and Application Popup Logic -->
 <script>
-    let loadingStartTime;
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadLenders();
+    
 
+    // Reloads lenders page when Apply For Loan is clicked
+    document.getElementById('applyLoanLink').addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent default anchor behavior
+        loadLenders(); // Reload lenders
+        window.location.hash = '#applyLoan'; // Update URL hash
+    });
+    //Reloads loan history when Loan History is clicked
+    document.getElementById('loanHistoryLink').addEventListener('click', function(e) {
+    e.preventDefault(); // Prevent default anchor behavior
+    loadLoanHistory(); // This should call loadLoanHistory, not showLoanDetails
+    window.location.hash = '#loanHistory'; // Update URL hash
+});
+
+
+    // Filter form submission
+    document.querySelector('.sub').addEventListener('click', function(e) {
+        e.preventDefault();
+        loadLenders();
+    });
+    
+    // Reset button
+    document.querySelector('.res').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelector('.loan-filter form').reset();
+        loadLenders();
+    });
+    
+    // Quick amount buttons
+    document.querySelectorAll('.quick-amounts button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelector('[name="min_amount"]').value = this.dataset.min;
+            document.querySelector('[name="max_amount"]').value = this.dataset.max;
+            loadLenders();
+        });
+    });
+    
+    // Calculate installments when amount or duration changes
+    document.getElementById('amountNeeded').addEventListener('input', calculateInstallments);
+    document.getElementById('duration').addEventListener('input', calculateInstallments);
+    
+    // Form submission handler
+    document.getElementById('loanApplicationForm').addEventListener('submit', handleLoanSubmission);
+    
+    // Cancel button
+    document.getElementById('cancelBtn').addEventListener('click', function() {
+        document.getElementById('loanPopup').style.display = 'none';
+    });
+    
+    // Handle any existing messages on page load
+    handleLoanMessage();
+});
+
+let loadingStartTime; // Keep track of when loading started
+
+// Load lenders based on filters
 function loadLenders() {
     const container = document.getElementById('lendersContainer');
     container.innerHTML = '<div class="loading">loading ...</div>';
-    loadingStartTime = Date.now();
+    loadingStartTime = Date.now(); // Record start time
     
     const formData = new FormData(document.querySelector('.loan-filter form'));
     const params = new URLSearchParams();
@@ -381,7 +499,7 @@ function loadLenders() {
         })
         .then(result => {
             const elapsed = Date.now() - loadingStartTime;
-            const remainingDelay = Math.max(0, 1000 - elapsed); //1000ms
+            const remainingDelay = Math.max(0, 1000 - elapsed); // Maintain minimum 1s loading time
             
             setTimeout(() => {
                 if (!result.success) throw new Error(result.error || 'Unknown error');
@@ -395,6 +513,7 @@ function loadLenders() {
         });
 }
 
+// Render lenders in the container
 function renderLenders(lenders) {
     const container = document.getElementById('lendersContainer');
     
@@ -419,7 +538,8 @@ function renderLenders(lenders) {
                 <a href="alert.html">More Info</a>
             </div>
             <button class="applynow" 
-                    data-id="${lender.id}"
+                    data-product-id="${lender.id}"
+                    data-lender-id="${lender.lender_id}"
                     data-name="${lender.name}"
                     data-rate="${lender.rate}"
                     data-duration="${lender.duration}"
@@ -428,32 +548,41 @@ function renderLenders(lenders) {
             </button>
         </div>
     `).join('');
+    
+    // Add click handlers to all Apply Now buttons
+    document.querySelectorAll('.applynow').forEach(btn => {
+        btn.addEventListener('click', function() {
+            showLoanPopup(this);
+        });
+    });
 }
 
-// Show loan popup with lender data
+// Show the loan application popup with visible lender info
 function showLoanPopup(button) {
-    const lenderData = {
-        name: button.dataset.name,
-        rate: button.dataset.rate,
-        maxDuration: button.dataset.duration,
-        maxAmount: button.dataset.amount
-    };
+    // Set hidden form fields
+    document.getElementById('productId').value = button.dataset.productId;
+    document.getElementById('lenderId').value = button.dataset.lenderId;
+    document.getElementById('interestRate').value = button.dataset.rate;
     
-    document.getElementById('lenderName').value = lenderData.name;
-    document.getElementById('interestRate').value = lenderData.rate;
-    document.getElementById('maxDuration').value = lenderData.maxDuration;
-    document.getElementById('maxAmount').value = parseFloat(lenderData.maxAmount).toLocaleString();
+    // Set VISIBLE lender information
+    document.getElementById('displayLenderName').textContent = button.dataset.name;
+    document.getElementById('displayInterestRate').textContent = button.dataset.rate + '%';
+    document.getElementById('displayMaxAmount').textContent = 'KES ' + parseFloat(button.dataset.amount).toLocaleString();
+    document.getElementById('displayMaxDuration').textContent = button.dataset.duration + ' months';
+    
+    // Set max values for validation
+    document.getElementById('amountNeeded').max = button.dataset.amount;
+    document.getElementById('duration').max = button.dataset.duration;
     
     // Reset form fields
     document.getElementById('amountNeeded').value = '';
     document.getElementById('duration').value = '';
     document.getElementById('installments').value = '';
-    document.getElementById('collateralDesc').value = '';
     document.getElementById('collateralValue').value = '';
+    document.getElementById('collateralDesc').value = '';
     
-    // Set max values
-    document.getElementById('amountNeeded').max = lenderData.maxAmount;
-    document.getElementById('duration').max = lenderData.maxDuration;
+    // Clear any existing messages
+    document.getElementById('loanMessage').innerHTML = '';
     
     // Show popup
     document.getElementById('loanPopup').style.display = 'flex';
@@ -463,10 +592,10 @@ function showLoanPopup(button) {
 function calculateInstallments() {
     const amount = parseFloat(document.getElementById('amountNeeded').value) || 0;
     const duration = parseInt(document.getElementById('duration').value) || 1;
-    const interestRate = parseFloat(document.getElementById('interestRate').value) || 0;
+    const rate = parseFloat(document.getElementById('interestRate').value) || 0;
     
-    if (amount > 0 && duration > 0) {
-        const monthlyRate = interestRate / 100 / 12;
+    if (amount > 0 && duration > 0 && rate > 0) {
+        const monthlyRate = rate / 100 / 12;
         const numerator = amount * monthlyRate * Math.pow(1 + monthlyRate, duration);
         const denominator = Math.pow(1 + monthlyRate, duration) - 1;
         const monthlyInstallment = numerator / denominator;
@@ -477,68 +606,223 @@ function calculateInstallments() {
     }
 }
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    loadLenders();
+// Handle loan application form submission
+async function handleLoanSubmission(e) {
+    e.preventDefault();
     
-    // Filter form submission
-    document.querySelector('.sub').addEventListener('click', function(e) {
-        e.preventDefault();
-        loadLenders();
-    });
+    const form = e.target;
+    const submitBtn = form.querySelector('.submit-btn');
+    const messageDiv = document.getElementById('loanMessage');
     
-    // Reset button
-    document.querySelector('.res').addEventListener('click', function(e) {
-        e.preventDefault();
-        document.querySelector('.loan-filter form').reset();
-        loadLenders();
-    });
-    
-    // Quick amount buttons
-    document.querySelectorAll('.quick-amounts button').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelector('[name="min_amount"]').value = this.dataset.min;
-            document.querySelector('[name="max_amount"]').value = this.dataset.max;
-            loadLenders();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Processing...';
+    messageDiv.innerHTML = ''; // Clear previous messages
+
+    try {
+        const formData = new FormData(form);
+        
+        // Client-side validation
+        const required = ['product_id', 'lender_id', 'amount', 'duration', 
+                         'collateral_value', 'collateral_description'];
+        const missing = [];
+        
+        required.forEach(field => {
+            if (!formData.get(field)) missing.push(field);
         });
-    });
-    
-    // Apply Now button click
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('applynow')) {
-            showLoanPopup(e.target);
+
+        if (missing.length > 0) {
+            throw new Error(`Please fill in all required fields: ${missing.join(', ')}`);
         }
-    });
-    
-    // Cancel button
-    document.getElementById('cancelBtn').addEventListener('click', function() {
-        document.getElementById('loanPopup').style.display = 'none';
-    });
-    
-    // Calculate installments
-    document.getElementById('amountNeeded').addEventListener('input', calculateInstallments);
-    document.getElementById('duration').addEventListener('input', calculateInstallments);
-    
-    // Form submission
-    document.getElementById('loanApplicationForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+
+        const response = await fetch('applyLoan.php', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        const result = await response.json();
         
-        const formData = {
-            lenderName: document.getElementById('lenderName').value,
-            interestRate: document.getElementById('interestRate').value,
-            amountNeeded: document.getElementById('amountNeeded').value,
-            duration: document.getElementById('duration').value,
-            monthlyInstallment: document.getElementById('installments').value,
-            collateralDesc: document.getElementById('collateralDesc').value,
-            collateralValue: document.getElementById('collateralValue').value
-        };
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Application failed');
+        }
         
-        // Here you would send the data to your server
-        console.log('Loan application submitted:', formData);
-        alert('Loan application submitted successfully!');
-        document.getElementById('loanPopup').style.display = 'none';
-    });
+        // Show success message
+        messageDiv.innerHTML = `
+            <div class="alert success">${result.message}</div>
+        `;
+        
+        // Hide the popup after a delay
+        setTimeout(() => {
+            document.getElementById('loanPopup').style.display = 'none';
+            window.location.href = result.redirect || 'customerDashboard.php#applyLoan';
+        }, 2000);
+        
+    } catch (error) {
+        messageDiv.innerHTML = `
+            <div class="alert error">${error.message}</div>
+        `;
+        console.error('Error:', error);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Application';
+        // Start the message fade-out timer
+        handleLoanMessage();
+    }
+}
+
+// Handle loan message display and fading
+function handleLoanMessage() {
+    const loanMessage = document.getElementById('loanMessage');
+    if (loanMessage) {
+        const alert = loanMessage.querySelector('.alert');
+        if (alert) {
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                setTimeout(() => {
+                    alert.remove();
+                }, 700);
+            }, 2000); // Message will fade out after 2 seconds
+        }
+    }
+}
+// Load and render loan history with enhanced error handling
+function loadLoanHistory() {
+    const container = document.getElementById('loanHistoryContainer');
+    container.innerHTML = '<div class="loading">loading history...</div>';
+    const loadingStart = Date.now();
+
+    fetch('loanHistory.php')
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            // Ensure loading displays for at least 1 seconds
+            const elapsed = Date.now() - loadingStart;
+            const remainingDelay = Math.max(0, 1000 - elapsed);
+
+            setTimeout(() => {
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to load loan history');
+                }
+                
+                if (!data.loans || data.loans.length === 0) {
+                    container.innerHTML = '<div class="no-loans">No loan history found</div>';
+                    return;
+                }
+                
+                renderLoanHistory(data.loans);
+            }, remainingDelay);
+        })
+        .catch(error => {
+            container.innerHTML = `
+                <div class="error">
+                    <p>Failed to load loan history</p>
+                    ${error.message ? `<p class="error-detail">${error.message}</p>` : ''}
+                </div>
+            `;
+        });
+}
+
+// Render loan table (unchanged)
+function renderLoanHistory(loans) {
+    const container = document.getElementById('loanHistoryContainer');
+    
+    container.innerHTML = `
+        <table class="simple-loan-table">
+            <thead>
+                <tr>
+                    <th>Loan ID</th>
+                    <th>Type</th>
+                    <th>Lender</th>
+                    <th>Amount (KES)</th>
+                    <th>Interest</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${loans.map(loan => `
+                <tr>
+                    <td>${loan.loan_id}</td>
+                    <td>${loan.loan_type}</td> 
+                    <td>${loan.lender_name}</td>
+                    <td>${loan.amount.toLocaleString()}</td> 
+                    <td>${loan.interest_rate}%</td>
+                    <td><span class="loan-status ${loan.status.toLowerCase()}">${loan.status}</span></td>
+                    <td>${new Date(loan.created_at).toLocaleDateString()}</td>
+                    <td><button class="view-btn" onclick="showLoanDetails(${loan.loan_id})">View</button></td>
+                </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+// Show loan details in popup with error handling
+function showLoanDetails(loanId) {
+    const popup = document.getElementById('loanDetailsPopup');
+    const content = document.getElementById('loanDetailsContent');
+    
+    // Show loading state
+    popup.style.display = 'flex';
+    
+    fetch(`loanHistory.php?loan_id=${loanId}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                throw new Error(data.message || 'Loan not found');
+            }
+            
+            document.getElementById('popupLoanId').textContent = `${data.loan.loan_id}`;
+            content.innerHTML = `
+                <p><strong>Type:</strong> ${data.loan.loan_type}</p>
+                <p><strong>Lender:</strong> ${data.loan.lender_name || 'N/A'}</p>
+                <p><strong>Amount:</strong> KES ${data.loan.amount.toLocaleString()}</p>
+                <p><strong>Interest:</strong> ${data.loan.interest_rate}%</p>
+                <p><strong>Status:</strong> <span class="loan-status ${data.loan.status.toLowerCase()}">
+                    ${data.loan.status}
+                </span></p>
+                <p><strong>Date:</strong> ${new Date(data.loan.created_at).toLocaleDateString()}</p>
+            `;
+        })
+        .catch(error => {
+            content.innerHTML = `
+                <div class="error">
+                    <p>Failed to load loan details</p>
+                    ${error.message ? `<p class="error-detail">${error.message}</p>` : ''}
+                </div>
+            `;
+        });
+}
+
+// Close popup 
+function closePopup() {
+    document.getElementById('loanDetailsPopup').style.display = 'none';
+}
+
+// Event listeners 
+document.getElementById('closePopupBtn').addEventListener('click', closePopup);
+document.getElementById('loanDetailsPopup').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('loanDetailsPopup')) {
+        closePopup();
+    }
 });
+
+// Initialize on page load 
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.location.hash === '#loanHistory') {
+        loadLoanHistory();
+    }
+});
+// Attach to form
+document.getElementById('loanApplicationForm')?.addEventListener('submit', handleLoanSubmission);
 </script>
 
 </body>
