@@ -88,7 +88,7 @@ $metrics = $stmt->get_result()->fetch_assoc();
 $approvedLoans = $metrics['approved_loans'] ?? 0;
 $totalBorrowed = $metrics['total_borrowed'] ?? 0;
 $outstandingBalance = $metrics['outstanding_balance'] ?? 0;
-$nextPaymentDate = $metrics['next_payment_date'] ? date('j M Y', strtotime($metrics['next_payment_date'])) : 'N/A';
+$nextPaymentDate = $metrics['next_payment_date'] ? date('j M ', strtotime($metrics['next_payment_date'])) : 'N/A';
 
 // Define all loan types (same as in lender dashboard)
 $allLoanTypes = [
@@ -505,11 +505,11 @@ mysqli_close($myconn);
 
                 <div class="visuals">
         <div>
-            <p>Loan Amounts by Status</p>
-            <canvas id="barChart" width="800" height="200"></canvas>
+            <p>Number of Active Loans per Loan Type</p>
+            <canvas id="barChart" width="800" height="300"></canvas>
         </div>
         <div>
-            <p>Loan Status Distribution</p>
+            <p>Loan Status</p>
             <canvas id="pieChart" width="400" height="200"></canvas>
         </div>
     </div>
@@ -549,7 +549,7 @@ mysqli_close($myconn);
         const barWidth = 30;
         const barSpacing = 20;
         const startX = 50;
-        const startY = barCanvas.height - 30;
+        const startY = barCanvas.height - 80;
         const axisPadding = 5;
         
         // Calculate Y-axis max (minimum of 5 for visibility)
@@ -603,7 +603,7 @@ mysqli_close($myconn);
         
         // Legend
         const legendX = barCanvas.width - 250;
-        const legendY = 0;
+        const legendY = 40;
         const legendSpacing = 20;
         
         barCtx.font = '16px Arial';
