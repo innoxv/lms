@@ -38,7 +38,7 @@ $loansData = mysqli_fetch_assoc($loansResult);
 
 if ($loansData['loan_count'] > 0) {
     $_SESSION['loan_message'] = "Cannot delete - there are active loans for this product";
-    header("Location: lenderDashboard.php");
+    header("Location: lenderDashboard.php#createLoan");
     exit();
 }
 
