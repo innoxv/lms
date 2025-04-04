@@ -59,8 +59,8 @@ mysqli_close($myconn);
                 <ul class="nav-split">
                     <div class="top">
                         <li><a href="#dashboard">Dashboard</a></li>
-                        <li><a href="#loanHistory">Loan History</a></li>
-                        <li><a href="#financialSummary">Financial Summary</a></li>
+                        <li><a href="#viewUsers">View Users</a></li>
+                        <li><a href="#disputes">Disputes</a></li>
                         <li><a href="#notifications">Notifications</a></li>
                         <li><a href="#profile">Profile</a></li>
                     </div>
@@ -75,16 +75,16 @@ mysqli_close($myconn);
             <div class="display">
                 
 
-                <!-- Loan History -->
-                <div id="loanHistory" class="margin">
-                    <h1>Loan History</h1>
-                    <p>View past loans and their status.</p>
+                <!-- View Users -->
+                <div id="viewUsers" class="margin">
+                    <h1>View and Add Users</h1>
+                    <p>View all the users and perform necessary activities</p>
                 </div>
 
-                <!-- Financial Summary -->
-                <div id="financialSummary" class="margin">
-                    <h1>Financial Summary</h1>
-                    <p>Charts and graphs summarizing financial data.</p>
+                <!-- Disputes -->
+                <div id="disputes" class="margin">
+                    <h1>Disputes</h1>
+                    <p>View and solve disputes</p>
                 </div>
 
                 <!-- Notifications -->
@@ -145,19 +145,19 @@ mysqli_close($myconn);
                     </div>
                     <div class="metrics">
                         <div>
-                            <p>Active Loans</p>
+                            <p>Active Users</p>
                             <span class="span-2">0</span>
                         </div>
                         <div>
-                            <p>Loan Amounts</p>
+                            <p>Total Number of Transactions</p>
                             <span class="span-2">0</span>
                         </div>
                         <div>
-                            <p>Interest Rates</p>
+                            <p>Defaulted Accounts</p>
                             <span class="span-2">0</span>
                         </div>
                         <div>
-                            <p>Outstanding Balance</p>
+                            <p>Average Interest Rates</p>
                             <span class="span-2">0</span>
                         </div>
                     </div>

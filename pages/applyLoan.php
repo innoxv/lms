@@ -64,6 +64,21 @@ try {
         throw new Exception("Invalid loan product for selected lender");
     }
 
+    // Check for existing active loan of same type
+    $existing_loan_check = mysqli_query($conn,
+        "SELECT loans.status, loan_products.loan_type 
+        FROM loans
+        JOIN loan_products ON loans.product_id = loan_products.product_id
+        WHERE loans.customer_id = $customer_id
+        AND loans.product_id = $product_id
+        AND loans.status != 'Paid'
+        LIMIT 1");
+    
+    if (mysqli_num_rows($existing_loan_check) > 0) {
+        $existing_loan = mysqli_fetch_assoc($existing_loan_check);
+        throw new Exception("Loan Active, Pay First");
+    }
+
     // Insert loan application
     $insert_query = "INSERT INTO loans (
         product_id, customer_id, lender_id,

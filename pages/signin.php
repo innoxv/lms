@@ -1,8 +1,8 @@
 <?php
 // Enable error reporting for debugging (currently commented out)
-// ini_set('display_errors', 1);  // Shows runtime errors
-// ini_set('display_startup_errors', 1);  // Shows startup errors
-// error_reporting(E_ALL);  // Reports all PHP errors
+ini_set('display_errors', 1);  // Shows runtime errors
+ini_set('display_startup_errors', 1);  // Shows startup errors
+error_reporting(E_ALL);  // Reports all PHP errors
 
 // Function to start or resume the session to store user data across pages
 session_start();
@@ -10,7 +10,7 @@ session_start();
 // Database connection setup:
 // $myconn is a global variable that creates a connection to MySQL database using mysqli_connect() function that opens a new connection to the MySQL server
 // Parameters: server, username, password, database 
-$myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
+$myconn = mysqli_connect('localhost', 'inno', 'figureitouttoo', 'LMSDB');
 
 // Check if connection failed
 if (!$myconn) {

@@ -1,4 +1,9 @@
 <?php
+// Enable error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
@@ -7,6 +12,10 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
+if (!$myconn) {
+    die("Connection failed: " . mysqli_connect_error());
+}
+
 $userId = $_SESSION['user_id'];
 
 // Fetch user data
@@ -35,63 +44,128 @@ if (mysqli_num_rows($lenderResult) > 0) {
 
 $lender_id = $_SESSION['lender_id'];
 
-// Get loan products count
-$totalProductsQuery = "SELECT COUNT(*) AS total_products FROM loan_products WHERE lender_id = '$lender_id'";
-$totalProductsResult = mysqli_query($myconn, $totalProductsQuery);
-$totalProductsData = mysqli_fetch_assoc($totalProductsResult);
-$totalProducts = $totalProductsData['total_products'];
-
-// Get average interest rate from loan products
-$avgInterestQuery = "SELECT AVG(interest_rate) AS avg_interest_rate FROM loan_products WHERE lender_id = '$lender_id'";
-$avgInterestResult = mysqli_query($myconn, $avgInterestQuery);
-$avgInterestData = mysqli_fetch_assoc($avgInterestResult);
-$avgInterestRate = number_format($avgInterestData['avg_interest_rate'], 2);
-
-// Get total loan capacity
-$capacityQuery = "SELECT SUM(max_amount) AS total_capacity FROM loan_products WHERE lender_id = '$lender_id'";
-$capacityResult = mysqli_query($myconn, $capacityQuery);
-$capacityData = mysqli_fetch_assoc($capacityResult);
-$totalCapacity = number_format($capacityData['total_capacity']);
-
-// Get total active loans (approved but not completed)
-$activeLoansQuery = "SELECT COUNT(*) AS active_loans FROM loans 
-                    WHERE lender_id = '$lender_id' 
-                    AND status IN ('approved', 'disbursed', 'active')";
-$activeLoansResult = mysqli_query($myconn, $activeLoansQuery);
-$activeLoansData = mysqli_fetch_assoc($activeLoansResult);
-$activeLoans = $activeLoansData['active_loans'];
-
-// Get total amount disbursed
-$disbursedQuery = "SELECT SUM(amount) AS total_disbursed FROM loans 
-                  WHERE lender_id = '$lender_id' 
-                  AND status IN ('disbursed', 'active', 'completed')";
-$disbursedResult = mysqli_query($myconn, $disbursedQuery);
-$disbursedData = mysqli_fetch_assoc($disbursedResult);
-$totalDisbursed = number_format($disbursedData['total_disbursed']);
-
-// Get loan products for display
-$productsQuery = "SELECT * FROM loan_products WHERE lender_id = '$lender_id'";
-$productsResult = mysqli_query($myconn, $productsQuery);
-$productsData = mysqli_fetch_all($productsResult, MYSQLI_ASSOC);
-
-// Prepare data for charts
+// Define all loan types
 $allLoanTypes = [
     "Personal Loan", "Business Loan", "Mortgage Loan", 
     "MicroFinance Loan", "Student Loan", "Construction Loan",
     "Green Loan", "Medical Loan", "Startup Loan", "Agricultural Loan"
 ];
 
+// Get loan products count
+$totalProductsQuery = "SELECT COUNT(*) FROM loan_products WHERE lender_id = '$lender_id'";
+$totalProductsResult = mysqli_query($myconn, $totalProductsQuery);
+$totalProducts = (int)mysqli_fetch_row($totalProductsResult)[0];
+
+// Get average interest rate
+$avgInterestQuery = "SELECT AVG(interest_rate) FROM loan_products WHERE lender_id = '$lender_id'";
+$avgInterestResult = mysqli_query($myconn, $avgInterestQuery);
+$avgInterestRate = number_format((float)mysqli_fetch_row($avgInterestResult)[0], 2);
+
+// Get total loan capacity
+$capacityQuery = "SELECT SUM(max_amount) FROM loan_products WHERE lender_id = '$lender_id'";
+$capacityResult = mysqli_query($myconn, $capacityQuery);
+$capacityData = mysqli_fetch_row($capacityResult);
+$totalCapacity = $capacityData[0] ? number_format((float)$capacityData[0]) : 0;
+
+// Get total APPROVED loans count
+$approvedLoansQuery = "SELECT COUNT(*) FROM loans WHERE lender_id = '$lender_id' AND status = 'approved'";
+$approvedLoansResult = mysqli_query($myconn, $approvedLoansQuery);
+$approvedLoans = (int)mysqli_fetch_row($approvedLoansResult)[0];
+
+// Get total amount disbursed
+$disbursedQuery = "SELECT SUM(amount) FROM loans WHERE lender_id = '$lender_id' AND status IN ('disbursed', 'active', 'completed')";
+$disbursedResult = mysqli_query($myconn, $disbursedQuery);
+$disbursedData = mysqli_fetch_row($disbursedResult);
+$totalDisbursed = $disbursedData[0] ? number_format((float)$disbursedData[0]) : 0;
+
+// Get loan products with their approved loans count
+$loanProductsQuery = "SELECT 
+                      loan_products.product_id,
+                      loan_products.loan_type,
+                      loan_products.interest_rate,
+                      loan_products.max_amount,
+                      loan_products.max_duration,
+                      COUNT(loans.loan_id) as approved_count
+                    FROM loan_products
+                    LEFT JOIN loans ON loan_products.product_id = loans.product_id
+                      AND loans.lender_id = '$lender_id'
+                      AND loans.status = 'approved'
+                    WHERE loan_products.lender_id = '$lender_id'
+                    GROUP BY loan_products.product_id, loan_products.loan_type, loan_products.interest_rate, 
+                             loan_products.max_amount, loan_products.max_duration";
+
+$loanProductsResult = mysqli_query($myconn, $loanProductsQuery);
+
+// Initialize loan counts
 $loanCounts = array_fill_keys($allLoanTypes, 0);
-foreach ($productsData as $product) {
-    $loanCounts[$product['loan_type']] = 1;
+$productsData = [];
+
+if ($loanProductsResult) {
+    while ($row = mysqli_fetch_assoc($loanProductsResult)) {
+        $loanType = $row['loan_type'];
+        $loanCounts[$loanType] = (int)$row['approved_count'];
+        
+        $productsData[] = [
+            'product_id' => $row['product_id'],
+            'loan_type' => $loanType,
+            'interest_rate' => $row['interest_rate'],
+            'max_amount' => $row['max_amount'],
+            'max_duration' => $row['max_duration']
+        ];
+    }
 }
 
-// Get loan status distribution for pie chart
-$statusQuery = "SELECT status, COUNT(*) as count FROM loans 
-               WHERE lender_id = '$lender_id' 
-               GROUP BY status";
+// Get loan status distribution
+$statusQuery = "SELECT status, COUNT(*) as count FROM loans WHERE lender_id = '$lender_id' GROUP BY status";
 $statusResult = mysqli_query($myconn, $statusQuery);
 $statusData = mysqli_fetch_all($statusResult, MYSQLI_ASSOC);
+
+
+
+// Fetch loan requests for this lender without using aliases
+$loanRequestsQuery = "SELECT 
+                      loans.loan_id,
+                      loans.amount,
+                      loans.interest_rate,
+                      loans.duration,
+                      loans.status,
+                      loans.created_at,
+                      customers.name,
+                      loan_products.loan_type
+                    FROM loans
+                    JOIN loan_products ON loans.product_id = loan_products.product_id
+                    JOIN customers ON loans.customer_id = customers.customer_id
+                    WHERE loans.lender_id = '$lender_id' 
+                    ORDER BY loans.created_at DESC";
+
+$loanRequestsResult = mysqli_query($myconn, $loanRequestsQuery);
+if (!$loanRequestsResult) {
+    die("Query failed: " . mysqli_error($myconn));
+}
+$loanRequests = mysqli_fetch_all($loanRequestsResult, MYSQLI_ASSOC);
+
+
+// Pie Chart
+// Get loan status distribution for the current lender
+$statusQuery = "SELECT status, COUNT(*) as count 
+                FROM loans 
+                WHERE lender_id = '$lender_id' 
+                GROUP BY status";
+$statusResult = mysqli_query($myconn, $statusQuery);
+$statusData = [];
+$totalLoans = 0;
+
+while ($row = mysqli_fetch_assoc($statusResult)) {
+    $statusData[$row['status']] = (int)$row['count'];
+    $totalLoans += (int)$row['count'];
+}
+
+// Calculate percentages for each status
+$pieData = [
+    'pending' => isset($statusData['pending']) ? ($statusData['pending'] / $totalLoans * 100) : 0,
+    'approved' => isset($statusData['approved']) ? ($statusData['approved'] / $totalLoans * 100) : 0,
+    'rejected' => isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0
+];
 
 // Check for messages
 if (isset($_SESSION['loan_message'])) {
@@ -142,7 +216,7 @@ mysqli_close($myconn);
                     <div class="top">
                         <li><a href="#dashboard">Dashboard</a></li>
                         <li><a href="#createLoan">Create a Loan</a></li>
-                        <li><a href="#loanHistory">Loan History</a></li>
+                        <li><a href="#loanRequests">Loan Requests</a></li>
                         <li><a href="#financialSummary">Financial Summary</a></li>
                         <li><a href="#notifications">Notifications</a></li>
                         <li><a href="#profile">Profile</a></li>
@@ -284,11 +358,71 @@ mysqli_close($myconn);
                 </div>
 
 
-                <!-- Loan History -->
-                <div id="loanHistory" class="margin">
-                    <h1>Loan Requests</h1>
-                    <p>View and approve loan requests.</p>
-                </div>
+                <div id="loanRequests" class="margin">
+    <h1>Loan Requests</h1>
+    <p>Loan applications from customers for your loan products.</p>
+    
+    <div class="loan-requests-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Loan ID</th>
+                    <th>Customer Name</th>
+                    <th>Loan Type</th>
+                    <th>Amount (KSh)</th>
+                    <th>Interest Rate</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Application Date</th>
+                    <th style="text-align: center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!empty($loanRequests)): ?>
+                    <?php foreach ($loanRequests as $request): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($request['loan_id']); ?></td>
+                        <td><?php echo htmlspecialchars($request['name']); ?></td>
+                        <td><?php echo htmlspecialchars($request['loan_type']); ?></td>
+                        <td><?php echo number_format($request['amount'], 2); ?></td>
+                        <td><?php echo htmlspecialchars($request['interest_rate']); ?>%</td>
+                        <td><?php echo htmlspecialchars($request['duration']); ?></td>
+                        <td>
+                            <span class="status-badge status-<?php echo strtolower(htmlspecialchars($request['status'])); ?>">
+                                <?php echo htmlspecialchars($request['status']); ?>
+                            </span>
+                        </td>
+                        <td><?php echo date('j M Y', strtotime($request['created_at'])); ?></td>
+                        <td class="action-buttons">
+                            <form action="approve_loan.php" method="post" class="inline-form">
+                                <input type="hidden" name="loan_id" value="<?php echo $request['loan_id']; ?>">
+                                <button type="submit" class="btn-approve <?php echo $request['status'] !== 'pending' ? 'disabled' : ''; ?>" 
+                                    <?php echo $request['status'] !== 'pending' ? 'disabled' : ''; ?>>
+                                    Approve
+                                </button>
+                            </form>
+                            <form action="reject_loan.php" method="post" class="inline-form">
+                                <input type="hidden" name="loan_id" value="<?php echo $request['loan_id']; ?>">
+                                <button type="submit" class="btn-reject <?php echo $request['status'] === 'rejected' ? 'disabled' : ''; ?>" 
+                                    <?php echo $request['status'] === 'rejected' ? 'disabled' : ''; ?>>
+                                    Reject
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="9" class="no-data">
+                            <i class="icon-info"></i> No loan requests found for your products
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 
                 <!-- Financial Summary -->
                 <div id="financialSummary" class="margin">
@@ -355,7 +489,7 @@ mysqli_close($myconn);
                     </div>
                     <div class="metrics">
                         <div>
-                            <p>Loan Products Offered</p>
+                            <p>Types of Loans Offered</p>
                             <div class="metric-value-container">
                                 <span class="span-2"><?php echo $totalProducts; ?></span>
                             </div>
@@ -369,7 +503,7 @@ mysqli_close($myconn);
                         <div>
                             <p>Active Loans</p>
                             <div class="metric-value-container">
-                                <span class="span-2"><?php echo $activeLoans; ?></span>
+                            <span class="span-2"><?php echo $approvedLoans; ?></span>
                             </div>
                         </div>
                         <div>
@@ -391,12 +525,12 @@ mysqli_close($myconn);
                     
                     <div class="visuals">
                         <div>
-                        <p>Number of Active Loans per Loan Type (in production)</p>
+                        <p>Number of Active Loans per Loan Type</p>
                         <canvas id="barChart" width="800" height="300"></canvas>
                         
                         </div>
                         <div>
-                            <p>Loan Status (dummy data)</p>
+                            <p>Loan Status </p>
                             <canvas id="pieChart" width="400" height="200"></canvas>
                              
                             
@@ -419,9 +553,31 @@ mysqli_close($myconn);
                         <a href="mailto:innocentmukabwa@gmail.com">dev</a>
                     </p>
                 </div>
+
+
+                <!-- PHP page reloads -->
+                <iframe name="hiddenFrame" style="display:none;"></iframe>
     </main>
     <script src="../js/validinput.js"></script>
 
+    <!-- Page Reloads with JS PHP -->
+    <script>
+// This will refresh only the loan requests section when the iframe loads
+window.onload = function() {
+    const hiddenFrame = document.getElementsByName('hiddenFrame')[0];
+    hiddenFrame.onload = function() {
+        // Refresh just the loan requests section
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newContent = doc.querySelector('#loanRequests').innerHTML;
+                document.querySelector('#loanRequests').innerHTML = newContent;
+            });
+    };
+};
+</script>
     <script>
         // Function to hide the loan message after 2 seconds
         function hideLoanMessage() {
@@ -580,146 +736,160 @@ mysqli_close($myconn);
 
     <!-- barchart -->
      
-    <script>
-        // Pass the loan counts from PHP to JavaScript
-        // uncomment getting data from PHP
-        const loanCounts = <?php echo json_encode($loanCounts); ?>;  
 
-        // Get the canvas element and context
-        const barCanvas = document.getElementById('barChart');
-        const barCtx = barCanvas.getContext('2d');
-
-        // Define all loan types
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const loanCounts = <?php echo json_encode($loanCounts); ?>;
         const loanTypes = Object.keys(loanCounts);
         const counts = Object.values(loanCounts);
-
-        // Abbreviate labels (first 2 letters)
-        const abbreviatedLabels = loanTypes.map(label => label.substring(0, 2).toUpperCase());
-
-        // Define chart dimensions
-        const barWidth = 30; // Width of each bar
-        const barSpacing = 20; // Spacing between bars
-        const startX = 50; // Starting X position for the first bar (reduced margin)
-        const startY = barCanvas.height - 80; // Starting Y position (bottom of the chart)
-        const axisPadding = 5; // Reduced padding for the Y-axis
-
-        // Calculate the maximum value for the Y-axis scale
-        const maxCount = Math.max(...counts);
-        const yAxisMax = Math.ceil(maxCount / 5) * 5; // Round up to the nearest multiple of 5
-
-        // Draw the bars
+        
+        const barCanvas = document.getElementById('barChart');
+        const barCtx = barCanvas.getContext('2d');
+        
+        // Clear any previous chart
+        barCtx.clearRect(0, 0, barCanvas.width, barCanvas.height);
+        
+        // Chart dimensions
+        const barWidth = 30;
+        const barSpacing = 20;
+        const startX = 50;
+        const startY = barCanvas.height - 80;
+        const axisPadding = 5;
+        
+        // Calculate Y-axis max (minimum of 5 for visibility)
+        const maxCount = Math.max(5, ...counts);
+        const yAxisMax = Math.ceil(maxCount / 5) * 5;
+        
+        // Draw bars
         counts.forEach((value, index) => {
             const x = startX + (barWidth + barSpacing) * index;
-            const y = startY - (value / yAxisMax) * (startY - 20); // Scale bar height to fit Y-axis
-            barCtx.fillStyle = '#74C0FC'; // Bar color
-            barCtx.fillRect(x, y, barWidth, startY - y); // Draw the bar
+            const barHeight = (value / yAxisMax) * (startY - 20);
+            const y = startY - barHeight;
+            
+            barCtx.fillStyle = '#74C0FC';
+            barCtx.fillRect(x, y, barWidth, barHeight);
+            
+      
         });
-
-        // Draw the X-axis labels (abbreviated)
-        barCtx.fillStyle = 'white'; // Label color
-        barCtx.font = '14px Trebuchet MS'; // Label font
-        barCtx.textAlign = 'center'; // Center-align the text
-        abbreviatedLabels.forEach((label, index) => {
+        
+        // X-axis labels (abbreviated)
+        barCtx.fillStyle = 'white';
+        barCtx.font = '14px Arial';
+        loanTypes.forEach((type, index) => {
+            const label = type.substring(0, 2).toUpperCase();
             const x = startX + (barWidth + barSpacing) * index + barWidth / 2;
-            barCtx.fillText(label, x, startY + 20); // Draw the label below the bar
+            barCtx.fillText(label, x, startY + 20);
         });
-
-        // Draw the Y-axis
+        
+        // Y-axis and grid
+        barCtx.strokeStyle = 'white';
         barCtx.beginPath();
         barCtx.moveTo(startX - axisPadding, startY);
         barCtx.lineTo(startX - axisPadding, 20);
-        barCtx.strokeStyle = 'white'; // Y-axis color
         barCtx.stroke();
-
-        // Draw Y-axis labels and grid lines (steps of 2 for better readability)
+        
+        // Y-axis labels
         barCtx.fillStyle = 'whitesmoke';
-        barCtx.font = '14px Trebuchet MS';
-        barCtx.textAlign = 'right'; // Right-align Y-axis labels
-        barCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; // Grid line color
-
-        for (let i = 0; i <= yAxisMax; i += 2) { // Steps of 2 for better readability
-            const y = startY - (i / yAxisMax) * (startY - 20); // Scale Y-axis labels
-
-            // Draw Y-axis labels
+        barCtx.textAlign = 'right';
+        barCtx.font = '14px Arial';
+        
+        for (let i = 0; i <= yAxisMax; i += (yAxisMax > 10 ? 2 : 1)) {
+            const y = startY - (i / yAxisMax) * (startY - 20);
             barCtx.fillText(i, startX - axisPadding - 5, y + 5);
-
-            // Draw horizontal grid lines
+            
+            // Grid lines
+            barCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
             barCtx.beginPath();
             barCtx.moveTo(startX - axisPadding, y);
-            barCtx.lineTo(barCanvas.width - 250, y); // Extend grid line across the chart
+            barCtx.lineTo(barCanvas.width - 250, y);
             barCtx.stroke();
         }
-
-        // Draw the legend (key) on the side
-        const legendX = barCanvas.width - 250; // X position for the legend
-        const legendY = 40; // Y position for the legend
-        const legendSpacing = 20; // Spacing between legend items
-
-        barCtx.font = '16px Trebuchet MS';
-        barCtx.textAlign = 'left'; // Left-align legend text
-        loanTypes.forEach((label, index) => {
-            
-
-            // Draw the label text
+        
+        // Legend
+        const legendX = barCanvas.width - 250;
+        const legendY = 40;
+        const legendSpacing = 20;
+        
+        barCtx.font = '16px Arial';
+        barCtx.textAlign = 'left';
+        loanTypes.forEach((type, index) => {
+            const label = type.substring(0, 2).toUpperCase();
             barCtx.fillStyle = 'lightgray';
-            barCtx.fillText(`${abbreviatedLabels[index]}: ${label}`, legendX + 20, legendY + index * legendSpacing + 12);
+            barCtx.fillText(`${label}: ${type}`, legendX + 20, legendY + index * legendSpacing + 12);
         });
-    </script>
+    });
+</script>
 
 
     <!-- pie chart -->
-    <!-- Dummy Data - Should actually analyze data from the database -->
     <script>
-    // Get the canvas element and context
-    const pieCanvas = document.getElementById('pieChart');
-    const pieCtx = pieCanvas.getContext('2d');
+    document.addEventListener('DOMContentLoaded', function() {
+        const pieCanvas = document.getElementById('pieChart');
+        const pieCtx = pieCanvas.getContext('2d');
+        
+        // Get the actual data from PHP
+        const pieData = {
+            labels: ['Pending', 'Approved', 'Rejected'
+            ],
+            values: [
+                <?php echo round($pieData['pending'], 2); ?>,
+                <?php echo round($pieData['approved'], 2); ?>,
+                <?php echo round($pieData['rejected'], 2); ?>,
+                
+            ]
+        };
 
-    // Define dummy data
-    const pieData = {
-        labels: ['Pending', 'Approved', 'Rejected'],
-        values: [50, 30, 20], // Percentages for each status
-    };
+        // Define colors for each status
+        const statusColors = {
+            'Pending': '#ddd',  
+            'Approved': 'teal',
+            'Rejected': 'tomato', 
+        };
 
-    // Define colors for each status
-    const statusColors = {
-        'Pending': 'white', 
-        'Approved': 'lightgreen', 
-        'Rejected': 'tomato',
-    };
+        // Extract labels and values from pieData
+        const labels = pieData.labels;
+        const values = pieData.values;
 
-    // Extract labels and values from pieData
-    const labels = pieData.labels;
-    const values = pieData.values;
+        // Calculate the total for percentage calculations
+        const total = values.reduce((sum, value) => sum + value, 0);
 
-    // Calculate the total for percentage calculations
-    const total = values.reduce((sum, value) => sum + value, 0);
+        // Draw the pie chart
+        let startAngle = 0;
+        const centerX = pieCanvas.width / 4;
+        const centerY = pieCanvas.height / 2;
+        const radius = Math.min(pieCanvas.width / 3, pieCanvas.height / 2) - 10;
 
-    // Draw the pie chart
-    let startAngle = 0;
-    const centerX = pieCanvas.width / 3;
-    const centerY = pieCanvas.height / 2;
-    const radius = 80;
+        values.forEach((value, index) => {
+            if (value > 0) {  // Only draw slices for non-zero values
+                const sliceAngle = (2 * Math.PI * value) / total;
+                pieCtx.beginPath();
+                pieCtx.moveTo(centerX, centerY);
+                pieCtx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+                pieCtx.closePath();
+                pieCtx.fillStyle = statusColors[labels[index]];
+                pieCtx.fill();
+                startAngle += sliceAngle;
+            }
+        });
 
-    values.forEach((value, index) => {
-        const sliceAngle = (2 * Math.PI * value) / total;
-        pieCtx.beginPath();
-        pieCtx.moveTo(centerX, centerY);
-        pieCtx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
-        pieCtx.closePath();
-        pieCtx.fillStyle = statusColors[labels[index]]; // Use color based on status
-        pieCtx.fill();
-        startAngle += sliceAngle;
+        // Add a legend
+        pieCtx.font = '16px Arial';
+        let legendY = 20;
+        const legendX = centerX + radius + 20;
+        const legendSpacing = 20;
+
+        values.forEach((value, index) => {
+            if (value > 0) {  // Only show legend items for non-zero values
+                pieCtx.fillStyle = statusColors[labels[index]];
+                pieCtx.fillRect(legendX, legendY, 15, 15);
+                pieCtx.fillStyle = 'whitesmoke';
+                pieCtx.fillText(`${labels[index]}: ${value.toFixed(1)}%`, legendX + 20, legendY + 12);
+                legendY += legendSpacing;
+            }
+        });
+
+       
     });
-
-    // Add a legend
-    pieCtx.font = '14px Trebuchet MS';
-    values.forEach((value, index) => {
-        const percentage = ((value / total) * 100).toFixed(2);
-        pieCtx.fillStyle = statusColors[labels[index]];
-        pieCtx.fillRect(centerX + radius + 20, 20 + index * 20, 15, 15);
-        pieCtx.fillStyle = 'whitesmoke';
-        pieCtx.fillText(`${labels[index]}: ${value}%`, centerX + radius + 40, 32 + index * 20);
-    });
-    </script>
+</script>
 </body>
 </html>
