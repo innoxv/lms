@@ -122,22 +122,38 @@ $statusData = mysqli_fetch_all($statusResult, MYSQLI_ASSOC);
 
 
 
-// Fetch loan requests for this lender without using aliases
-$loanRequestsQuery = "SELECT 
-                      loans.loan_id,
-                      loans.amount,
-                      loans.interest_rate,
-                      loans.duration,
-                      loans.status,
-                      loans.created_at,
-                      customers.name,
-                      loan_products.loan_type
-                    FROM loans
-                    JOIN loan_products ON loans.product_id = loan_products.product_id
-                    JOIN customers ON loans.customer_id = customers.customer_id
-                    WHERE loans.lender_id = '$lender_id' 
-                    ORDER BY loans.created_at DESC";
+// Get filter parameters from URL (add near top with other initializations)
+$statusFilter = $_GET['status'] ?? '';
+$loanTypeFilter = $_GET['loan_type'] ?? '';
 
+// Modify the loan requests query to include both filters
+$loanRequestsQuery = "SELECT 
+    loans.loan_id,
+    loans.amount,
+    loans.interest_rate,
+    loans.duration,
+    loans.status,
+    loans.created_at,
+    customers.name,
+    loan_products.loan_type
+FROM loans
+JOIN loan_products ON loans.product_id = loan_products.product_id
+JOIN customers ON loans.customer_id = customers.customer_id
+WHERE loans.lender_id = '$lender_id'";
+
+// Add status filter if specified
+if (!empty($statusFilter) && in_array($statusFilter, ['pending', 'approved', 'rejected'])) {
+    $loanRequestsQuery .= " AND loans.status = '$statusFilter'";
+}
+
+// Add loan type filter if specified
+if (!empty($loanTypeFilter)) {
+    $loanRequestsQuery .= " AND loan_products.loan_type = '$loanTypeFilter'";
+}
+
+$loanRequestsQuery .= " ORDER BY loans.created_at DESC";
+
+// Execute the query
 $loanRequestsResult = mysqli_query($myconn, $loanRequestsQuery);
 if (!$loanRequestsResult) {
     die("Query failed: " . mysqli_error($myconn));
@@ -361,7 +377,43 @@ mysqli_close($myconn);
                 <div id="loanRequests" class="margin">
     <h1>Loan Requests</h1>
     <p>Loan applications from customers for your loan products.</p>
-    
+    <div class="loan-filter-container">
+        <form method="get" action="#loanRequests">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="status">Status:</label>
+                    <select name="status" id="status">
+                        <option value="">All Statuses</option>
+                        <option value="pending" <?= ($statusFilter === 'pending') ? 'selected' : '' ?>>Pending</option>
+                        <option value="approved" <?= ($statusFilter === 'approved') ? 'selected' : '' ?>>Approved</option>
+                        <option value="rejected" <?= ($statusFilter === 'rejected') ? 'selected' : '' ?>>Rejected</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="loan_type">Loan Type:</label>
+                    <select name="loan_type" id="loan_type">
+                        <option value="">All Types</option>
+                        <option value="Personal Loan" <?= ($loanTypeFilter === 'Personal Loan') ? 'selected' : '' ?>>Personal</option>
+                        <option value="Business Loan" <?= ($loanTypeFilter === 'Business Loan') ? 'selected' : '' ?>>Business</option>
+                        <option value="Mortgage Loan" <?= ($loanTypeFilter === 'Mortgage Loan') ? 'selected' : '' ?>>Mortgage</option>
+                        <option value="MicroFinance Loan" <?= ($loanTypeFilter === 'MicroFinance Loan') ? 'selected' : '' ?>>MicroFinance</option>
+                        <option value="Student Loan" <?= ($loanTypeFilter === 'Student Loan') ? 'selected' : '' ?>>Student</option>
+                        <option value="Construction Loan" <?= ($loanTypeFilter === 'Construction Loan') ? 'selected' : '' ?>>Construction</option>
+                        <option value="Green Loan" <?= ($loanTypeFilter === 'Green Loan') ? 'selected' : '' ?>>Green</option>
+                        <option value="Medical Loan" <?= ($loanTypeFilter === 'Medical Loan') ? 'selected' : '' ?>>Medical</option>
+                        <option value="Startup Loan" <?= ($loanTypeFilter === 'Startup Loan') ? 'selected' : '' ?>>Startup</option>
+                        <option value="Agricultural Loan" <?= ($loanTypeFilter === 'Agricultural Loan') ? 'selected' : '' ?>>Agricultural</option>
+                    </select>
+                </div>
+                
+                <div class="filter-actions">
+                    <button type="submit" class="apply-btn">Apply Filters</button>
+                    <a href="lenderDashboard.php#loanRequests"><button type="button" class="reset-btn">Reset</button></a>
+                </div>
+            </div>
+        </form>
+    </div>
     <div class="loan-requests-table">
         <table>
             <thead>
@@ -562,12 +614,24 @@ mysqli_close($myconn);
 
     <!-- Page Reloads with JS PHP -->
     <script>
-// This will refresh only the loan requests section when the iframe loads
+        // Update the iframe reload handler to preserve both filters
 window.onload = function() {
     const hiddenFrame = document.getElementsByName('hiddenFrame')[0];
     hiddenFrame.onload = function() {
+        // Preserve both filter states when refreshing
+        const statusFilter = document.getElementById('status').value;
+        const loanTypeFilter = document.getElementById('loan_type').value;
+        let url = window.location.href.split('#')[0] + '#loanRequests';
+        
+        if (statusFilter || loanTypeFilter) {
+            url += '?';
+            if (statusFilter) url += `status=${encodeURIComponent(statusFilter)}`;
+            if (statusFilter && loanTypeFilter) url += '&';
+            if (loanTypeFilter) url += `loan_type=${encodeURIComponent(loanTypeFilter)}`;
+        }
+        
         // Refresh just the loan requests section
-        fetch(window.location.href)
+        fetch(url)
             .then(response => response.text())
             .then(html => {
                 const parser = new DOMParser();
@@ -577,7 +641,18 @@ window.onload = function() {
             });
     };
 };
-</script>
+
+// Add visual feedback when filtering
+document.querySelector('#loanRequests form').addEventListener('submit', function(e) {
+    const loanRequestsTable = document.querySelector('.loan-requests-table');
+    loanRequestsTable.style.opacity = '0.5';
+    loanRequestsTable.style.transition = 'opacity 0.3s ease';
+    
+    setTimeout(() => {
+        loanRequestsTable.style.opacity = '1';
+    }, 300);
+});
+    </script>
     <script>
         // Function to hide the loan message after 2 seconds
         function hideLoanMessage() {

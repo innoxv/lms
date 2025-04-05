@@ -5,6 +5,9 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
+// Initialize variables
+$statusFilter = ''; // Initialize status filter variable
+
 // Check if the user is logged in
 if (!isset($_SESSION['user_id'])) {
     // Redirect to the login page if the user is not logged in
@@ -19,6 +22,10 @@ $myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
 if (!$myconn) {
     die("Connection failed: " . mysqli_connect_error());
 }
+
+// Get the status filter from the URL if it exists
+$statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
+
 
 // Fetch user data from the database
 $userId = $_SESSION['user_id'];
@@ -48,28 +55,40 @@ if (mysqli_num_rows($customerResult) > 0) {
 
 $customer_id = $_SESSION['customer_id'];
 
+// Get the status filter from the URL if it exists
+$statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
 
-// Loan History Query (fixed ambiguous columns)
+// Loan History Query with optional status filter
 $loansQuery = "SELECT 
     loans.loan_id,
     loan_products.loan_type,
     loans.amount,
     loans.interest_rate,
     loans.status AS loan_status,  
-    lenders.name AS lender_name
+    lenders.name AS lender_name,
+    loans.created_at
 FROM loans
 JOIN loan_products ON loans.product_id = loan_products.product_id
 JOIN lenders ON loans.lender_id = lenders.lender_id
 JOIN customers ON loans.customer_id = customers.customer_id
-WHERE customers.user_id = ?
-ORDER BY loans.created_at DESC";
+WHERE customers.user_id = ?";
 
-$stmt = $myconn->prepare($loansQuery);
-$stmt->bind_param("i", $userId);
+// Add status filter if specified
+if (!empty($statusFilter) && in_array($statusFilter, ['approved', 'pending', 'rejected'])) {
+    $loansQuery .= " AND loans.status = ?";
+    $stmt = $myconn->prepare($loansQuery);
+    $stmt->bind_param("is", $userId, $statusFilter);
+} else {
+    $loansQuery .= " ORDER BY loans.created_at DESC";
+    $stmt = $myconn->prepare($loansQuery);
+    $stmt->bind_param("i", $userId);
+}
+
 $stmt->execute();
 $loans = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-// Fetch loan metrics (fixed ambiguous columns)
+
+// Fetch loan metrics 
 $metricsQuery = "SELECT 
     SUM(CASE WHEN loans.status = 'approved' THEN 1 ELSE 0 END) as approved_loans,
     SUM(CASE WHEN loans.status = 'approved' THEN loans.amount ELSE 0 END) as total_borrowed,
@@ -90,7 +109,7 @@ $totalBorrowed = $metrics['total_borrowed'] ?? 0;
 $outstandingBalance = $metrics['outstanding_balance'] ?? 0;
 $nextPaymentDate = $metrics['next_payment_date'] ? date('j M ', strtotime($metrics['next_payment_date'])) : 'N/A';
 
-// Define all loan types (same as in lender dashboard)
+// Define all loan types 
 $allLoanTypes = [
     "Personal Loan", "Business Loan", "Mortgage Loan", 
     "MicroFinance Loan", "Student Loan", "Construction Loan",
@@ -144,6 +163,8 @@ $pieData = [
     'approved' => isset($statusData['approved']) ? ($statusData['approved'] / $totalLoans * 100) : 0,
     'rejected' => isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0
 ];
+
+
 
 // Check for messages
 if (isset($_SESSION['loan_message'])) {
@@ -394,6 +415,21 @@ mysqli_close($myconn);
                 <div id="loanHistory" class="margin">
                     <h1>Loan History</h1>
                     <p>View your loan history</p>
+                   <!-- Loan Status Filter -->
+                    <div class="loan-filter-container">
+                        <form method="get" action="#loanHistory">
+                            <input type="hidden" name="status" value="<?php echo htmlspecialchars($statusFilter); ?>">
+                            <label for="status">Filter by Status:</label>
+                            <select name="status" id="status" onchange="this.form.submit()">
+                                <option value="">All Loans</option>
+                                <option value="pending" <?php echo ($statusFilter === 'pending') ? 'selected' : ''; ?>>Pending</option>
+                                <option value="approved" <?php echo ($statusFilter === 'approved') ? 'selected' : ''; ?>>Approved</option>
+                                <option value="rejected" <?php echo ($statusFilter === 'rejected') ? 'selected' : ''; ?>>Rejected</option>
+                            </select>
+                            <!-- <button type="submit">Apply Filter</button> -->
+                            <a href="customerDashboard.php#loanHistory"><button type="button" class="reset">Reset</button></a>
+                        </form>
+                    </div>
                     <div class="loanhistory" id="loanHistoryContainer">
                         <!-- Content will be loaded dynamically -->
                         <div class="loading">loading...</div>
@@ -529,7 +565,41 @@ mysqli_close($myconn);
                 </div>
 
 
+                
     </main>
+
+
+
+        <!-- Container metrics overflow handling  -->
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const metricValues = document.querySelectorAll('.metrics .span-2');
+            
+            function adjustSizes() {
+                metricValues.forEach(span => {
+                    // Reset to default size for measurement
+                    span.style.fontSize = '';
+                    
+                    const container = span.closest('.metrics > div');
+                    const containerWidth = container.offsetWidth;
+                    const textWidth = span.scrollWidth;
+                    
+                    // Only scale if text overflows (with 5px buffer)
+                    if (textWidth > containerWidth - 10) {
+                        const scaleRatio = (containerWidth - 10) / textWidth;
+                        const newSize = Math.max(2, 4 * scaleRatio); // Never below 2em
+                        span.style.fontSize = `${newSize}em`;
+                    } else {
+                        span.style.fontSize = '4em'; // Reset to original if fits
+                    }
+                });
+            }
+        
+            // Run on load and resize
+            adjustSizes();
+            window.addEventListener('resize', adjustSizes);
+        });
+        </script>
     <!-- barchart -->
      
 
@@ -964,7 +1034,16 @@ function loadLoanHistory() {
     container.innerHTML = '<div class="loading">loading history...</div>';
     const loadingStart = Date.now();
 
-    fetch('loanHistory.php')
+    // Get the current status filter value
+    const statusFilter = document.getElementById('status').value;
+    let url = 'loanHistory.php';
+    
+    // Add status filter to URL if specified
+    if (statusFilter) {
+        url += `?status=${encodeURIComponent(statusFilter)}`;
+    }
+
+    fetch(url)
         .then(response => {
             if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
@@ -980,7 +1059,7 @@ function loadLoanHistory() {
                 }
                 
                 if (!data.loans || data.loans.length === 0) {
-                    container.innerHTML = '<div class="no-loans">No loan history found</div>';
+                    container.innerHTML = `<div class="no-loans">${data.message || 'No loan history found'}</div>`;
                     return;
                 }
                 

@@ -562,8 +562,13 @@ li p{
     overflow-y: auto; 
 
 }
+iframe {
+    border: none;
+    outline: none;
+}
+
 .loanhistory {
-    height: 80%;
+    height: 70%;
     overflow-y: auto;
 
 }
@@ -687,6 +692,12 @@ li p{
     margin: 2.5% 0 0 0;
     
     
+}
+.form-actions .cancel-btn{
+        border-radius: .5em 0 0 .5em;
+}
+.form-actions .submit-btn{
+    border-radius: 0 .5em .5em 0;
 }
 .display-info{
     color: whitesmoke;
@@ -835,6 +846,27 @@ li p{
     transition: .2s ease-in-out;
 }
 
+.loan-filter-container{
+    margin-bottom: .5em;
+}
+.loan-filter-container select{
+    padding: .7em;
+    border: none;
+    background-color: lightgray;
+    color: #28282B;
+    border-radius: .5em 0 0 .5em ;
+}
+.loan-filter-container button{
+    color: #28282B;
+    background-color: tomato;
+    border-radius: 0 .5em .5em 0;
+
+}
+.loan-filter-container button:hover{
+    background: transparent;
+    color: tomato;
+    outline: 1px solid tomato;
+}
 
 /* Lender Dashboard */
 #createLoan{
@@ -903,10 +935,17 @@ li p{
 .act button{
     padding: 0.5em .8em;
 
+
 }
+.action-buttons .act{
+    border-radius: .5em 0 0 .5em;
+
+}
+
 .del-form .del-btn{
     background: tomato;
     padding: 0.68em .8em;
+    border-radius: 0 .5em .5em 0;
 
 }
 .del-form .del-btn:hover{
@@ -1005,7 +1044,12 @@ li p{
     color: white;
     transition: .2s ease-in-out;
 }
-
+.edit-act .del{
+    border-radius: .5em 0  0 .5em ;
+}
+.edit-act .act{
+    border-radius: 0 .5em .5em 0;
+}
 #loanRequests{
     width: 95%;
     overflow-y: auto;
@@ -1013,7 +1057,15 @@ li p{
 
 
 }
-
+.filter-actions .apply-btn{
+    color: #28282B;
+    background-color: #74C0FC;
+}
+.filter-actions .apply-btn:hover{
+    color: #74C0FC;
+    background-color: transparent;
+    outline: 1px solid #74C0FC;
+}
 .loan-requests-table table{
     width: 100%;
     border: none;
@@ -1039,11 +1091,14 @@ li p{
     justify-content: center;
 }
 .loan-requests-table .action-buttons button{
-    margin-inline-start: .5em;
+    margin-inline-start: .2em;
 }
-
+.action-buttons .btn-approve{
+    border-radius: .5em 0 0 .5em;
+}
 .loan-requests-table .action-buttons .btn-reject{
     background-color: tomato;
+    border-radius: 0 .5em .5em 0;
 }
 .loan-requests-table .action-buttons .btn-reject:hover{
     background: transparent;
@@ -1069,4 +1124,119 @@ li p{
     background-color: #f8d7da;
     /* color: #721c24;
     border: 1px solid #f5c6cb; */
+}
+
+/* Enhanced Filter Styles */
+
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    /* min-width: 180px; */
+}
+
+.filter-group label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+
+.filter-group select {
+    padding: .7em;
+    border: none;
+    background-color: lightgray;
+    color: #28282B;
+    border-radius: .5em ;
+}
+
+.filter-actions {
+    display: flex;
+    gap: .2em;
+    align-self: flex-end;
+}
+
+.filter-actions .apply-btn {
+    border-radius: .5em 0 0 .5em;
+}
+
+
+
+.reset-btn {
+    background-color: tomato;
+    color: #28282B;
+}
+
+.reset-btn:hover {
+    background: transparent;
+    outline: 1px solid tomato;
+    color: tomato;
+}
+
+
+/* Admin Dashboard */
+#viewUsers{
+    width: 98%;
+    overflow-y: auto;
+    height: 100%;
+
+
+}
+.user-filter{
+    margin-bottom: .5em;
+}
+.user-filter select{
+    padding: .7em;
+    border: none;
+    background-color: lightgray;
+    color: #28282B;
+    border-radius: .5em 0 0 .5em ;
+}
+.user-filter button{
+    padding: .7em;
+    border-radius: 0 .5em .5em 0;
+}
+.users-table table{
+    width: 90%;
+    border: none;
+    border-collapse: collapse;
+    outline: none;
+
+}
+.users-table thead th {
+    position: sticky;
+    top: 0;
+    background: #3A3A3A;
+    z-index: 10;
+    padding: .5em 0;
+    text-align: left;
+    color: whitesmoke;
+    border: none;
+}
+.users-table td{
+    color: lightgray;
+    text-align: left;
+    padding: .2em 1em ;
+
+
+}
+.users-table .action-buttons .edit-btn{
+    border-radius: .5em 0 0 .5em ;
+}
+
+.users-table .action-buttons .delete-btn{
+    background-color: tomato;
+    border-radius: 0 .5em .5em 0;
+
+}
+.users-table .action-buttons .delete-btn:hover{
+    background: transparent;
+    color: tomato;
+    outline: 1px solid tomato;
 }
