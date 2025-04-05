@@ -29,7 +29,7 @@ if (isset($_POST['submit'])) {
 
     if (mysqli_num_rows($result) > 0) {
         // Email already exists, show an error message
-        echo "<script>alert('Email already exists. Please use a different email.'); window.location.href = 'users.html';</script>";
+        echo "<script>alert('Email already exists. Please use a different email.'); window.location.href = 'adminDashboard.php#addUsers';</script>";
     } else {
         // Email does not exist, proceed with registration
         $sql = "INSERT INTO users (user_name, email, phone, password, role) 
@@ -37,9 +37,9 @@ if (isset($_POST['submit'])) {
 
         // Execute the query
         if (mysqli_query($myconn, $sql)) {
-            echo "<script>alert('User registered successfully!'); window.location.href = 'users.html';</script>";
+            echo "<script>alert('User registered successfully!'); window.location.href = 'adminDashboard.php#addUsers';</script>";
         } else {
-            echo "<script>alert('Unable to register user. Error: " . mysqli_error($myconn) . "'); window.location.href = 'users.html';</script>";
+            echo "<script>alert('Unable to register user. Error: " . mysqli_error($myconn) . "'); window.location.href = 'adminDashboard.php#addUsers';</script>";
         }
     }
 
