@@ -76,7 +76,7 @@ try {
     
     if (mysqli_num_rows($existing_loan_check) > 0) {
         $existing_loan = mysqli_fetch_assoc($existing_loan_check);
-        throw new Exception("Loan Active, Pay First");
+        throw new Exception("Loan is active, pay first to reapply.");
     }
 
     // Insert loan application

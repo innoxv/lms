@@ -73,10 +73,10 @@ $approvedLoansResult = mysqli_query($myconn, $approvedLoansQuery);
 $approvedLoans = (int)mysqli_fetch_row($approvedLoansResult)[0];
 
 // Get total amount disbursed
-$disbursedQuery = "SELECT SUM(amount) FROM loans WHERE lender_id = '$lender_id' AND status IN ('disbursed', 'active', 'completed')";
-$disbursedResult = mysqli_query($myconn, $disbursedQuery);
-$disbursedData = mysqli_fetch_row($disbursedResult);
-$totalDisbursed = $disbursedData[0] ? number_format((float)$disbursedData[0]) : 0;
+$disbursedAmountQuery = "SELECT SUM(amount) FROM loans WHERE lender_id = '$lender_id' AND status IN ('approved')";
+$disbursedAmountResult = mysqli_query($myconn, $disbursedAmountQuery);
+$disbursedAmountData = mysqli_fetch_row($disbursedAmountResult);
+$totalDisbursedAmount = $disbursedAmountData[0] ? number_format((float)$disbursedAmountData[0]) : 0;
 
 // Get loan products with their approved loans count
 $loanProductsQuery = "SELECT 
@@ -182,6 +182,13 @@ $pieData = [
     'approved' => isset($statusData['approved']) ? ($statusData['approved'] / $totalLoans * 100) : 0,
     'rejected' => isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0
 ];
+
+// Fetch lender profile data
+$lenderProfileQuery = "SELECT * FROM lenders WHERE lender_id = '$lender_id'";
+$lenderProfileResult = mysqli_query($myconn, $lenderProfileQuery);
+$lenderProfile = mysqli_fetch_assoc($lenderProfileResult);
+
+
 
 // Check for messages
 if (isset($_SESSION['loan_message'])) {
@@ -465,8 +472,8 @@ mysqli_close($myconn);
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="9" class="no-data">
-                            <i class="icon-info"></i> No loan requests found for your products
+                        <td style="color: tomato; font-size: 1.2em;" colspan="9" class="no-data">
+                             No loan requests found for your products
                         </td>
                     </tr>
                 <?php endif; ?>
@@ -488,12 +495,77 @@ mysqli_close($myconn);
                     <p>View your alerts and reminders.</p>
                 </div>
 
-                <!-- Profile -->
-                <div id="profile" class="margin">
-                    <h1>Profile</h1>
-                    <p>Update your personal information and settings.</p>
-                </div>
+<!-- Profile -->
+<div id="profile" class="margin">
+    <h1>Profile</h1>
+    <p>View and update your personal information.</p>
+    
+    
+    <div class="profile-container">
+        <div class="profile-details">
+            <h2>Personal Information</h2>
+            <div class="profile-row">
+                <span class="profile-label">Full Name:</span>
+                <span class="profile-value"><?php echo htmlspecialchars($lenderProfile['name']); ?></span>
+            </div>
+            <div class="profile-row">
+                <span class="profile-label">Member Since:</span>
+                <span class="profile-value"><?php echo date('j M Y', strtotime($lenderProfile['registration_date'])); ?></span>
+            </div>
+            <div class="profile-row">
+                <span class="profile-label">Email:</span>
+                <span class="profile-value"><?php echo htmlspecialchars($lenderProfile['email']); ?></span>
+            </div>
+            <div class="profile-row">
+                <span class="profile-label">Phone:</span>
+                <span class="profile-value"><?php echo htmlspecialchars($lenderProfile['phone']); ?></span>
+            </div>
+            
+            <button id="editProfileBtn" >Edit Profile</button>
+        </div>
+    </div>
+</div>
 
+<!-- Profile Edit Overlay -->
+<div class="popup-overlay3" id="profileOverlay">
+    <div class="popup-content3">
+        <div id="profileMessage" class="message-container">
+            <?php if (isset($_SESSION['profile_message'])): ?>
+                <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
+                    <?= htmlspecialchars($_SESSION['profile_message']) ?>
+                </div>
+                <?php 
+                    unset($_SESSION['profile_message']);
+                    unset($_SESSION['profile_message_type']);
+                ?>
+            <?php endif; ?>
+        </div>
+        <h2>Edit Profile</h2>
+        <form id="profileEditForm" action="lendProfileUpdate.php" method="post">
+            <input type="hidden" name="lender_id" value="<?php echo $lender_id; ?>">
+            
+            <div class="form-group">
+                <label for="editName">Full Name</label>
+                <input type="text" id="editName" name="name" value="<?php echo htmlspecialchars($lenderProfile['name']); ?>">
+            </div>
+            
+            <div class="form-group">
+                <label for="editEmail">Email</label>
+                <input type="email" id="editEmail" name="email" value="<?php echo htmlspecialchars($lenderProfile['email']); ?>">
+            </div>
+            
+            <div class="form-group">
+                <label for="editPhone">Phone</label>
+                <input type="tel" id="editPhone" name="phone" value="<?php echo htmlspecialchars($lenderProfile['phone']); ?>">
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
+                <button type="submit" class="save-btn">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
                 <!-- Feedback -->
                 <div id="feedback" class="margin">
                     <h1>Feedback</h1>
@@ -561,7 +633,7 @@ mysqli_close($myconn);
                         <div>
                             <p>Amount Disbursed</p>
                             <div class="metric-value-container">
-                                <span class="span-2"><?php echo $totalDisbursed; ?></span>
+                                <span class="span-2"><?php echo $totalDisbursedAmount; ?></span>
                             </div>
                         </div>
                         <div>
@@ -642,15 +714,15 @@ window.onload = function() {
     };
 };
 
-// Add visual feedback when filtering
+// visual feedback when filtering
 document.querySelector('#loanRequests form').addEventListener('submit', function(e) {
     const loanRequestsTable = document.querySelector('.loan-requests-table');
-    loanRequestsTable.style.opacity = '0.5';
-    loanRequestsTable.style.transition = 'opacity 0.3s ease';
+    loanRequestsTable.style.opacity = '.2';
+    loanRequestsTable.style.transition = 'opacity .3s ease';
     
     setTimeout(() => {
         loanRequestsTable.style.opacity = '1';
-    }, 300);
+    }, 500);
 });
     </script>
     <script>
@@ -807,6 +879,92 @@ document.querySelector('#loanRequests form').addEventListener('submit', function
         // Attach form submission handler
         document.getElementById('editForm').addEventListener('submit', handleFormSubmit);
     });
+
+// Profile Edit Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Show edit profile popup
+    document.getElementById('editProfileBtn').addEventListener('click', function() {
+        document.getElementById('profileOverlay').style.display = 'flex';
+    });
+
+    // Hide edit profile popup
+    document.getElementById('cancelEditBtn').addEventListener('click', function() {
+        document.getElementById('profileOverlay').style.display = 'none';
+    });
+
+    // Handle profile form submission
+    const profileForm = document.getElementById('profileEditForm');
+    if (profileForm) {
+        profileForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const submitBtn = form.querySelector('.save-btn');
+            const messageDiv = document.getElementById('profileMessage');
+            const overlay = document.getElementById('profileOverlay');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+            messageDiv.innerHTML = ''; // Clear previous messages
+
+            try {
+                // Get form data
+                const formData = new FormData(form);
+                const data = {
+                    lender_id: formData.get('lender_id'),
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    phone: formData.get('phone')
+                };
+
+                // Client-side validation
+                if (!data.name || !data.email || !data.phone) {
+                    throw new Error('Please fill in all required fields');
+                }
+
+                // Send update request
+                const response = await fetch('lendUpdateProfile.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Profile update failed');
+                }
+                
+                // Show success message
+                messageDiv.innerHTML = '<div class="alert success">Profile updated successfully</div>';
+                
+                // Close overlay after delay and reload page
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    window.location.reload();
+                }, 2000);
+                
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="alert error">${error.message}</div>`;
+                console.error('Error:', error);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Changes';
+                
+                // Auto-fade messages after 3 seconds
+                setTimeout(() => {
+                    const alerts = messageDiv.querySelectorAll('.alert');
+                    alerts.forEach(alert => {
+                        alert.style.opacity = '0';
+                        setTimeout(() => alert.remove(), 500);
+                    });
+                }, 3000);
+            }
+        });
+    }
+});
 </script>
 
     <!-- barchart -->

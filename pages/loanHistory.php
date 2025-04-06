@@ -62,7 +62,7 @@ if ($loanId) {
     
     $message = 'No loan history found';
     if (!empty($statusFilter)) {
-        $message .= " with status '$statusFilter'";
+        $message = "No $statusFilter loans found";
     }
     
     echo json_encode([

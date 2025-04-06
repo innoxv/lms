@@ -248,7 +248,7 @@ mysqli_close($myconn);
                         <div>
                             <h1>Administrator's Dashboard</h1>
                             <p>Overview the systems performance.</p>
-                        </div>
+                  </div>
                         <div class="greeting">
                             <p>
                                 <code>

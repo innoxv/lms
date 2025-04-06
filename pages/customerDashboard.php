@@ -164,7 +164,10 @@ $pieData = [
     'rejected' => isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0
 ];
 
-
+// Fetch customer profile data
+$profileQuery = "SELECT * FROM customers WHERE customer_id = '$customer_id'";
+$profileResult = mysqli_query($myconn, $profileQuery);
+$customerProfile = mysqli_fetch_assoc($profileResult);
 
 // Check for messages
 if (isset($_SESSION['loan_message'])) {
@@ -439,7 +442,11 @@ mysqli_close($myconn);
                 <!-- Loan Details Popup (hidden by default) -->
                 <div id="loanDetailsPopup" class="popup-overlay3" style="display: none;">
                     <div class="popup-content3">
+                    <div id="loanMessage" class="message-container">
+                                        <div class="alert"></div>
+                        </div>
                         <h2>Loan Details for ID <span id="popupLoanId"></span></h2>
+                        
                         <button id="closePopupBtn" class="close-btn">&times;</button>
                         <div id="loanDetailsContent" class="popup-body"></div>
                         <div id="loanActionButtons" class="popup-actions">
@@ -461,11 +468,110 @@ mysqli_close($myconn);
                     <p>View your alerts and reminders.</p>
                 </div>
 
-                <!-- Profile -->
-                <div id="profile" class="margin">
-                    <h1>Profile</h1>
-                    <p>Update your personal information and settings.</p>
-                </div>
+               <!-- Profile -->
+<div id="profile" class="margin">
+    <h1>Profile</h1>
+    <p>View and update your personal information.</p>
+    
+    <div class="profile-container">
+
+        
+        
+        <div class="profile-details">
+        <h2>Personal Information</h2>
+            <div class="profile-row">
+                <span class="profile-label">Full Name:</span>
+                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['name']); ?></span>
+            </div>
+            <div class="profile-row">
+                <span class="profile-label">Member Since:</span>
+                <span class="profile-value"><?php echo date('j M Y', strtotime($customerProfile['registration_date'])); ?></span>
+            </div>
+            <div class="profile-row">
+                <span class="profile-label">Email:</span>
+                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['email']); ?></span>
+            </div>
+            <div class="profile-row">
+                <span class="profile-label">Phone:</span>
+                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['phone']); ?></span>
+            </div>
+            <div class="profile-row">
+                <span class="profile-label">Date of Birth:</span>
+                <span class="profile-value"><?php echo date('j M Y', strtotime($customerProfile['dob'])); ?></span>
+            </div>
+            <div class="profile-row">
+                <span class="profile-label">National ID:</span>
+                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['national_id']); ?></span>
+            </div>
+            <div class="profile-row">
+                <span class="profile-label">Address:</span>
+                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['address']); ?></span>
+            </div>
+            <div class="profile-row">
+                <span class="profile-label">Bank Account:</span>
+                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['bank_account']); ?></span>
+            </div>
+            
+        <button id="editProfileBtn" class="edit-btn">Edit Profile</button>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- Profile Edit Overlay -->
+<div class="popup-overlay3" id="profileOverlay">
+     
+    <div class="popup-content3">
+           <!-- Message container -->
+           <div id="profileMessage" class="message-container">
+        <?php if (isset($_SESSION['profile_message'])): ?>
+            <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
+                <?= htmlspecialchars($_SESSION['profile_message']) ?>
+            </div>
+            <?php 
+                // Clear the message after displaying
+                unset($_SESSION['profile_message']);
+                unset($_SESSION['profile_message_type']);
+            ?>
+        <?php endif; ?>
+    </div>
+        <h2>Edit Profile</h2>
+        <form id="profileEditForm" action="updateProfile.php" method="post">
+            <input type="hidden" name="customer_id" value="<?php echo $customer_id; ?>">
+            
+            <div class="form-group">
+                <label for="editName">Full Name</label>
+                <input type="text" id="editName" name="name" value="<?php echo htmlspecialchars($customerProfile['name']); ?>">
+            </div>
+            
+            <div class="form-group">
+                <label for="editEmail">Email</label>
+                <input type="email" id="editEmail" name="email" value="<?php echo htmlspecialchars($customerProfile['email']); ?>">
+            </div>
+            
+            <div class="form-group">
+                <label for="editPhone">Phone</label>
+                <input type="tel" id="editPhone" name="phone" value="<?php echo htmlspecialchars($customerProfile['phone']); ?>">
+            </div>
+            
+            <div class="form-group">
+                <label for="editAddress">Address</label>
+                <input id="editAddress" name="address" value="<?php echo htmlspecialchars($customerProfile['address']); ?>">
+            </div>
+            
+            <div class="form-group">
+                <label for="editBankAccount">Bank Account</label>
+                <input type="text" id="editBankAccount" name="bank_account" value="<?php echo htmlspecialchars($customerProfile['bank_account']); ?>">
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
+                <button type="submit" class="save-btn">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
 
                 <!-- Feedback -->
                 <div id="feedback" class="margin">
@@ -1028,7 +1134,7 @@ function handleLoanMessage() {
         }
     }
 }
-// Load and render loan history with enhanced error handling
+// Load and render loan history 
 function loadLoanHistory() {
     const container = document.getElementById('loanHistoryContainer');
     container.innerHTML = '<div class="loading">loading history...</div>';
@@ -1165,10 +1271,14 @@ function showLoanDetails(loanId) {
 }
 
 //  Loan deletion
+
+// BUG ALERT!! Loan Deletion Message
+
 function deleteLoanApplication(loanId) {
-    if (!confirm('Are you sure you want to delete this loan application? This action cannot be undone.')) {
-        return;
-    }
+    const messageDiv = document.getElementById('loanMessage');
+    
+    
+    messageDiv.innerHTML = ''; // Clear previous messages
     
     fetch('deleteApplication.php', {
         method: 'POST',
@@ -1180,7 +1290,9 @@ function deleteLoanApplication(loanId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Loan application deleted successfully. You may now reapply.');
+            messageDiv.innerHTML = `
+            <div class="alert error">Loan deleted, you can re-apply</div>
+        `;
             closePopup();
             loadLoanHistory(); // Refresh the loan history
         } else {
@@ -1213,6 +1325,84 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 // Attach to form
 document.getElementById('loanApplicationForm')?.addEventListener('submit', handleLoanSubmission);
+
+document.getElementById('editProfileBtn').addEventListener('click', function() {
+    document.getElementById('profileOverlay').style.display = 'flex';
+});
+
+document.getElementById('cancelEditBtn').addEventListener('click', function() {
+    document.getElementById('profileOverlay').style.display = 'none';
+});
+
+// Handle profile edit form submission
+document.getElementById('profileEditForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    const submitBtn = form.querySelector('.save-btn');
+    const messageDiv = document.getElementById('profileMessage');
+    const overlay = document.getElementById('profileOverlay');
+    
+    // Clear previous messages
+    messageDiv.innerHTML = '';
+    
+    // Disable button during submission
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+    
+    // Collect form data
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Simple client-side validation
+    if (!data.name || !data.email || !data.phone) {
+        messageDiv.innerHTML = '<div class="alert error">Please fill in all required fields</div>';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Changes';
+        return;
+    }
+    
+    // Send update request
+    fetch('custUpdateProfile.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            // Show success message
+            messageDiv.innerHTML = '<div class="alert success">Profile updated successfully</div>';
+            
+            // Close overlay after delay
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                window.location.reload();
+            }, 2000);
+        } else {
+            // Show error message
+            messageDiv.innerHTML = `<div class="alert error">${result.message || 'Update failed'}</div>`;
+        }
+    })
+    .catch(() => {
+        messageDiv.innerHTML = '<div class="alert error">Network error occurred</div>';
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Changes';
+        
+        // Auto-fade messages after 3 seconds
+        setTimeout(() => {
+            const alerts = messageDiv.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 3000);
+    });
+});
 </script>
 
 </body>
