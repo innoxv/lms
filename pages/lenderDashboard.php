@@ -238,7 +238,7 @@ mysqli_close($myconn);
                 <ul class="nav-split">
                     <div class="top">
                         <li><a href="#dashboard">Dashboard</a></li>
-                        <li><a href="#createLoan">Create a Loan</a></li>
+                        <li><a href="#createLoan">Create Loan Offers</a></li>
                         <li><a href="#loanRequests">Loan Requests</a></li>
                         <li><a href="#financialSummary">Financial Summary</a></li>
                         <li><a href="#notifications">Notifications</a></li>
@@ -520,6 +520,10 @@ mysqli_close($myconn);
                 <span class="profile-label">Phone:</span>
                 <span class="profile-value"><?php echo htmlspecialchars($lenderProfile['phone']); ?></span>
             </div>
+            <div class="profile-row">
+                <span class="profile-label">Address:</span>
+                <span class="profile-value"><?php echo htmlspecialchars($lenderProfile['address']); ?></span>
+            </div>
             
             <button id="editProfileBtn" >Edit Profile</button>
         </div>
@@ -558,7 +562,10 @@ mysqli_close($myconn);
                 <label for="editPhone">Phone</label>
                 <input type="tel" id="editPhone" name="phone" value="<?php echo htmlspecialchars($lenderProfile['phone']); ?>">
             </div>
-            
+            <div class="form-group">
+                <label for="editAddress">Address</label>
+                <input type="text" id="editAddress" name="address" value="<?php echo htmlspecialchars($lenderProfile['address']); ?>">
+            </div>
             <div class="form-actions">
                 <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
                 <button type="submit" class="save-btn">Save Changes</button>
@@ -914,7 +921,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     lender_id: formData.get('lender_id'),
                     name: formData.get('name'),
                     email: formData.get('email'),
-                    phone: formData.get('phone')
+                    phone: formData.get('phone'),
+                    address: formData.get('address')
+
                 };
 
                 // Client-side validation
@@ -1007,10 +1016,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // X-axis labels (abbreviated)
         barCtx.fillStyle = 'white';
-        barCtx.font = '14px Arial';
+        barCtx.font = '16px Trebuchet MS';
         loanTypes.forEach((type, index) => {
             const label = type.substring(0, 2).toUpperCase();
-            const x = startX + (barWidth + barSpacing) * index + barWidth / 2;
+            const x = startX + (barWidth + barSpacing) * index + barWidth / 5;
             barCtx.fillText(label, x, startY + 20);
         });
         
@@ -1024,7 +1033,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Y-axis labels
         barCtx.fillStyle = 'whitesmoke';
         barCtx.textAlign = 'right';
-        barCtx.font = '14px Arial';
+        barCtx.font = '16px Trebuchet MS';
         
         for (let i = 0; i <= yAxisMax; i += (yAxisMax > 10 ? 2 : 1)) {
             const y = startY - (i / yAxisMax) * (startY - 20);
@@ -1043,7 +1052,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const legendY = 40;
         const legendSpacing = 20;
         
-        barCtx.font = '16px Arial';
+        barCtx.font = '16px Trebuchet MS';
         barCtx.textAlign = 'left';
         loanTypes.forEach((type, index) => {
             const label = type.substring(0, 2).toUpperCase();
@@ -1106,7 +1115,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Add a legend
-        pieCtx.font = '16px Arial';
+        pieCtx.font = '16px Trebuchet MS';
         let legendY = 20;
         const legendX = centerX + radius + 20;
         const legendSpacing = 20;

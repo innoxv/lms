@@ -40,14 +40,17 @@ if ($activeUsersResult && mysqli_num_rows($activeUsersResult) > 0) {
 
 // Fetch all users from the database for the View Users section
 $roleFilter = isset($_GET['role']) ? $_GET['role'] : '';
-$usersQuery = "SELECT user_id, user_name, phone, role FROM users";
+$usersQuery = "SELECT user_id, user_name, phone, role FROM users ORDER BY user_id DESC";
+
 
 // Add role filter if specified
 if (!empty($roleFilter) && in_array($roleFilter, ['Admin', 'Lender', 'Customer'])) {
-    $usersQuery .= " WHERE role = '$roleFilter'";
+    $usersQuery = "SELECT user_id, user_name, phone, role FROM users WHERE role = '$roleFilter' ORDER BY user_id DESC";
 }
 
+
 $usersResult = mysqli_query($myconn, $usersQuery);
+
 
 // Initialize users array
 $users = [];
