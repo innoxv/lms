@@ -620,12 +620,8 @@ iframe {
 
 }
 
-.error, .no-lenders {
+.no-lenders {
     color: tomato;
-    position: fixed; 
-    top: 28%;
-    left: 44%;
-    transform: translate(-50%, -50%);
     font-size: 1.5em;
     font-weight: 900;
     
@@ -644,10 +640,6 @@ iframe {
 
 .loanhistory .no-loans {
     color: tomato;
-    position: fixed; 
-    top: 25%;
-    left: 28%;
-    transform: translate(-50%, -50%);
     font-size: 1.5em;
     font-weight: 900;
     
@@ -740,11 +732,7 @@ iframe {
     resize: none;
 }
 /* Message Styles */
-.message-container {
-    margin: 10px 0;
-    padding: 10px;
-    border-radius: 4px;
-}
+
 
 .alert {
     padding: 10px;
@@ -866,6 +854,42 @@ iframe {
     background: transparent;
     color: tomato;
     outline: 1px solid tomato;
+}
+
+.profile-container{
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+    height: 90%;
+    
+}
+.profile-details h2{
+    color: whitesmoke;
+}
+.profile-details button{
+    margin: 0 0 .5em .5em;
+}
+.profile-row{
+    padding: .5em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    outline: 1px solid #3A3A3A;
+    border-radius: .5em;
+    width: 50%;
+    margin:  .5em;
+
+}
+.profile-label{
+    color: lightgray;
+}
+.profile-value{
+    color: whitesmoke;
+    font-weight: 700;
+
+}
+.save-btn{
+    border-radius: 0 .5em .5em 0;
 }
 
 /* Lender Dashboard */

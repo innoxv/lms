@@ -38,10 +38,7 @@ try {
     $loan = mysqli_fetch_assoc($loan_check);
     $status = strtolower($loan['status']);
     
-    // Only allow deletion for pending or rejected loans
-    if ($status !== 'pending' && $status !== 'rejected') {
-        throw new Exception("You can only delete pending or rejected loan applications");
-    }
+
 
     // Delete the loan
     $delete_query = "DELETE FROM loans WHERE loan_id = $loan_id";
