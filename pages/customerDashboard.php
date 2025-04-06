@@ -746,10 +746,10 @@ mysqli_close($myconn);
         
         // X-axis labels (abbreviated)
         barCtx.fillStyle = 'white';
-        barCtx.font = '14px Arial';
+        barCtx.font = '16px Trebuchet MS';
         loanTypes.forEach((type, index) => {
             const label = type.substring(0, 2).toUpperCase();
-            const x = startX + (barWidth + barSpacing) * index + barWidth / 2;
+            const x = startX + (barWidth + barSpacing) * index + barWidth / 5;
             barCtx.fillText(label, x, startY + 20);
         });
         
@@ -763,7 +763,7 @@ mysqli_close($myconn);
         // Y-axis labels
         barCtx.fillStyle = 'whitesmoke';
         barCtx.textAlign = 'right';
-        barCtx.font = '14px Arial';
+        barCtx.font = '16px Trebuchet MS';
         
         for (let i = 0; i <= yAxisMax; i += (yAxisMax > 10 ? 2 : 1)) {
             const y = startY - (i / yAxisMax) * (startY - 20);
@@ -782,7 +782,7 @@ mysqli_close($myconn);
         const legendY = 40;
         const legendSpacing = 20;
         
-        barCtx.font = '16px Arial';
+        barCtx.font = '16px Trebuchet MS';
         barCtx.textAlign = 'left';
         loanTypes.forEach((type, index) => {
             const label = type.substring(0, 2).toUpperCase();
@@ -845,7 +845,7 @@ mysqli_close($myconn);
         });
 
         // Add a legend
-        pieCtx.font = '16px Arial';
+        pieCtx.font = '16px Trebuchet MS';
         let legendY = 20;
         const legendX = centerX + radius + 20;
         const legendSpacing = 20;

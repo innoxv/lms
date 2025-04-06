@@ -24,7 +24,7 @@ if (!isset($_SESSION['user_id']) || empty($data['lender_id'])) {
     exit();
 }
 
-if (empty($data['name']) || empty($data['email']) || empty($data['phone'])) {
+if (empty($data['name']) || empty($data['email']) || empty($data['phone']) || empty($data['address'])) {
     echo json_encode(['success' => false, 'message' => 'All fields are required']);
     exit();
 }
@@ -34,23 +34,26 @@ $lender_id = (int)$data['lender_id'];
 $name = mysqli_real_escape_string($conn, $data['name']);
 $email = mysqli_real_escape_string($conn, $data['email']);
 $phone = mysqli_real_escape_string($conn, $data['phone']);
+$address = mysqli_real_escape_string($conn, $data['address']);
+
 
 // Start transaction
 mysqli_begin_transaction($conn);
 
 try {
-    // 1. Update lenders table
+    // Update lenders table
     $query = "UPDATE lenders SET 
               name = '$name',
               email = '$email',
-              phone = '$phone'
+              phone = '$phone',
+              address = '$address'
               WHERE lender_id = $lender_id";
     
     if (!mysqli_query($conn, $query)) {
         throw new Exception('Failed to update lender details');
     }
 
-    // 2. Update users table
+    // Update users table
     $query = "UPDATE users SET 
               user_name = '$name',
               email = '$email',
