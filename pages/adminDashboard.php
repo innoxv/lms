@@ -108,7 +108,7 @@ mysqli_close($myconn);
 
                 <!-- View Users -->
             <div id="viewUsers" class="margin">
-                <h1>View and Manage Users</h1>
+                <h1>View and manage Users</h1>
                 <p>View all the users and perform necessary activities</p>
                 
                 <!-- Role Filter Form -->
@@ -129,11 +129,11 @@ mysqli_close($myconn);
                     <table class="users-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>User ID</th>
                                 <th>Username</th>
                                 <th>Phone</th>
                                 <th>Role</th>
-                                <th>Actions</th>
+                                <th style="text-align: right;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -144,8 +144,8 @@ mysqli_close($myconn);
                                     <td><?php echo htmlspecialchars($user['phone']); ?></td>
                                     <td><?php echo htmlspecialchars($user['role']); ?></td>
                                     <td class="action-buttons">
-                                        <button class="edit-btn" onclick="editUser(<?php echo $user['user_id']; ?>)">Edit</button>
-                                        <button class="delete-btn" onclick="deleteUser(<?php echo $user['user_id']; ?>)">Delete</button>
+                                        <button class="edit-btn" onclick="editUser(<?php echo $user['user_id']; ?>)">Restrict</button>
+                                        <button class="delete-btn" onclick="deleteUser(<?php echo $user['user_id']; ?>)">Block</button>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
