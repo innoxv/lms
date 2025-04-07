@@ -206,7 +206,7 @@ mysqli_close($myconn);
             <div class="nav">
                 <ul class="nav-split">
                     <div class="top">
-                        <li><a href="#dashboard">Dashboard</a></li>
+                        <li><a href="#dashboard" id="dashboardLink">Dashboard</a></li>
                         <li><a href="#applyLoan" id="applyLoanLink">Apply for Loan</a></li>
                         <li><a href="#loanHistory" id="loanHistoryLink">Loan History</a></li>
                         <li><a href="#financialSummary">Financial Summary</a></li>
@@ -362,6 +362,10 @@ mysqli_close($myconn);
                                 </div>
                                 
                                 <div class="form-group2">
+                                    <label>Loan Type:</label>
+                                    <div id="displayType" class="display-info"></div>
+                                </div>
+                                <div class="form-group2">
                                     <label>Interest Rate:</label>
                                     <div id="displayInterestRate" class="display-info"></div>
                                 </div>
@@ -379,22 +383,22 @@ mysqli_close($myconn);
                                 <!-- User input fields -->
                                 <div class="form-group">
                                     <label for="amountNeeded">Amount Needed (KES):*</label>
-                                    <input type="number" id="amountNeeded" name="amount" required>
+                                    <input type="text" id="amountNeeded" name="amount" required>
                                 </div>
                                 
                                 <div class="form-group">
                                     <label for="duration">Duration (months):*</label>
-                                    <input type="number" id="duration" name="duration" required>
+                                    <input type="text" id="duration" name="duration" required>
                                 </div>
                                 
                                 <div class="form-group">
                                     <label for="installments">Monthly Installment (KES):</label>
-                                    <input type="text" id="installments" name="installments" placeholder="auto-calculated" readonly>
+                                    <input style="border-bottom: none;" type="text" id="installments" name="installments" placeholder="auto-calculated" readonly>
                                 </div>
                                 
                                 <div class="form-group">
                                     <label for="collateralValue">Collateral Value (KES):*</label>
-                                    <input type="number" id="collateralValue" name="collateral_value" required >
+                                    <input type="text" id="collateralValue" name="collateral_value" required >
                                 </div>
                                 
                                 <div class="form-group">
@@ -442,9 +446,13 @@ mysqli_close($myconn);
                 <!-- Loan Details Popup (hidden by default) -->
                 <div id="loanDetailsPopup" class="popup-overlay3" style="display: none;">
                     <div class="popup-content3">
-                    <div id="loanMessage" class="message-container">
+                        
+                        <!-- Message Display has Issues -->
+
+                    <!-- <div id="loanMessage" class="message-container">
                                         <div class="alert"></div>
-                        </div>
+                        </div> -->
+
                         <h2>Loan Details for ID <span id="popupLoanId"></span></h2>
                         
                         <button id="closePopupBtn" class="close-btn">&times;</button>
@@ -468,111 +476,118 @@ mysqli_close($myconn);
                     <p>View your alerts and reminders.</p>
                 </div>
 
-               <!-- Profile -->
-<div id="profile" class="margin">
-    <h1>Profile</h1>
-    <p>View and update your personal information.</p>
-    
-    <div class="profile-container">
-
-        
-        
-        <div class="profile-details">
-        <h2>Personal Information</h2>
-            <div class="profile-row">
-                <span class="profile-label">Full Name:</span>
-                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['name']); ?></span>
-            </div>
-            <div class="profile-row">
-                <span class="profile-label">Member Since:</span>
-                <span class="profile-value"><?php echo date('j M Y', strtotime($customerProfile['registration_date'])); ?></span>
-            </div>
-            <div class="profile-row">
-                <span class="profile-label">Email:</span>
-                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['email']); ?></span>
-            </div>
-            <div class="profile-row">
-                <span class="profile-label">Phone:</span>
-                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['phone']); ?></span>
-            </div>
-            <div class="profile-row">
-                <span class="profile-label">Date of Birth:</span>
-                <span class="profile-value"><?php echo date('j M Y', strtotime($customerProfile['dob'])); ?></span>
-            </div>
-            <div class="profile-row">
-                <span class="profile-label">National ID:</span>
-                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['national_id']); ?></span>
-            </div>
-            <div class="profile-row">
-                <span class="profile-label">Address:</span>
-                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['address']); ?></span>
-            </div>
-            <div class="profile-row">
-                <span class="profile-label">Bank Account:</span>
-                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['bank_account']); ?></span>
-            </div>
-            
-        <button id="editProfileBtn" class="edit-btn">Edit Profile</button>
-
-        </div>
-
-    </div>
-</div>
-
-<!-- Profile Edit Overlay -->
-<div class="popup-overlay3" id="profileOverlay">
-     
-    <div class="popup-content3">
-           <!-- Message container -->
-           <div id="profileMessage" class="message-container">
-        <?php if (isset($_SESSION['profile_message'])): ?>
-            <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
-                <?= htmlspecialchars($_SESSION['profile_message']) ?>
-            </div>
-            <?php 
-                // Clear the message after displaying
-                unset($_SESSION['profile_message']);
-                unset($_SESSION['profile_message_type']);
-            ?>
-        <?php endif; ?>
-    </div>
-        <h2>Edit Profile</h2>
-        <form id="profileEditForm" action="updateProfile.php" method="post">
-            <input type="hidden" name="customer_id" value="<?php echo $customer_id; ?>">
-            
-            <div class="form-group">
-                <label for="editName">Full Name</label>
-                <input type="text" id="editName" name="name" value="<?php echo htmlspecialchars($customerProfile['name']); ?>">
-            </div>
-            
-            <div class="form-group">
-                <label for="editEmail">Email</label>
-                <input type="email" id="editEmail" name="email" value="<?php echo htmlspecialchars($customerProfile['email']); ?>">
-            </div>
-            
-            <div class="form-group">
-                <label for="editPhone">Phone</label>
-                <input type="tel" id="editPhone" name="phone" value="<?php echo htmlspecialchars($customerProfile['phone']); ?>">
-            </div>
-            
-            <div class="form-group">
-                <label for="editAddress">Address</label>
-                <input id="editAddress" name="address" value="<?php echo htmlspecialchars($customerProfile['address']); ?>">
-            </div>
-            
-            <div class="form-group">
-                <label for="editBankAccount">Bank Account</label>
-                <input type="text" id="editBankAccount" name="bank_account" value="<?php echo htmlspecialchars($customerProfile['bank_account']); ?>">
-            </div>
-            
-            <div class="form-actions">
-                <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
-                <button type="submit" class="save-btn">Save Changes</button>
-            </div>
-        </form>
-    </div>
-</div>
-
+                <!-- Profile -->
+                <div id="profile" class="margin">
+                    <h1>Profile</h1>
+                    <p>View and update your personal information.</p>
+                    
+                    <div class="profile-container">
+                
+                        
+                        
+                        <div class="profile-details">
+                        <h2>Personal Information</h2>
+                            <div class="profile-row">
+                                <span class="profile-label">Full Name:</span>
+                                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['name']); ?></span>
+                            </div>
+                            <div class="profile-row">
+                                <span class="profile-label">Member Since:</span>
+                                <span class="profile-value"><?php echo date('j M Y', strtotime($customerProfile['registration_date'])); ?></span>
+                            </div>
+                            <div class="profile-row">
+                                <span class="profile-label">Email:</span>
+                                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['email']); ?></span>
+                            </div>
+                            <div class="profile-row">
+                                <span class="profile-label">Phone:</span>
+                                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['phone']); ?></span>
+                            </div>
+                            <div class="profile-row">
+                                <span class="profile-label">Date of Birth:</span>
+                                <span class="profile-value"><?php echo date('j M Y', strtotime($customerProfile['dob'])); ?></span>
+                            </div>
+                            <div class="profile-row">
+                                <span class="profile-label">National ID:</span>
+                                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['national_id']); ?></span>
+                            </div>
+                            <div class="profile-row">
+                                <span class="profile-label">Address:</span>
+                                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['address']); ?></span>
+                            </div>
+                            <div class="profile-row">
+                                <span class="profile-label">Bank Account:</span>
+                                <span class="profile-value"><?php echo htmlspecialchars($customerProfile['bank_account']); ?></span>
+                            </div>
+                            
+                            <button id="editProfileBtn" class="edit-btn">Edit Profile</button>
+                
+                        </div>
+                        <div class="additional-settings">
+                            <h2>Additional Settings</h2>
+                            <p class="change">Change Password</p>
+                            <p class="delete">Delete Account</p>
+                        </div>
+                
+                    </div>
+                    
+                </div>
+                
+                <!-- Profile Edit Overlay -->
+                <div class="popup-overlay3" id="profileOverlay">
+                    
+                    <div class="popup-content3">
+                        <!-- Message container -->
+                        <div id="profileMessage" class="message-container">
+                            <?php if (isset($_SESSION['profile_message'])): ?>
+                                <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
+                                    <?= htmlspecialchars($_SESSION['profile_message']) ?>
+                                </div>
+                                <?php 
+                                    // Clear the message after displaying
+                                    unset($_SESSION['profile_message']);
+                                    unset($_SESSION['profile_message_type']);
+                                ?>
+                            <?php endif; ?>
+                        </div>
+                        <h2>Edit Profile</h2>
+                        <form id="profileEditForm" action="updateProfile.php" method="post">
+                            <input type="hidden" name="customer_id" value="<?php echo $customer_id; ?>">
+                            
+                            <div class="form-group">
+                                <label for="editName">Full Name</label>
+                                <input type="text" id="editName" name="name" value="<?php echo htmlspecialchars($customerProfile['name']); ?>">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="editEmail">Email</label>
+                                <input type="email" id="editEmail" name="email" value="<?php echo htmlspecialchars($customerProfile['email']); ?>">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="editPhone">Phone</label>
+                                <input type="tel" id="editPhone" name="phone" value="<?php echo htmlspecialchars($customerProfile['phone']); ?>">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="editAddress">Address</label>
+                                <input id="editAddress" name="address" value="<?php echo htmlspecialchars($customerProfile['address']); ?>">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="editBankAccount">Bank Account</label>
+                                <input type="text" id="editBankAccount" name="bank_account" value="<?php echo htmlspecialchars($customerProfile['bank_account']); ?>">
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
+                                <button type="submit" class="save-btn">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                </div>
+                
                 <!-- Feedback -->
                 <div id="feedback" class="margin">
                     <h1>Feedback</h1>
@@ -880,9 +895,10 @@ document.addEventListener('DOMContentLoaded', function() {
     //Reloads loan history when Loan History is clicked
     document.getElementById('loanHistoryLink').addEventListener('click', function(e) {
     e.preventDefault(); // Prevent default anchor behavior
-    loadLoanHistory(); // This should call loadLoanHistory, not showLoanDetails
+    loadLoanHistory(); // 
     window.location.hash = '#loanHistory'; // Update URL hash
 });
+
 
 
     // Filter form submission
@@ -988,6 +1004,7 @@ function renderLenders(lenders) {
                     data-product-id="${lender.id}"
                     data-lender-id="${lender.lender_id}"
                     data-name="${lender.name}"
+                    data-type="${lender.type}"
                     data-rate="${lender.rate}"
                     data-duration="${lender.duration}"
                     data-amount="${lender.amount}">
@@ -1013,6 +1030,7 @@ function showLoanPopup(button) {
     
     // Set VISIBLE lender information
     document.getElementById('displayLenderName').textContent = button.dataset.name;
+    document.getElementById('displayType').textContent = button.dataset.type;
     document.getElementById('displayInterestRate').textContent = button.dataset.rate + '%';
     document.getElementById('displayMaxAmount').textContent = 'KES ' + parseFloat(button.dataset.amount).toLocaleString();
     document.getElementById('displayMaxDuration').textContent = button.dataset.duration + ' months';
@@ -1202,16 +1220,16 @@ function renderLoanHistory(loans) {
             </thead>
             <tbody>
                 ${loans.map(loan => `
-                <tr>
-                    <td>${loan.loan_id}</td>
-                    <td>${loan.loan_type}</td> 
-                    <td>${loan.lender_name}</td>
-                    <td>${loan.amount.toLocaleString()}</td> 
-                    <td>${loan.interest_rate}%</td>
-                    <td><span class="loan-status ${loan.status.toLowerCase()}">${loan.status}</span></td>
-                    <td>${new Date(loan.created_at).toLocaleDateString()}</td>
-                    <td><button class="view-btn" onclick="showLoanDetails(${loan.loan_id})">View</button></td>
-                </tr>
+                    <tr>
+                        <td>${loan.loan_id}</td>
+                        <td>${loan.loan_type}</td> 
+                        <td>${loan.lender_name}</td>
+                        <td>${loan.amount.toLocaleString()}</td> 
+                        <td>${loan.interest_rate}%</td>
+                        <td><span class="loan-status ${loan.status.toLowerCase()}">${loan.status}</span></td>
+                        <td>${new Date(loan.created_at).toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'})}</td>
+                        <td><button class="view-btn" onclick="showLoanDetails(${loan.loan_id})">View</button></td>
+                    </tr>
                 `).join('')}
             </tbody>
         </table>
@@ -1241,14 +1259,16 @@ function showLoanDetails(loanId) {
             
             document.getElementById('popupLoanId').textContent = `${data.loan.loan_id}`;
             content.innerHTML = `
-                <p><strong>Type:</strong> ${data.loan.loan_type}</p>
-                <p><strong>Lender:</strong> ${data.loan.lender_name || 'N/A'}</p>
-                <p><strong>Amount:</strong> KES ${data.loan.amount.toLocaleString()}</p>
-                <p><strong>Interest:</strong> ${data.loan.interest_rate}%</p>
-                <p><strong>Status:</strong> <span class="loan-status ${data.loan.status.toLowerCase()}">
+                <p>Type: <strong>${data.loan.loan_type}</strong></p>
+                <p>Lender:<strong>${data.loan.lender_name}</strong> </p>
+                <p>Amount: <strong>KES ${data.loan.amount.toLocaleString()}</strong> </p>
+                <p>Interest: <strong>${data.loan.interest_rate}%</strong> </p>
+                <p>Collateral Value: <strong>${data.loan.collateral_value}</strong> </p>
+                <p>Collateral Description: <strong>${data.loan.collateral_description}</strong> </p>
+                <p>Status: <strong><span class="loan-status ${data.loan.status.toLowerCase()}">
                     ${data.loan.status}
-                </span></p>
-                <p><strong>Date:</strong> ${new Date(data.loan.created_at).toLocaleDateString()}</p>
+                </span></strong> </p>
+                <p>Application Date: <strong>${new Date(data.loan.created_at).toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'})}</strong> </p>
             `;
             
             // Add delete button if status is pending or rejected

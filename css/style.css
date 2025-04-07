@@ -67,6 +67,7 @@ input{
     font-size: 1.1em;
     margin: .2em 1em;
     border-radius: 6px;
+    text-align: right;  /* Bug to a Feature 7.4.25 19:15 */
 
 
 }
@@ -670,6 +671,12 @@ iframe {
     color: whitesmoke;
     font-weight: 700;
 }
+.popup-body p{
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
 .form-group{
     display: flex;
     /* flex-direction: column; */
@@ -806,22 +813,30 @@ iframe {
     
   }
   
-  .close-btn {
+  .close-btn{
     position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 2em;
+    top: 2px;
+    right: 2px;
+    font-size: 3em;
     cursor: pointer;
     background: none;
     border: none;
     color: #74C0FC;
-    padding: .2em;
-    border-radius: .1em;
+    padding: 0 .2em;
+    font-weight: 100;
     margin: 0;
+  }
+
+  .close-btn:hover {
+    color: tomato;
+    outline: none;
+    font-weight: 900;
+    transition: .2s ease-in-out;
   }
 
 .popup-content3 h2{
     color: whitesmoke;
+    margin: 0;
 }
 
 .popup-content3 .delete-btn{
@@ -840,6 +855,7 @@ iframe {
 .loan-filter-container select{
     padding: .7em;
     border: none;
+    outline: none;
     background-color: lightgray;
     color: #28282B;
     border-radius: .5em 0 0 .5em ;
@@ -856,15 +872,25 @@ iframe {
     outline: 1px solid tomato;
 }
 
+
 .profile-container{
     display: flex;
-    flex-direction: column;
+    /* flex-direction: column; */
+    justify-content: space-between;
+    width: 99%;
+    height: 90%;
+    
+}
+.profile-details{
+    /* display: flex; */
+    /* flex-direction: column; */
     width: 50%;
     height: 90%;
     
 }
-.profile-details h2{
+.profile-details h2, .additional-settings h2{
     color: whitesmoke;
+    margin: 0;
 }
 .profile-details button{
     margin: 0 0 .5em .5em;
@@ -891,6 +917,27 @@ iframe {
 .save-btn{
     border-radius: 0 .5em .5em 0;
 }
+.additional-settings{
+    width: 50%;
+    height: 90%;
+
+}
+.additional-settings .change:hover{
+    color: whitesmoke;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s ease-in-out;
+
+}
+.additional-settings .delete:hover{
+    color: tomato;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s ease-in-out;
+}
+
+
+
 
 /* Lender Dashboard */
 #createLoan{
@@ -914,7 +961,7 @@ iframe {
     display: flex;
     flex-direction: row;
     height: 90%;
-    width: 100%;
+    width: 98%;
     /* outline: 1px solid blue; */
     justify-content: space-between;
 
@@ -928,27 +975,28 @@ iframe {
 }
 .loan-slot table{
     border-spacing: .5em;
-    /* border-collapse: collapse;  */
+    border-collapse: collapse; 
     width: 100%;
 }
 .loan-slot h3{
     color: whitesmoke;
 }
 .loan-slot th{
+    position: sticky;
+    top: 0;
+    background: #3A3A3A;
+    z-index: 10;
+    padding: .5em 0;
+    text-align: left;
     color: whitesmoke;
-    text-align: start;
-    border-right: 1px solid #4DA8F8;
 
 }
 .loan-slot td{
     color: lightgray;
     text-align: start;
-    border-right: 1px solid #74C0FC;
 
 }
-.loan-slot th:last-child, .loan-slot td:last-child {
-    border-right: none; /* Removes the border from the last column */
-  }
+
 .loan-slot .mid, .mid th{
     text-align: center;
 }
@@ -956,19 +1004,25 @@ iframe {
     display: inline;
 }
 
-.act button{
-    padding: 0.5em .8em;
 
 
+
+
+
+.action-buttons{
+    display: flex;
+    justify-content: right;
+    margin-bottom: .1em;
 }
 .action-buttons .act{
     border-radius: .5em 0 0 .5em;
+    margin-right: .1em;
 
 }
 
 .del-form .del-btn{
     background: tomato;
-    padding: 0.68em .8em;
+    /* padding: 0.68em .8em; */
     border-radius: 0 .5em .5em 0;
 
 }
@@ -1012,7 +1066,7 @@ iframe {
 /* Form Elements */
 .edit-popup span {
     width: 90%;
-    color: #74C0FC;
+    color: whitesmoke;
     font-weight: 700;
     font: 2em;
     margin: 1.5em 1em;
@@ -1024,6 +1078,7 @@ iframe {
     align-items: center;
     width: 100%;
     margin-bottom: 1em;
+    justify-content: space-between;
     
 }
 .ltype span{
@@ -1094,7 +1149,6 @@ iframe {
     width: 100%;
     border: none;
     border-collapse: collapse;
-
 }
 .loan-requests-table thead th {
     position: sticky;
@@ -1108,26 +1162,81 @@ iframe {
 .loan-requests-table td{
     color: lightgray;
     text-align: left;
-
 }
 .loan-requests-table .action-buttons{
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
+    margin: .1em 0;
 }
 .loan-requests-table .action-buttons button{
-    margin-inline-start: .2em;
+    margin-inline: .2em;
 }
 .action-buttons .btn-approve{
-    border-radius: .5em 0 0 .5em;
+    border-radius: 0;
+    /* outline: 1px solid #74C0FC; */
+    
 }
 .loan-requests-table .action-buttons .btn-reject{
     background-color: tomato;
     border-radius: 0 .5em .5em 0;
+    /* outline: 1px solid tomato; */
 }
 .loan-requests-table .action-buttons .btn-reject:hover{
     background: transparent;
     color: tomato;
     outline: 1px solid tomato;
+}
+
+/* View Loan Popup Styles */
+.view-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #28282B;
+    padding: 1.5em;
+    width: 20%;
+    border-radius: 1em;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    display: none;
+    z-index: 1001;
+}
+.view-popup h2{
+    color: whitesmoke;
+    margin: 0 0 .5em 0;
+}
+
+.detail-row{
+    padding: .5em 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: .5em;
+    width: 99%;
+    /* margin:  .5em; */
+
+}
+.detail-label{
+    color: lightgray;
+}
+.detail-value{
+    color: lightgray;
+    font-weight: 600;
+
+}
+.action-buttons .btn-view{
+    color: #2C2C2C;
+    background: lightgray;
+    /* outline: 1px solid lightgray; */
+    border-radius: .5em 0 0 .5em;
+    /* border: none; */
+
+}
+.action-buttons .btn-view:hover{
+    color: lightgray;
+    background: transparent;
+    outline: 1px solid lightgray;
+    transition: .2s ease-in-out;
 }
 
 
@@ -1178,6 +1287,8 @@ iframe {
     background-color: lightgray;
     color: #28282B;
     border-radius: .5em ;
+    outline: none;
+
 }
 
 .filter-actions {
@@ -1221,18 +1332,20 @@ iframe {
     background-color: lightgray;
     color: #28282B;
     border-radius: .5em 0 0 .5em ;
+    outline: none;
+
 }
 .user-filter button{
     padding: .7em;
     border-radius: 0 .5em .5em 0;
 }
-.users-table table{
-    width: 90%;
+.users-table {
+    width: 50%;
     border: none;
     border-collapse: collapse;
     outline: none;
-
 }
+
 .users-table thead th {
     position: sticky;
     top: 0;
@@ -1242,13 +1355,18 @@ iframe {
     text-align: left;
     color: whitesmoke;
     border: none;
+    
 }
 .users-table td{
     color: lightgray;
     text-align: left;
-    padding: .2em 1em ;
+    padding: .2em 0 ;
+    
 
 
+}
+.users-table .action-buttons{
+    text-align: right;
 }
 .users-table .action-buttons .edit-btn{
     border-radius: .5em 0 0 .5em ;
