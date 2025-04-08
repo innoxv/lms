@@ -18,6 +18,11 @@ body{
     margin: 0;
 
 }
+
+*:focus {
+    outline: none;
+}
+
 .centered-page{
     height: 100%;
     width: 100%;
@@ -28,7 +33,7 @@ body{
 }
 .container{
     /* outline: 1px solid red; */
-    width: 110vh;
+    width: 100vh;
     height: 65vh;
     border-radius: 1em;
     background-color: rgba(0, 0, 0, 0.3);
@@ -44,7 +49,7 @@ body{
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 2em;
+    margin: 2em 0;
 }
 .content-2{
     display: flex;
@@ -67,7 +72,7 @@ input{
     font-size: 1.1em;
     margin: .2em 1em;
     border-radius: 6px;
-    text-align: right;  /* Bug to a Feature 7.4.25 19:15 */
+    /* text-align: right;  Bug to a Feature 7.4.25 19:15 */
 
 
 }
@@ -533,17 +538,32 @@ img{
     margin: .5em 0;
     padding: .5em .4em;
 }
+.quick-amounts .one{
+    border-radius: .5em 0 0 .5em;
+}
+.quick-amounts .two{
+    border-radius:0;
+}
+.quick-amounts .three{
+    border-radius: 0 .5em .5em 0;
+}
 .subres{
     display: flex;
     width: 95%;
     margin: 1em 0 0 0;
     justify-content: space-between;
 }
+.sub{
+    border-radius: .5em 0 0 .5em;
 
+}
 .res{
     background: transparent;
     color: lightgray;
     padding: .6em .9em;
+    border-radius: 0 .5em .5em 0;
+    outline: 1px solid #3A3A3A;
+
     
 }
 li p{
@@ -906,6 +926,9 @@ iframe {
     margin:  .5em;
 
 }
+.form-group input{
+    text-align: right;
+}
 .profile-label{
     color: lightgray;
 }
@@ -946,7 +969,7 @@ iframe {
     /* outline: 1px solid red; */
    
 }
-.loan-message {
+.loan-message {         /* re use this class for messages reporting */
     background-color: lightgray; 
     color: #1D1E20; 
     padding: .5em;
@@ -1169,7 +1192,7 @@ iframe {
     margin: .1em 0;
 }
 .loan-requests-table .action-buttons button{
-    margin-inline: .2em;
+    margin-inline: .1em;
 }
 .action-buttons .btn-approve{
     border-radius: 0;
@@ -1340,7 +1363,7 @@ iframe {
     border-radius: 0 .5em .5em 0;
 }
 .users-table {
-    width: 50%;
+    width: 80%;
     border: none;
     border-collapse: collapse;
     outline: none;
@@ -1368,17 +1391,42 @@ iframe {
 .users-table .action-buttons{
     text-align: right;
 }
-.users-table .action-buttons .edit-btn{
-    border-radius: .5em 0 0 .5em ;
-}
 
-.users-table .action-buttons .delete-btn{
+
+.users-table .action-buttons .restrict-btn{
+    border-radius: .5em 0 0 .5em;
+
+}
+.users-table .action-buttons .unrestrict-btn{
+    background-color: whitesmoke;
+    border-radius: .5em 0 0 .5em;
+
+}
+.users-table .action-buttons .unrestrict-btn:hover{
+    background: transparent;
+    color: whitesmoke;
+    outline: 1px solid whitesmoke
+}
+.users-table .action-buttons .block-btn{
     background-color: tomato;
-    border-radius: 0 .5em .5em 0;
+    border-radius: 0  .5em .5em 0;
 
 }
-.users-table .action-buttons .delete-btn:hover{
+.users-table .action-buttons .block-btn:hover{
     background: transparent;
     color: tomato;
     outline: 1px solid tomato;
 }
+.users-table .action-buttons .unblock-btn{
+    background-color: teal;
+    border-radius: .5em;
+    color: whitesmoke;
+
+}
+.users-table .action-buttons .unblock-btn:hover{
+    background: transparent;
+    color: whitesmoke;
+    outline: 1px solid teal;
+}
+
+

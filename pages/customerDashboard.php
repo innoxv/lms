@@ -5,6 +5,11 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
+
+// Access Restrictions from Admin Functionality
+require_once 'check_access.php';
+
+
 // Initialize variables
 $statusFilter = ''; // Initialize status filter variable
 
@@ -287,9 +292,9 @@ mysqli_close($myconn);
                                         </div>
                                         <div>
                                             <div class="quick-amounts">
-                                            <button type="button" data-min="1000" data-max="5000">1k-5k</button>
-                                            <button type="button" data-min="5000" data-max="20000">5k-20k</button>
-                                            <button type="button" data-min="20000" data-max="100000">20k-100k</button>
+                                            <button class="one" type="button" data-min="1000" data-max="5000">1k-5k</button>
+                                            <button class="two" type="button" data-min="5000" data-max="20000">5k-20k</button>
+                                            <button class="three" type="button" data-min="20000" data-max="100000">20k-100k</button>
                                             </div>
                                         </div>
                                         </span>

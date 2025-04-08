@@ -6,6 +6,12 @@ ini_set('display_startup_errors', 1);
 
 session_start();
 
+
+// Access Restrictions from Admin Functionality
+require_once 'check_access.php';
+
+
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: signin.html");
     exit();
@@ -113,6 +119,10 @@ if ($loanProductsResult) {
             'max_duration' => $row['max_duration']
         ];
     }
+    // Sort the $productsData array by product_id in descending order using funtion usort
+    usort($productsData, function($a, $b) {
+        return $b['product_id'] - $a['product_id'];
+    });
 }
 
 // Get loan status distribution
@@ -126,7 +136,7 @@ $statusData = mysqli_fetch_all($statusResult, MYSQLI_ASSOC);
 $statusFilter = $_GET['status'] ?? '';
 $loanTypeFilter = $_GET['loan_type'] ?? '';
 
-// Modify the loan requests query to include both filters
+// loan requests query to include both filters
 $loanRequestsQuery = "SELECT 
     loans.loan_id,
     loans.amount,
@@ -148,7 +158,7 @@ if (!empty($statusFilter) && in_array($statusFilter, ['pending', 'approved', 're
     $loanRequestsQuery .= " AND loans.status = '$statusFilter'";
 }
 
-// Add loan type filter if specified
+// loan type filter if specified
 if (!empty($loanTypeFilter)) {
     $loanRequestsQuery .= " AND loan_products.loan_type = '$loanTypeFilter'";
 }
