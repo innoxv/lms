@@ -2,6 +2,12 @@
 // Start the session
 session_start();
 
+// error_reporting(E_ALL);
+// ini_set('display_errors', 1);
+// ini_set('display_startup_errors', 1);
+
+
+
 // Check if the user is logged in
 if (!isset($_SESSION['user_id'])) {
     // Redirect to the login page if the user is not logged in
@@ -29,23 +35,74 @@ if ($result && mysqli_num_rows($result) > 0) {
     $_SESSION['user_name'] = "Guest";
 }
 
-// Count active users (assuming all users in the table are active)
-$activeUsersQuery = "SELECT COUNT(*) as active_users FROM users";
+// Count active users 
+$activeUsersQuery = "SELECT COUNT(*) as active_users FROM users where status='active'";
 $activeUsersResult = mysqli_query($myconn, $activeUsersQuery);
 $activeUsersCount = 0;
 if ($activeUsersResult && mysqli_num_rows($activeUsersResult) > 0) {
     $countData = mysqli_fetch_assoc($activeUsersResult);
     $activeUsersCount = $countData['active_users'];
 }
+// Count blocked users 
+$blockedUsersQuery = "SELECT COUNT(*) as blocked_users FROM users WHERE status='inactive'";
+$blockedUsersResult = mysqli_query($myconn, $blockedUsersQuery);
+$blockedUsersCount = 0;
+if ($blockedUsersResult && mysqli_num_rows($blockedUsersResult) > 0) {
+    $countData = mysqli_fetch_assoc($blockedUsersResult);
+    $blockedUsersCount = $countData['blocked_users'];
+}
+// Count total customers
+$customersQuery = "SELECT COUNT(*) as total_customers FROM customers";
+$customersResult = mysqli_query($myconn, $customersQuery);
+$totalCustomers = 0;
+if ($customersResult && mysqli_num_rows($customersResult) > 0) {
+    $countData = mysqli_fetch_assoc($customersResult);
+    $totalCustomers = $countData['total_customers'];
+}
+// Count total lenders
+$lendersQuery = "SELECT COUNT(*) as total_lenders FROM lenders";
+$lendersResult = mysqli_query($myconn, $lendersQuery);
+$totalLenders = 0;
+if ($lendersResult && mysqli_num_rows($lendersResult) > 0) {
+    $countData = mysqli_fetch_assoc($lendersResult);
+    $totalLenders = $countData['total_lenders'];
+}
+
 
 // Fetch all users from the database for the View Users section
 $roleFilter = isset($_GET['role']) ? $_GET['role'] : '';
-$usersQuery = "SELECT user_id, user_name, phone, role FROM users ORDER BY user_id DESC";
 
-
+$usersQuery = "SELECT 
+               users.user_id, 
+               users.user_name, 
+               users.phone, 
+               users.role,
+               CASE 
+                   WHEN users.role = 'Customer' THEN customers.status
+                   WHEN users.role = 'Lender' THEN lenders.status
+                   ELSE 'active'
+               END as status
+               FROM users
+               LEFT JOIN customers ON users.user_id = customers.user_id AND users.role = 'Customer'
+               LEFT JOIN lenders ON users.user_id = lenders.user_id AND users.role = 'Lender'
+               ORDER BY users.user_id DESC";
 // Add role filter if specified
 if (!empty($roleFilter) && in_array($roleFilter, ['Admin', 'Lender', 'Customer'])) {
-    $usersQuery = "SELECT user_id, user_name, phone, role FROM users WHERE role = '$roleFilter' ORDER BY user_id DESC";
+    $usersQuery = "SELECT 
+                   users.user_id, 
+                   users.user_name, 
+                   users.phone, 
+                   users.role,
+                   CASE 
+                       WHEN users.role = 'Customer' THEN customers.status
+                       WHEN users.role = 'Lender' THEN lenders.status
+                       ELSE 'active'
+                   END as status
+                   FROM users
+                   LEFT JOIN customers ON users.user_id = customers.user_id AND users.role = 'Customer'
+                   LEFT JOIN lenders ON users.user_id = lenders.user_id AND users.role = 'Lender'
+                   WHERE users.role = '$roleFilter'
+                   ORDER BY users.user_id DESC";
 }
 
 
@@ -59,6 +116,9 @@ if ($usersResult && mysqli_num_rows($usersResult) > 0) {
         $users[] = $row;
     }
 }
+
+
+
 
 // Close the database connection
 mysqli_close($myconn);
@@ -78,10 +138,24 @@ mysqli_close($myconn);
             <div class="header2">
                 <div class="logo">LMS</div>
             </div>
-            <div class="header3">
-                <ul>
-                    <li><a href="logoutbtn.php" class="no-col">Log Out</a></li>
-                </ul>
+
+            <div class="header4">
+                <div>
+            <!-- reporting -->
+            <?php if (isset($_SESSION['admin_message'])): ?>
+                <div class="loan-message" id="admin-message">  <!-- loan message class is for styling    -->
+                    <?php echo htmlspecialchars($_SESSION['admin_message']); ?>
+                    <?php unset($_SESSION['admin_message']); ?>
+                </div>
+            <?php endif; ?>
+            </div>
+          
+                <div>
+                    <ul>
+                        <li><a href="logoutbtn.php" class="no-col">Log Out</a></li>
+                    </ul>
+                </div>
+
             </div>
         </div>
         <div class="customer-content">
@@ -125,6 +199,7 @@ mysqli_close($myconn);
                     </form>
                 </div>
                 
+
                 <?php if (!empty($users)): ?>
                     <table class="users-table">
                         <thead>
@@ -133,28 +208,95 @@ mysqli_close($myconn);
                                 <th>Username</th>
                                 <th>Phone</th>
                                 <th>Role</th>
+                                <th>Status</th>
+                                <th>Restrictions</th>
                                 <th style="text-align: right;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($users as $user): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($user['user_id']); ?></td>
-                                    <td><?php echo htmlspecialchars($user['user_name']); ?></td>
-                                    <td><?php echo htmlspecialchars($user['phone']); ?></td>
-                                    <td><?php echo htmlspecialchars($user['role']); ?></td>
-                                    <td class="action-buttons">
-                                        <button class="edit-btn" onclick="editUser(<?php echo $user['user_id']; ?>)">Restrict</button>
-                                        <button class="delete-btn" onclick="deleteUser(<?php echo $user['user_id']; ?>)">Block</button>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
+                                <?php foreach ($users as $user): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($user['user_id']) ?></td>
+                                        <td><?= htmlspecialchars($user['user_name']) ?></td>
+                                        <td><?= htmlspecialchars($user['phone']) ?></td>
+                                        <td><?= htmlspecialchars($user['role']) ?></td>
+                                        <td class="status-<?= 
+                                            strpos($user['status'] ?? 'active', 'restricted') !== false ? 'restricted' : 
+                                            ($user['status'] === 'inactive' ? 'inactive' : 'active') 
+                                        ?>">
+                                            <?= ($user['status'] ?? 'active') ?>
+                                        </td>
+                                        <td>
+                                            <?php
+                                                $restrictions = [];
+                                                if ($user['role'] === 'Customer' && ($user['status'] ?? '') === 'restricted_apply') {
+                                                    $restrictions[] = "Cannot apply for loans";
+                                                }
+                                                if ($user['role'] === 'Lender' && ($user['status'] ?? '') === 'restricted_create') {
+                                                    $restrictions[] = "Cannot create loan offers";
+                                                }
+                                                echo $restrictions ? implode(', ', $restrictions) : 'None';
+                                            ?>
+                                        </td>
+
+                                        <td class="action-buttons">
+    
+                                            <!-- Restriction Form -->
+                                            <?php
+                                                $restrict_btn_visible = true;
+                                                if (($user['status'] ?? 'active') === 'inactive' && ($user['status'] ?? '') !== 'restricted_apply' && ($user['status'] ?? '') !== 'restricted_create') {
+                                                    $restrict_btn_visible = false;
+                                                }
+                                            ?>
+                                            <?php if ($user['role'] === 'Customer'): ?>
+                                                <form method="post" action="user_actions.php">
+                                                    <input type="hidden" name="user_id" value="<?= $user['user_id'] ?>">
+                                                    <input type="hidden" name="action" value="toggle_restriction">
+                                                    <input type="hidden" name="restriction_type" value="apply_loan">
+                                                    <button type="submit" class="<?= 
+                                                        ($user['status'] ?? '') === 'restricted_apply' ? 'unrestrict-btn' : 'restrict-btn' 
+                                                    ?>" <?= $restrict_btn_visible ? '' : 'style="display: none;"' ?>>
+                                                        <?= ($user['status'] ?? '') === 'restricted_apply' ? 'Permit' : 'Forbid' ?>
+                                                    </button>
+                                                </form>
+                                            <?php elseif ($user['role'] === 'Lender'): ?>
+                                                <form method="post" action="user_actions.php">
+                                                    <input type="hidden" name="user_id" value="<?= $user['user_id'] ?>">
+                                                    <input type="hidden" name="action" value="toggle_restriction">
+                                                    <input type="hidden" name="restriction_type" value="create_loan">
+                                                    <button type="submit" class="<?= 
+                                                        ($user['status'] ?? '') === 'restricted_create' ? 'unrestrict-btn' : 'restrict-btn' 
+                                                    ?>" <?= $restrict_btn_visible ? '' : 'style="display: none;"' ?>>
+                                                        <?= ($user['status'] ?? '') === 'restricted_create' ? 'Permit' : 'Forbid' ?>
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
+                                        
+                                            <!-- Status Form -->
+                                            <form method="post" action="user_actions.php">
+                                                <input type="hidden" name="user_id" value="<?= $user['user_id'] ?>">
+                                                <input type="hidden" name="action" value="toggle_status">
+                                                <input type="hidden" name="role" value="<?= $user['role'] ?>">
+                                                
+                                                <?php if (($user['status'] ?? 'active') === 'active' || 
+                                                        strpos($user['status'] ?? '', 'restricted') !== false): ?>
+                                                    <button type="submit" name="new_status" value="inactive" class="block-btn">Block</button>
+                                                <?php else: ?>
+                                                    <button type="submit" name="new_status" value="active" class="unblock-btn">Unblock</button>
+                                                <?php endif; ?>
+                                            </form>
+                                        </td>
+                    
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
                     </table>
                 <?php else: ?>
-                    <p>No users found<?php echo !empty($roleFilter) ? " with role '$roleFilter'" : ''; ?>.</p>
+                        <p>No users found<?= !empty($roleFilter) ? " with role '$roleFilter'" : '' ?>.</p>
                 <?php endif; ?>
             </div>
+
+
 
                 <!-- Add Users -->
                  <div id="addUsers" class="margin">
@@ -283,16 +425,16 @@ mysqli_close($myconn);
                             <span class="span-2"><?php echo $activeUsersCount; ?></span>
                         </div>
                         <div>
-                            <p>Total Number of Transactions</p>
-                            <span class="span-2">0</span>
+                            <p>Blocked Users</p>
+                            <span class="span-2"><?php echo $blockedUsersCount; ?></span>
                         </div>
                         <div>
-                            <p>Defaulted Accounts</p>
-                            <span class="span-2">0</span>
+                            <p>Total Registered Borrowers</p>
+                            <span class="span-2"><?php echo $totalCustomers; ?></span>
                         </div>
                         <div>
-                            <p>Average Interest Rates</p>
-                            <span class="span-2">0</span>
+                            <p>Total Registered Lenders</p>
+                            <span class="span-2"><?php echo $totalLenders; ?></span>
                         </div>
                     </div>
                     <div class="visuals">
@@ -324,6 +466,8 @@ mysqli_close($myconn);
                 </div>
 
                 <!-- PHP page reloads -->
+                <iframe name="hiddenFrame" style="display:none; border: none; outline:none;"></iframe>
+
                  
     </main>
 
@@ -352,5 +496,25 @@ mysqli_close($myconn);
             }
         };
     </script>
+
+<script>
+        // Function to hide the admin message after 2 seconds
+        function hideAdminMessage() {
+            const adminMessage = document.getElementById('admin-message');
+            if (adminMessage) {
+                setTimeout(() => {
+                    adminMessage.style.opacity = '0'; // Fade out the message
+                    setTimeout(() => {
+                        adminMessage.style.display = 'none'; // Hide the message after fading out
+                    }, 700); // Wait for the transition to complete
+                }, 2000); // 2000 milliseconds = 2seconds
+            }
+        }
+
+        // Call the function when the page loads
+        window.onload = hideAdminMessage;
+    </script>
+
+    
 </body>
 </html>
