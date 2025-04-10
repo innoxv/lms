@@ -60,6 +60,8 @@ if (mysqli_num_rows($customerResult) > 0) {
 
 $customer_id = $_SESSION['customer_id'];
 
+
+
 // Get the status filter from the URL if it exists
 $statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
 
@@ -212,7 +214,12 @@ mysqli_close($myconn);
                 <ul class="nav-split">
                     <div class="top">
                         <li><a href="#dashboard" id="dashboardLink">Dashboard</a></li>
-                        <li><a href="#applyLoan" id="applyLoanLink">Apply for Loan</a></li>
+                        <li>
+                            <a href="#applyLoan" id="applyLoanLink"
+                            class="<?php echo ($status === 'restricted_apply') ? 'disabled-link' : '' ?>">
+                            Apply for Loan
+                            </a>
+                        </li>
                         <li><a href="#loanHistory" id="loanHistoryLink">Loan History</a></li>
                         <li><a href="#financialSummary">Financial Summary</a></li>
                         <li><a href="#notifications">Notifications</a></li>
@@ -302,15 +309,15 @@ mysqli_close($myconn);
                                     <li>
                                         <p>Interest Rates</p>
                                         <span>
-                                        <input type="checkbox" name="interest_range[]" value="0-5" id="0-5">
+                                        <input type="radio" name="interest_range[]" value="0-5" id="0-5">
                                         <label for="0-5">0 - 5%</label>
                                         </span>
                                         <span>
-                                        <input type="checkbox" name="interest_range[]" value="5-10" id="5-10">
+                                        <input type="radio" name="interest_range[]" value="5-10" id="5-10">
                                         <label for="5-10">5 - 10%</label>
                                         </span>
                                         <span>
-                                        <input type="checkbox" name="interest_range[]" value="10+" id="10+">
+                                        <input type="radio" name="interest_range[]" value="10+" id="10+">
                                         <label for="10+">10% +</label>
                                         </span>
                                     </li>
