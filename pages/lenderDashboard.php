@@ -50,6 +50,7 @@ if (mysqli_num_rows($lenderResult) > 0) {
 
 $lender_id = $_SESSION['lender_id'];
 
+
 // Define all loan types
 $allLoanTypes = [
     "Personal Loan", "Business Loan", "Mortgage Loan", 
@@ -250,7 +251,12 @@ mysqli_close($myconn);
                 <ul class="nav-split">
                     <div class="top">
                         <li><a href="#dashboard">Dashboard</a></li>
-                        <li><a href="#createLoan">Create Loan Offers</a></li>
+                        <li>
+                            <a href="#createLoan" 
+                            class="<?php echo ($status === 'restricted_create') ? 'disabled-link' : '' ?>">
+                            Create Loan Offers
+                            </a>
+                        </li>
                         <li><a href="#loanRequests">Loan Requests</a></li>
                         <li><a href="#financialSummary">Financial Summary</a></li>
                         <li><a href="#notifications">Notifications</a></li>

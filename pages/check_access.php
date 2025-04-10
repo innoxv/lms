@@ -16,7 +16,7 @@ if (!$myconn) {
     die("Connection failed: " . mysqli_connect_error());
 }
 
-// Get user role
+// Get user role and status
 $userId = $_SESSION['user_id'];
 $query = "SELECT role FROM users WHERE user_id = ?";
 $stmt = mysqli_prepare($myconn, $query);
@@ -28,7 +28,7 @@ if ($result && mysqli_num_rows($result) > 0) {
     $user = mysqli_fetch_assoc($result);
     $role = $user['role'];
     
-    // Check status based on role
+    // Determine status query based on role
     if ($role === 'Lender') {
         $statusQuery = "SELECT status FROM lenders WHERE user_id = ?";
         $restrictedValue = 'restricted_create';
@@ -56,48 +56,31 @@ if ($result && mysqli_num_rows($result) > 0) {
         exit();
     }
     
-
-    // These other restricions are not working YET!!
-
-    // Check restrictions based on current page and role
+    // Get current URL information
+    $currentUrl = $_SERVER['REQUEST_URI'];
     $currentPage = basename($_SERVER['PHP_SELF']);
-    $requestUri = $_SERVER['REQUEST_URI'];
     
-    // For lenders trying to access create loan section
-    if ($role === 'Lender') {
-        // Check if accessing the create loan section directly
-        if (strpos($requestUri, 'createLoan.php') !== false) {
-            if ($status === 'restricted_create') {
-                header("Location: restricted.php");
-                exit();
-            }
-        }
+    // Handle lender restrictions
+    if ($role === 'Lender' && $status === 'restricted_create') {
+        $isCreateLoanPage = (strpos($currentPage, 'createLoan.php') !== false);
+        $isCreateLoanAnchor = ($currentPage === 'lenderDashboard.php' && 
+                             (isset($_GET['createLoan']) || strpos($currentUrl, '#createLoan') !== false));
         
-        // Check if accessing the create loan section via dashboard
-        if ($currentPage === 'lenderDashboard.php' && 
-            (isset($_GET['createLoan']) || strpos($requestUri, '#createLoan') !== false)) {
-            if ($status === 'restricted_create') {
-                header("Location: restricted.php");
-                exit();
-            }
+        if ($isCreateLoanPage || $isCreateLoanAnchor) {
+            header("Location: restricted.php");
+            exit();
         }
     }
     
-    // For customers trying to access apply loan section
-    if ($role === 'Customer') {
-        if (strpos($requestUri, 'applyLoan.php') !== false) {
-            if ($status === 'restricted_apply') {
-                header("Location: restricted.php");
-                exit();
-            }
-        }
+    // Handle customer restrictions
+    if ($role === 'Customer' && $status === 'restricted_apply') {
+        $isApplyLoanPage = (strpos($currentPage, 'applyLoan.php') !== false);
+        $isApplyLoanAnchor = ($currentPage === 'customerDashboard.php' && 
+                             (isset($_GET['applyLoan']) || strpos($currentUrl, '#applyLoan') !== false));
         
-        if ($currentPage === 'customerDashboard.php' && 
-            (isset($_GET['applyLoan']) || strpos($requestUri, '#applyLoan') !== false)) {
-            if ($status === 'restricted_apply') {
-                header("Location: restricted.php");
-                exit();
-            }
+        if ($isApplyLoanPage || $isApplyLoanAnchor) {
+            header("Location: restricted.php");
+            exit();
         }
     }
     
@@ -111,6 +94,11 @@ if ($result && mysqli_num_rows($result) > 0) {
         header("Location: unauthorized.php");
         exit();
     }
+} else {
+    // User not found in database
+    session_destroy();
+    header("Location: signin.html");
+    exit();
 }
 
 mysqli_close($myconn);
