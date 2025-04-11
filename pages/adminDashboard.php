@@ -303,15 +303,16 @@ mysqli_close($myconn);
                     <h1>Add Users</h1>
                     <p>Add a new user to the system.</p>
     
-                    <form action="signup.php" id="signupForm" method="post" onsubmit="return validateForm()">
+                    <form action="users.php" id="signupForm" method="post" onsubmit="return validateFormUsers()">
                 <table>
                     <!-- Error tag for displaying validation errors -->
                     <div id="error" style="color: tomato; font-weight:700;"></div>
                     <tr>
                         <td><label>Register as?</label></td>
                         <td>
-                            <select name="role" id="role" class="select">
+                            <select name="role" id="user-role" class="select">
                                 <option value="--select option--" selected>--select option--</option>
+                                <option value="Admin">Admin</option>
                                 <option value="Customer">Customer</option>
                                 <option value="Lender">Lender</option>
                             </select>
@@ -474,18 +475,17 @@ mysqli_close($myconn);
     <!-- External JavaScript for validation -->
     <script src="../js/validinput.js"></script>
     
-
     <script>
     
         // Show/hide fields based on role selection
-        const roleDropdown = document.getElementById('role');
+        const roleDropdown = document.getElementById('user-role');
         const customerFields = document.querySelectorAll('#customerFields');
     
         roleDropdown.addEventListener('change', function () {
-            if (roleDropdown.value === 'Lender') {
-                customerFields.forEach(field => field.classList.add('hidden'));
-            } else {
+            if (roleDropdown.value === 'Customer') {
                 customerFields.forEach(field => field.classList.remove('hidden'));
+            } else {
+                customerFields.forEach(field => field.classList.add('hidden'));
             }
         });
     
