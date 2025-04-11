@@ -251,7 +251,7 @@ img{
       height: 100%;
       object-fit: contain;
       opacity: 0;
-      animation: imageFadeIn 2s ease-in-out forwards;
+      animation: imageFadeIn 1.5s ease-in-out forwards;
     }
 
     @keyframes imageFadeIn {
@@ -433,6 +433,12 @@ img{
     justify-content: space-between;
     padding-bottom: 1em;
     container-type: inline-size;
+}
+
+.metrics > div:hover {
+    /* outline: 1px solid whitesmoke; */
+    transition: .2s ease-in-out;
+    background-color: #2C2C2C;
 }
 
 .metrics p {
@@ -625,7 +631,8 @@ iframe {
 }
 .lender:hover{
    
-    outline: .15em solid gray;
+    outline: 1px solid gray;
+    background-color: #2C2C2C;
     transition: .2s ease-in-out;
 }
 .lender:hover span{

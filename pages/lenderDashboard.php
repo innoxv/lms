@@ -258,7 +258,6 @@ mysqli_close($myconn);
                             </a>
                         </li>
                         <li><a href="#loanRequests">Loan Requests</a></li>
-                        <li><a href="#financialSummary">Financial Summary</a></li>
                         <li><a href="#notifications">Notifications</a></li>
                         <li><a href="#profile">Profile</a></li>
                     </div>
@@ -570,11 +569,7 @@ mysqli_close($myconn);
                 </div>
                 
 
-                <!-- Financial Summary -->
-                <div id="financialSummary" class="margin">
-                    <h1>Financial Summary</h1>
-                    <p>Charts and graphs summarizing your financial data.</p>
-                </div>
+                
 
                 <!-- Notifications -->
                 <div id="notifications" class="margin">

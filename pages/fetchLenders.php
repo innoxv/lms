@@ -91,13 +91,13 @@ if (!$stmt->execute()) {
 $result = $stmt->get_result();
 $lenders = $result->fetch_all(MYSQLI_ASSOC);
 
-// Return response - UPDATED VERSION
+// Return response 
 echo json_encode([
     'success' => true,
     'data' => array_map(function($lender) {
         return [
-            'id' => (int)$lender['product_id'],  // This is crucial for product_id
-            'product_id' => (int)$lender['product_id'], // Added for clarity
+            'id' => (int)$lender['product_id'],  
+            'product_id' => (int)$lender['product_id'],
             'lender_id' => (int)$lender['lender_id'],
             'name' => htmlspecialchars($lender['lender_name']),
             'type' => htmlspecialchars($lender['loan_type']),

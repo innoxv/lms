@@ -56,6 +56,8 @@ if ($result && mysqli_num_rows($result) > 0) {
         exit();
     }
     
+    // Restrictions Functionality still has issues
+
     // Get current URL information
     $currentUrl = $_SERVER['REQUEST_URI'];
     $currentPage = basename($_SERVER['PHP_SELF']);

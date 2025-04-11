@@ -289,7 +289,7 @@ function validateFormUsers() {
     displayError("");
 
     // Validate Role
-    var role = document.getElementById("role").value;
+    var role = document.getElementById("user-role").value;
     if (role === "--select option--") {
         displayError("You must select a valid role (Customer, Lender, or Admin).");
         return false;
