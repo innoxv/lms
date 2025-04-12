@@ -618,49 +618,54 @@ mysqli_close($myconn);
                     </div>
                 </div>
                 
+
                 <!-- Profile Edit Overlay -->
-                <div class="popup-overlay3" id="profileOverlay">
-                    <div class="popup-content3">
-                        <div id="profileMessage" class="message-container">
-                            <?php if (isset($_SESSION['profile_message'])): ?>
-                                <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
-                                    <?= htmlspecialchars($_SESSION['profile_message']) ?>
-                                </div>
-                                <?php 
-                                    unset($_SESSION['profile_message']);
-                                    unset($_SESSION['profile_message_type']);
-                                ?>
-                            <?php endif; ?>
-                        </div>
-                        <h2>Edit Profile</h2>
-                        <form id="profileEditForm" action="lendProfileUpdate.php" method="post">
-                            <input type="hidden" name="lender_id" value="<?php echo $lender_id; ?>">
-                            
-                            <div class="form-group">
-                                <label for="editName">Full Name</label>
-                                <input type="text" id="editName" name="name" value="<?php echo htmlspecialchars($lenderProfile['name']); ?>">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="editEmail">Email</label>
-                                <input type="email" id="editEmail" name="email" value="<?php echo htmlspecialchars($lenderProfile['email']); ?>">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="editPhone">Phone</label>
-                                <input type="tel" id="editPhone" name="phone" value="<?php echo htmlspecialchars($lenderProfile['phone']); ?>">
-                            </div>
-                            <div class="form-group">
-                                <label for="editAddress">Address</label>
-                                <input type="text" id="editAddress" name="address" value="<?php echo htmlspecialchars($lenderProfile['address']); ?>">
-                            </div>
-                            <div class="form-actions">
-                                <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
-                                <button type="submit" class="save-btn">Save Changes</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+<div class="popup-overlay3" id="profileOverlay"></div>
+<div class="popup-content3" id="profilePopup">
+    <!-- Message container -->
+    <div id="profileMessage" class="message-container">
+        <?php if (isset($_SESSION['profile_message'])): ?>
+            <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
+                <?= htmlspecialchars($_SESSION['profile_message']) ?>
+            </div>
+            <?php 
+                // Clear the message after displaying
+                unset($_SESSION['profile_message']);
+                unset($_SESSION['profile_message_type']);
+            ?>
+        <?php endif; ?>
+    </div>
+    <h2>Edit Profile</h2>
+    <form id="profileEditForm" action="lendUpdateProfile.php" method="post">
+        <input type="hidden" name="lender_id" value="<?php echo $lender_id; ?>">
+        
+        <div class="form-group">
+            <label for="editName">Full Name</label>
+            <input type="text" id="editName" name="name" value="<?php echo htmlspecialchars($lenderProfile['name']); ?>">
+        </div>
+        
+        <div class="form-group">
+            <label for="editEmail">Email</label>
+            <input type="email" id="editEmail" name="email" value="<?php echo htmlspecialchars($lenderProfile['email']); ?>">
+        </div>
+        
+        <div class="form-group">
+            <label for="editPhone">Phone</label>
+            <input type="tel" id="editPhone" name="phone" value="<?php echo htmlspecialchars($lenderProfile['phone']); ?>">
+        </div>
+        <div class="form-group">
+            <label for="editPhone">Address</label>
+            <input type="text" id="editAddress" name="address" value="<?php echo htmlspecialchars($lenderProfile['address']); ?>">
+        </div>
+        
+
+        
+        <div class="form-actions">
+            <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
+            <button type="submit" class="save-btn">Save Changes</button>
+        </div>
+    </form>
+</div>
 
                 <!-- Feedback -->
                 <div id="feedback" class="margin">
@@ -872,8 +877,8 @@ document.querySelector('#loanRequests form').addEventListener('submit', function
 
 
 
+
 <!-- // Edit Loan Functionality -->
-    <!-- Pop Up Overlay -->
     <script>
 
         
@@ -980,93 +985,7 @@ document.querySelector('#loanRequests form').addEventListener('submit', function
         document.getElementById('editForm').addEventListener('submit', handleFormSubmit);
     });
 
-// Profile Edit Functionality
-document.addEventListener('DOMContentLoaded', function() {
-    // Show edit profile popup
-    document.getElementById('editProfileBtn').addEventListener('click', function() {
-        document.getElementById('profileOverlay').style.display = 'flex';
-    });
 
-    // Hide edit profile popup
-    document.getElementById('cancelEditBtn').addEventListener('click', function() {
-        document.getElementById('profileOverlay').style.display = 'none';
-    });
-
-    // Handle profile form submission
-    const profileForm = document.getElementById('profileEditForm');
-    if (profileForm) {
-        profileForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const form = e.target;
-            const submitBtn = form.querySelector('.save-btn');
-            const messageDiv = document.getElementById('profileMessage');
-            const overlay = document.getElementById('profileOverlay');
-            
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Saving...';
-            messageDiv.innerHTML = ''; // Clear previous messages
-
-            try {
-                // Get form data
-                const formData = new FormData(form);
-                const data = {
-                    lender_id: formData.get('lender_id'),
-                    name: formData.get('name'),
-                    email: formData.get('email'),
-                    phone: formData.get('phone'),
-                    address: formData.get('address')
-
-                };
-
-                // Client-side validation
-                if (!data.name || !data.email || !data.phone) {
-                    throw new Error('Please fill in all required fields');
-                }
-
-                // Send update request
-                const response = await fetch('lendUpdateProfile.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-                
-                if (!response.ok || !result.success) {
-                    throw new Error(result.message || 'Profile update failed');
-                }
-                
-                // Show success message
-                messageDiv.innerHTML = '<div class="alert success">Profile updated successfully</div>';
-                
-                // Close overlay after delay and reload page
-                setTimeout(() => {
-                    overlay.style.display = 'none';
-                    window.location.reload();
-                }, 2000);
-                
-            } catch (error) {
-                messageDiv.innerHTML = `<div class="alert error">${error.message}</div>`;
-                console.error('Error:', error);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Save Changes';
-                
-                // Auto-fade messages after 3 seconds
-                setTimeout(() => {
-                    const alerts = messageDiv.querySelectorAll('.alert');
-                    alerts.forEach(alert => {
-                        alert.style.opacity = '0';
-                        setTimeout(() => alert.remove(), 500);
-                    });
-                }, 3000);
-            }
-        });
-    }
-});
 </script>
 
 <script>
@@ -1290,6 +1209,61 @@ document.addEventListener('DOMContentLoaded', function() {
 
        
     });
+</script>
+
+<script>
+// Profile Edit Popup Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Show profile edit popup
+    document.getElementById('editProfileBtn').addEventListener('click', function() {
+        document.getElementById('profileOverlay').style.display = 'block';
+        document.getElementById('profilePopup').style.display = 'block';
+    });
+    
+    // Hide profile edit popup
+    function hideProfilePopup() {
+        document.getElementById('profileOverlay').style.display = 'none';
+        document.getElementById('profilePopup').style.display = 'none';
+    }
+    
+    // Close when clicking overlay or cancel button
+    document.getElementById('profileOverlay').addEventListener('click', hideProfilePopup);
+    document.getElementById('cancelEditBtn').addEventListener('click', hideProfilePopup);
+    
+    // Prevent form from closing when clicking inside popup
+    document.getElementById('profilePopup').addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    
+    // Handle form submission
+    document.getElementById('profileEditForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Perform basic validation
+        const name = document.getElementById('editName').value.trim();
+        const email = document.getElementById('editEmail').value.trim();
+        const phone = document.getElementById('editPhone').value.trim();
+        
+        if (!name || !email || !phone) {
+            alert('Please fill in all required fields');
+            return;
+        }
+        
+        // Submit the form
+        this.submit();
+    });
+    
+    // Auto-hide success/error message after 3 seconds
+    const profileMessage = document.getElementById('profileMessage');
+    if (profileMessage && profileMessage.textContent.trim() !== '') {
+        setTimeout(() => {
+            profileMessage.style.opacity = '0';
+            setTimeout(() => {
+                profileMessage.style.display = 'none';
+            }, 500);
+        }, 3000);
+    }
+});
 </script>
 </body>
 </html>

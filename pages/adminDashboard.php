@@ -165,7 +165,7 @@ mysqli_close($myconn);
                         <li><a href="#dashboard">Dashboard</a></li>
                         <li><a href="#viewUsers">View Users</a></li>
                         <li><a href="#addUsers">Add New User</a></li>
-                        <li><a href="#disputes">Disputes</a></li>
+                        <li><a href="#activityLogs">Activity Logs</a></li>
                         <li><a href="#notifications">Notifications</a></li>
                         <li><a href="#profile">Profile</a></li>
                     </div>
@@ -358,10 +358,10 @@ mysqli_close($myconn);
             </form>
                  </div>
                     
-                <!-- Disputes -->
-                <div id="disputes" class="margin">
-                    <h1>Disputes</h1>
-                    <p>View and solve disputes.</p>
+                <!-- Activity Logs -->
+                <div id="activityLogs" class="margin">
+                    <h1>Activity Logs</h1>
+                    <p>View user activity logs.</p>
                 </div>
 
                 <!-- Notifications -->
