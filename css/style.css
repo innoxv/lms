@@ -1471,3 +1471,37 @@ iframe {
 }
 
 
+#activityLogs{
+    width: 98%;
+    overflow-y: auto;
+    height: 100%;
+
+
+}
+
+.activity-table {
+    width: 98%;
+    border: none;
+    border-collapse: collapse;
+    outline: none;
+}
+
+.activity-table thead th {
+    position: sticky;
+    top: 0;
+    background: #3A3A3A;
+    z-index: 10;
+    padding: .5em 0;
+    text-align: left;
+    color: whitesmoke;
+    border: none;
+    
+}
+.activity-table td{
+    color: lightgray;
+    text-align: left;
+    padding: .2em 0 ;
+    
+
+
+}

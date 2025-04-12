@@ -15,7 +15,6 @@ if (!$myconn) {
     exit();
 }
 
-// Retrieve user_id from the session
 $user_id = $_SESSION['user_id'];
 
 // Fetch lender_id from the lenders table
@@ -37,8 +36,7 @@ $interest_rate = floatval($_POST['interestRate']);
 $max_amount = floatval($_POST['maxAmount']);
 $max_duration = intval($_POST['maxDuration']);
 
-
-// Check if the loan type already exists in loan_products for this lender
+// Check if the loan type already exists
 $checkQuery = "SELECT product_id FROM loan_products 
               WHERE loan_type = '$loan_type' AND lender_id = '$lender_id'";
 $checkResult = mysqli_query($myconn, $checkQuery);
@@ -56,18 +54,20 @@ $sql = "INSERT INTO loan_products
         ('$lender_id', '$loan_type', '$interest_rate', '$max_amount', '$max_duration')";
 
 if (mysqli_query($myconn, $sql)) {
+    // Log loan offer creation activity
+    $activity = "Created loan offer: $loan_type";
+    $logSql = "INSERT INTO activity (user_id, activity, activity_time, activity_type)
+              VALUES ('$user_id', '$activity', NOW(), 'loan offer creation')";
+    mysqli_query($myconn, $logSql);
+    
     // Calculate new average interest rate
-    $avgQuery = "SELECT AVG(interest_rate) AS new_avg 
-                FROM loan_products 
-                WHERE lender_id = '$lender_id'";
+    $avgQuery = "SELECT AVG(interest_rate) AS new_avg FROM loan_products WHERE lender_id = '$lender_id'";
     $avgResult = mysqli_query($myconn, $avgQuery);
     $avgData = mysqli_fetch_assoc($avgResult);
     $newAverage = $avgData['new_avg'];
 
     // Update lenders table
-    $updateLender = "UPDATE lenders 
-                    SET average_interest_rate = '$newAverage' 
-                    WHERE lender_id = '$lender_id'";
+    $updateLender = "UPDATE lenders SET average_interest_rate = '$newAverage' WHERE lender_id = '$lender_id'";
     mysqli_query($myconn, $updateLender);
 
     $_SESSION['loan_message'] = "$loan_type created successfully!";

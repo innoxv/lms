@@ -108,6 +108,14 @@ $insert_query = "INSERT INTO loans (
 )";
 
 if ($conn->query($insert_query)) {
+    // ACTIVITY LOGGING 
+    $loan_id = $conn->insert_id;
+    $activity_description = "Applied for loan #$loan_id: $loan_type";
+    $conn->query(
+        "INSERT INTO activity (user_id, activity, activity_time, activity_type)
+        VALUES ($user_id, '$activity_description', NOW(), 'loan application')"
+    );
+    
     $_SESSION['loan_message'] = "Application submitted successfully";
     $_SESSION['message_type'] = "success";
 } else {

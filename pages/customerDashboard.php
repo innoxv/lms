@@ -389,15 +389,7 @@ if (isset($_SESSION['profile_message_shown'])) {
                         <!-- Loan Lenders display and filter functionality -->
                         <div class="loan-lenders" id="lendersContainer">
     <?php
-    // Display messages
-    if (isset($_SESSION['loan_message'])): ?>
-        <div class="alert <?= $_SESSION['message_type'] ?? 'info' ?>">
-            <?= htmlspecialchars($_SESSION['loan_message']) ?>
-        </div>
-        <?php 
-        unset($_SESSION['loan_message']);
-        unset($_SESSION['message_type']);
-    endif;
+
 
     if (isset($_SESSION['filters_applied']) && $_SESSION['filters_applied']): 
         // Filtered view
@@ -465,21 +457,17 @@ if (isset($_SESSION['profile_message_shown'])) {
                             <div class="popup-content">
                                 <h2>Loan Application</h2>
                         
+<?php
+    // Display messages
+    if (isset($_SESSION['loan_message'])): ?>
+        <div class="alert <?= $_SESSION['message_type'] ?? 'info' ?>">
+            <?= htmlspecialchars($_SESSION['loan_message']) ?>
+        </div>
+        <?php 
+        unset($_SESSION['loan_message']);
+        unset($_SESSION['message_type']);
+    endif; ?>
 
-                                
-                                <?php if (isset($_SESSION['loan_message'])): ?>
-            <div class="alert <?= $_SESSION['message_type'] ?? 'info' ?>">
-                <?= htmlspecialchars($_SESSION['loan_message']) ?>
-            </div>
-
-           
-            <?php $_SESSION['loan_application_message_shown'] = true; ?>
-            <script>
-                setTimeout(() => {
-                    document.querySelector('#loanPopup .alert').style.display = 'none';
-                }, 2000);
-            </script>
-        <?php endif; ?>
                                 
                             <!-- Loan Application Form -->
                             <form id="loanApplicationForm" action="applyLoan.php" method="post">
@@ -489,6 +477,8 @@ if (isset($_SESSION['profile_message_shown'])) {
                                         <input type="hidden" id="lenderId" name="lender_id">
                                         <input type="hidden" id="interestRate" name="interest_rate">
                                 </div>
+                                 
+
                                 <!-- Visible lender information -->
                                 <div class="form-group2">
                                     <label>Lender:</label>
@@ -777,19 +767,18 @@ if (isset($_SESSION['loan_details'])) {
                     
                     <div class="popup-content3">
                         <!-- Message container -->
-                        <div id="profileMessage" class="message-container">
-                        <?php if (isset($_SESSION['profile_message'])): ?>
-            <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
-                <?= htmlspecialchars($_SESSION['profile_message']) ?>
-            </div>
-            <?php $_SESSION['profile_message_shown'] = true; ?>
-            <script>
-                setTimeout(() => {
-                    document.querySelector('#profileOverlay .alert').style.display = 'none';
-                }, 2000);
-            </script>
-        <?php endif; ?>
-                        </div>
+        <!-- Message container -->
+        <div id="profileMessage" class="message-container">
+            <?php if (isset($_SESSION['profile_message'])): ?>
+                <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
+                    <?= htmlspecialchars($_SESSION['profile_message']) ?>
+                </div>
+                <?php 
+                    unset($_SESSION['profile_message']);
+                    unset($_SESSION['profile_message_type']);
+                ?>
+            <?php endif; ?>
+        </div>
                         <h2>Edit Profile</h2>
                         <form id="profileEditForm" action="custUpdateProfile.php" method="post">
                             <input type="hidden" name="customer_id" value="<?php echo $customer_id; ?>">
@@ -953,12 +942,50 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize popup functionality
     initPopups();
     
-    // Check if we need to show loan details from PHP session
-    <?php if (isset($_SESSION['loan_details'])): ?>
-        document.getElementById('loanDetailsPopup').style.display = 'flex';
+    // Loan Application Messages Handling -shows message before pop up disappears
+    const popup = document.getElementById('loanPopup');
+    const alert = popup?.querySelector('.alert');
+
+    if (popup && alert && alert.textContent.trim() !== '') {
+        popup.style.display = 'flex';
         document.body.classList.add('popup-open');
-    <?php endif; ?>
+
+        // Fade out after 3 seconds
+        setTimeout(() => {
+            popup.style.opacity = '0';
+
+            setTimeout(() => {
+                popup.style.display = 'none';
+                popup.style.opacity = '';
+                document.body.classList.remove('popup-open');
+            }, 500);
+        }, 3000);
+    }
+
+    // Profile Messages
+    const profileOverlay = document.getElementById('profileOverlay');
+    const profileAlert = profileOverlay?.querySelector('.alert');
+    
+    if (profileOverlay && profileAlert && profileAlert.textContent.trim() !== '') {
+        profileOverlay.style.display = 'flex';
+        document.body.classList.add('popup-open');
+    
+        // Fade out alert after 3 seconds
+        setTimeout(() => {
+            profileAlert.style.opacity = '0';
+    
+            setTimeout(() => {
+                profileAlert.style.display = 'none';
+                profileAlert.style.opacity = '';
+                profileOverlay.style.display = 'none';
+                document.body.classList.remove('popup-open');
+            }, 500);
+        }, 3000);
+    }
+
 });
+    
+
 
 // SIMPLIFIED POPUP MANAGEMENT
 

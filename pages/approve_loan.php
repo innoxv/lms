@@ -19,6 +19,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['loan_id'])) {
               WHERE loan_id = $loanId AND lender_id = $lenderId AND status = 'pending'";
     
     if (mysqli_query($myconn, $query)) {
+        // Log loan approval activity
+        $activity = "Approved loan application #$loanId";
+        $logSql = "INSERT INTO activity (user_id, activity, activity_time, activity_type)
+                  VALUES ('{$_SESSION['user_id']}', '$activity', NOW(), 'loan approval')";
+        mysqli_query($myconn, $logSql);
+        
         $_SESSION['loan_message'] = "Loan $loanId has been approved!";
     } else {
         $_SESSION['loan_message'] = "Error: " . mysqli_error($myconn);
