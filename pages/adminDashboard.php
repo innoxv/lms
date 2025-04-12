@@ -118,6 +118,28 @@ if ($usersResult && mysqli_num_rows($usersResult) > 0) {
 }
 
 
+// Fetch activity logs 
+$activityQuery = "SELECT 
+    activity.log_id, 
+    users.user_name, 
+    users.email,
+    activity.activity, 
+    activity.activity_time, 
+    activity.activity_type
+FROM activity
+JOIN users ON activity.user_id = users.user_id
+ORDER BY activity.activity_time DESC";
+// LIMIT 50"; // Limit to 50 most recent logs
+
+$activityResult = mysqli_query($myconn, $activityQuery);
+
+// Initialize activity logs array
+$activityLogs = [];
+if ($activityResult && mysqli_num_rows($activityResult) > 0) {
+    while ($row = mysqli_fetch_assoc($activityResult)) {
+        $activityLogs[] = $row;
+    }
+}
 
 
 // Close the database connection
@@ -358,11 +380,44 @@ mysqli_close($myconn);
             </form>
                  </div>
                     
-                <!-- Activity Logs -->
-                <div id="activityLogs" class="margin">
-                    <h1>Activity Logs</h1>
-                    <p>View user activity logs.</p>
-                </div>
+<!-- Activity Logs -->
+<div id="activityLogs" class="margin">
+    <h1>Activity Logs</h1>
+    <p>View user activity logs.</p>
+    
+    <?php if (!empty($activityLogs)): ?>
+        <div class="activity-logs-container">
+            <table class="activity-table">
+                <thead>
+                    <tr>
+                        <th>Log ID</th>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Activity</th>
+                        <th>Type</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($activityLogs as $log): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($log['log_id']) ?></td>
+                            <td><?= htmlspecialchars($log['user_name']) ?></td>
+                            <td><?= htmlspecialchars($log['email']) ?></td>
+                            <td><?= htmlspecialchars($log['activity']) ?></td>
+                            <td class="log-type-<?= strtolower($log['activity_type']) ?>">
+                                <?= htmlspecialchars($log['activity_type']) ?>
+                            </td>
+                            <td><?= date('M j, Y g:i A', strtotime($log['activity_time'])) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php else: ?>
+        <p>No activity logs found.</p>
+    <?php endif; ?>
+</div>
 
                 <!-- Notifications -->
                 <div id="notifications" class="margin">

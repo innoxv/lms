@@ -54,6 +54,13 @@ if (isset($_POST['submit'])) {  // isset is a PHP function that determines if a 
             // Get the ID of the newly inserted user
             $userId = mysqli_insert_id($myconn);    //mysqli_insert_id() is a PHP function that returns the value generated for an AUTO_INCREMENT column by the last query
 
+            // Log the registration activity
+            $activity = "New $role registration: $userName ($email)";
+            mysqli_query($myconn, 
+                "INSERT INTO activity (user_id, activity, activity_time, activity_type)
+                VALUES ($userId, '$activity', NOW(), 'account registration')"
+            );
+
             // Store user data in the session
             $_SESSION['user_id'] = $userId;
             $_SESSION['email'] = $email;

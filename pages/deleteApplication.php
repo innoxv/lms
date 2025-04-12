@@ -27,7 +27,7 @@ $user_id = intval($_SESSION['user_id']);
 
 // Verify the loan belongs to the user and is deletable
 $loan_check = $conn->query(
-    "SELECT loans.status 
+    "SELECT loans.status, loans.amount, loans.duration 
     FROM loans
     JOIN customers ON loans.customer_id = customers.customer_id
     WHERE loans.loan_id = $loan_id
@@ -48,6 +48,13 @@ $status = strtolower($loan['status']);
 // Delete the loan
 $delete_query = "DELETE FROM loans WHERE loan_id = $loan_id";
 if ($conn->query($delete_query)) {
+    // Log the deletion activity
+    $activity = "Deleted loan application #$loan_id ";
+    $conn->query(
+        "INSERT INTO activity (user_id, activity, activity_time, activity_type)
+        VALUES ($user_id, '$activity', NOW(), 'application deletion')"
+    );
+    
     $_SESSION['loan_message'] = "Loan application deleted successfully";
     $_SESSION['message_type'] = "success";
 } else {

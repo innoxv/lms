@@ -22,11 +22,16 @@ if (!isset($_SESSION['user_id']) || empty($_POST['customer_id'])) {
 $success = true;
 $message = '';
 
+// Track changed fields for logging
+$changedFields = [];
+
 // Update customers table
 $customerUpdates = [];
 foreach ($_POST as $field => $value) {
     if (in_array($field, ['name', 'email', 'phone', 'address', 'bank_account'])) {
-        $customerUpdates[] = "$field = '" . $conn->real_escape_string($value) . "'";
+        $escapedValue = $conn->real_escape_string($value);
+        $customerUpdates[] = "$field = '$escapedValue'";
+        $changedFields[$field] = $escapedValue;
     }
 }
 
@@ -63,6 +68,19 @@ if (!empty($userUpdates)) {
 // Update session data
 if (isset($_POST['name'])) {
     $_SESSION['user_name'] = $_POST['name'];
+}
+
+// Log profile update activity if successful
+if ($success && !empty($changedFields)) {
+    $activityDetails = [];
+    foreach ($changedFields as $field => $value) {
+        $activityDetails[] = "$field: $value";
+    }
+    $activity = "Updated profile";
+    $conn->query(
+        "INSERT INTO activity (user_id, activity, activity_time, activity_type)
+        VALUES ({$_SESSION['user_id']}, '$activity', NOW(), 'profile update')"
+    );
 }
 
 // Set response

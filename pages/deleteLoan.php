@@ -11,6 +11,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['lender_id'])) {
     exit();
 }
 
+$user_id = intval($_SESSION['user_id']);
+
+
 $myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
 
 // Get product ID to delete
@@ -22,8 +25,9 @@ if (!$product_id) {
     exit();
 }
 
-// Verify the product belongs to this lender
-$verifyQuery = "SELECT product_id FROM loan_products 
+// Verify the product belongs to this lender and get details
+$verifyQuery = "SELECT product_id, loan_type, interest_rate, max_amount, max_duration 
+               FROM loan_products 
                WHERE product_id = $product_id AND lender_id = {$_SESSION['lender_id']}";
 $verifyResult = mysqli_query($myconn, $verifyQuery);
 
@@ -32,6 +36,8 @@ if (mysqli_num_rows($verifyResult) === 0) {
     header("Location: lenderDashboard.php");
     exit();
 }
+
+$product = mysqli_fetch_assoc($verifyResult);
 
 // Check if there are active loans for this product
 $loansCheck = "SELECT COUNT(*) as loan_count FROM loans 
@@ -49,8 +55,14 @@ if ($loansData['loan_count'] > 0) {
 // Delete the loan product
 $deleteQuery = "DELETE FROM loan_products WHERE product_id = $product_id";
 
-
 if (mysqli_query($myconn, $deleteQuery)) {
+    // Log the deletion activity
+    $activity = "Deleted loan offer #$product_id";
+    $myconn->query(
+        "INSERT INTO activity (user_id, activity, activity_time, activity_type)
+        VALUES ({$_SESSION['user_id']}, '$activity', NOW(), 'loan offer deletion')"
+    );
+    
     // Update average interest rate in lenders table
     $updateLender = "UPDATE lenders l
                     SET average_interest_rate = (

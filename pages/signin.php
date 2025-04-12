@@ -57,6 +57,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $_SESSION['role'] = $user['role'];  // Store user role (Admin/Customer/Lender)
                 $_SESSION['user_name'] = $user['user_name'];  // Store user's full name
 
+                // Log successful login to activity table
+                $logStmt = $myconn->prepare("INSERT INTO activity (user_id, activity, activity_time, activity_type) 
+                                            VALUES (?, ?, NOW(), 'login')");
+                $activity = "User logged in";
+                $logStmt->bind_param("is", $user['user_id'], $activity);
+                $logStmt->execute();
+                $logStmt->close();
+
                 // Redirect based on user role
                 if ($user['role'] == 'Admin') {
                     header("Location: adminDashboard.php");
@@ -70,12 +78,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
                 exit();  // Terminate script after redirect
             } else {
-                // Password verification failed
-                echo "<script>alert('Invalid email or password.'); window.location.href = 'signin.html';</script>";
+                // Password verification failed - log failed attempt for existing user
+                $logStmt = $myconn->prepare("INSERT INTO activity (user_id, activity, activity_time, activity_type) 
+                                           VALUES (?, ?, NOW(), 'failed login')");
+                $activity = "Failed login attempt - incorrect password";
+                $logStmt->bind_param("is", $user['user_id'], $activity);
+                $logStmt->execute();
+                $logStmt->close();
+                
+                echo "<script>alert('Invalid password.'); window.location.href = 'signin.html';</script>";
                 exit();
             }
         } else {
-            // No user found with this email
+            // No user found with this email (don't log to prevent filling logs with spam attempts)
             echo "<script>alert('Invalid email or password.'); window.location.href = 'signin.html';</script>";
             exit();
         }
