@@ -107,7 +107,7 @@ if (isset($_POST['submit'])) {  // isset is a PHP function that determines if a 
 
             mysqli_query($myconn, 
                 "INSERT INTO activity (user_id, activity, activity_time, activity_type)
-                VALUES ($user_id, '$activity', NOW(), 'registration_success')"
+                VALUES ($user_id, '$activity', NOW(), 'registration success')"
             );
 
             // Redirect based on role
