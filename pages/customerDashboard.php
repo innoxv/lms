@@ -1,71 +1,70 @@
 <?php
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 // Start the session
-session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
-
 // Access Restrictions from Admin Functionality
 require_once 'check_access.php';
 
-
-// Initialize variables
-$statusFilter = ''; // Initialize status filter variable
-
-// Check if the user is logged in
-if (!isset($_SESSION['user_id'])) {
-    // Redirect to the login page if the user is not logged in
-    header("Location: signin.html");
-    exit();
-}
-
 // Database connection
 $myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-
-// Check connection
 if (!$myconn) {
     die("Connection failed: " . mysqli_connect_error());
 }
 
-// Get the status filter from the URL if it exists
-$statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
-
-
-// Fetch user data from the database
-$userId = $_SESSION['user_id'];
-$query = "SELECT user_name FROM users WHERE user_id = '$userId'";
-$result = mysqli_query($myconn, $query);
-
-if ($result && mysqli_num_rows($result) > 0) {
-    $user = mysqli_fetch_assoc($result);
-    $_SESSION['user_name'] = $user['user_name']; // Update the session with the latest data
-} else {
-    // Handle error if user data is not found
-    $_SESSION['user_name'] = "Guest";
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: signin.html");
+    exit();
 }
 
-// Fetch customer_id for the current user
-$customerQuery = "SELECT customer_id FROM customers WHERE user_id = '$userId'";
-$customerResult = mysqli_query($myconn, $customerQuery);
+$userId = $_SESSION['user_id'];
 
-if (mysqli_num_rows($customerResult) > 0) {
-    $customer = mysqli_fetch_assoc($customerResult);
-    $_SESSION['customer_id'] = $customer['customer_id'];
-} else {
+// USER DATA FETCHING
+
+// Fetch user basic info
+$userQuery = "SELECT user_name FROM users WHERE user_id = ?";
+$stmt = $myconn->prepare($userQuery);
+$stmt->bind_param("i", $userId);
+$stmt->execute();
+$userResult = $stmt->get_result();
+$user = $userResult->fetch_assoc() ?? ['user_name' => "Guest"];
+$_SESSION['user_name'] = $user['user_name'];
+
+// Fetch customer profile
+$customerQuery = "SELECT customer_id, name, email, phone, address, bank_account, 
+                 DATE_FORMAT(dob, '%Y-%m-%d') as dob, 
+                 DATE_FORMAT(registration_date, '%Y-%m-%d') as registration_date, 
+                 national_id 
+                 FROM customers WHERE user_id = ?";
+$stmt = $myconn->prepare($customerQuery);
+$stmt->bind_param("i", $userId);
+$stmt->execute();
+$customerResult = $stmt->get_result();
+$customerProfile = $customerResult->fetch_assoc();
+
+if (!$customerProfile) {
     $_SESSION['loan_message'] = "You are not registered as a customer.";
     header("Location: customerDashboard.php");
     exit();
 }
 
+$_SESSION['customer_id'] = $customerProfile['customer_id'];
 $customer_id = $_SESSION['customer_id'];
 
+// LOAN DATA FETCHING
 
+// Status filter
+$statusFilter = isset($_GET['status']) && in_array($_GET['status'], ['approved', 'pending', 'rejected']) 
+    ? $_GET['status'] 
+    : '';
 
-// Get the status filter from the URL if it exists
-$statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
-
-// Loan History Query with optional status filter
+// Fetch loan history
 $loansQuery = "SELECT 
     loans.loan_id,
     loan_products.loan_type,
@@ -73,120 +72,175 @@ $loansQuery = "SELECT
     loans.interest_rate,
     loans.status AS loan_status,  
     lenders.name AS lender_name,
-    loans.created_at
+    DATE_FORMAT(loans.created_at, '%Y-%m-%d') as created_at
 FROM loans
 JOIN loan_products ON loans.product_id = loan_products.product_id
 JOIN lenders ON loans.lender_id = lenders.lender_id
-JOIN customers ON loans.customer_id = customers.customer_id
-WHERE customers.user_id = ?";
+WHERE loans.customer_id = ?";
 
-// Add status filter if specified
-if (!empty($statusFilter) && in_array($statusFilter, ['approved', 'pending', 'rejected'])) {
+if ($statusFilter) {
     $loansQuery .= " AND loans.status = ?";
     $stmt = $myconn->prepare($loansQuery);
-    $stmt->bind_param("is", $userId, $statusFilter);
+    $stmt->bind_param("is", $customer_id, $statusFilter);
 } else {
     $loansQuery .= " ORDER BY loans.created_at DESC";
     $stmt = $myconn->prepare($loansQuery);
-    $stmt->bind_param("i", $userId);
+    $stmt->bind_param("i", $customer_id);
 }
 
+// Loan History Query 
 $stmt->execute();
 $loans = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
+// Loan Details Handling 
+if (isset($_GET['loan_id'])) {
+    $loanId = $_GET['loan_id'];
+    
+    // First verify the loan belongs to the current customer
+    $verifyQuery = "SELECT customer_id FROM loans WHERE loan_id = ?";
+    $stmt = $myconn->prepare($verifyQuery);
+    $stmt->bind_param("i", $loanId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        $_SESSION['loan_message'] = "Loan not found";
+        header("Location: customerDashboard.php#loanHistory");
+        exit();
+    }
+    
+    $loanData = $result->fetch_assoc();
+    if ($loanData['customer_id'] != $customer_id) {
+        $_SESSION['loan_message'] = "You don't have permission to view this loan";
+        header("Location: customerDashboard.php#loanHistory");
+        exit();
+    }
 
-// Fetch loan metrics 
+    // Now fetch the full details with joins
+    $loanDetailsQuery = "SELECT 
+        loans.*,
+        loan_products.loan_type,
+        lenders.name AS lender_name,
+        DATE_FORMAT(loans.created_at, '%Y-%m-%d') as created_date
+    FROM loans
+    JOIN loan_products ON loans.product_id = loan_products.product_id
+    JOIN lenders ON loans.lender_id = lenders.lender_id
+    WHERE loans.loan_id = ?";
+    
+    $stmt = $myconn->prepare($loanDetailsQuery);
+    $stmt->bind_param("i", $loanId);
+    $stmt->execute();
+    $loanDetails = $stmt->get_result()->fetch_assoc();
+    
+    if ($loanDetails) {
+        $_SESSION['loan_details'] = $loanDetails;
+        header("Location: customerDashboard.php#loanHistory");
+        exit();
+    } else {
+        $_SESSION['loan_message'] = "Failed to load loan details";
+        header("Location: customerDashboard.php#loanHistory");
+        exit();
+    }
+}
+
+// METRICS AND CHARTS DATA
+
+// Loan metrics
 $metricsQuery = "SELECT 
-    SUM(CASE WHEN loans.status = 'approved' THEN 1 ELSE 0 END) as approved_loans,
-    SUM(CASE WHEN loans.status = 'approved' THEN loans.amount ELSE 0 END) as total_borrowed,
-    SUM(CASE WHEN loans.status IN ('approved', 'disbursed', 'active') THEN loans.amount ELSE 0 END) as outstanding_balance,
-    MIN(CASE WHEN loans.status = 'approved' THEN DATE_ADD(loans.created_at, INTERVAL 1 MONTH) ELSE NULL END) as next_payment_date
+    SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved_loans,
+    SUM(CASE WHEN status = 'approved' THEN amount ELSE 0 END) as total_borrowed,
+    SUM(CASE WHEN status IN ('approved', 'disbursed', 'active') THEN amount ELSE 0 END) as outstanding_balance,
+    MIN(CASE WHEN status = 'approved' THEN DATE_ADD(created_at, INTERVAL 1 MONTH) ELSE NULL END) as next_payment_date
 FROM loans
-JOIN customers ON loans.customer_id = customers.customer_id
-WHERE customers.user_id = ?";
+WHERE customer_id = ?";
 
 $stmt = $myconn->prepare($metricsQuery);
-$stmt->bind_param("i", $userId);
+$stmt->bind_param("i", $customer_id);
 $stmt->execute();
 $metrics = $stmt->get_result()->fetch_assoc();
 
-// Format the metrics
+// Format metrics
 $approvedLoans = $metrics['approved_loans'] ?? 0;
 $totalBorrowed = $metrics['total_borrowed'] ?? 0;
 $outstandingBalance = $metrics['outstanding_balance'] ?? 0;
-$nextPaymentDate = $metrics['next_payment_date'] ? date('j M ', strtotime($metrics['next_payment_date'])) : 'N/A';
+$nextPaymentDate = $metrics['next_payment_date'] 
+    ? date('j M', strtotime($metrics['next_payment_date'])) 
+    : 'N/A';
 
-// Define all loan types 
+// Loan types data for chart
 $allLoanTypes = [
     "Personal Loan", "Business Loan", "Mortgage Loan", 
     "MicroFinance Loan", "Student Loan", "Construction Loan",
     "Green Loan", "Medical Loan", "Startup Loan", "Agricultural Loan"
 ];
 
-// Get active loans count per loan type for the current user
 $loanTypesQuery = "SELECT 
     loan_products.loan_type, 
     COUNT(*) as loan_count
 FROM loans 
 JOIN loan_products ON loans.product_id = loan_products.product_id
-JOIN customers ON loans.customer_id = customers.customer_id
-WHERE customers.user_id = '$userId'
+WHERE loans.customer_id = ?
 AND loans.status IN ('approved', 'disbursed', 'active')
 GROUP BY loan_products.loan_type";
 
-$loanTypesResult = mysqli_query($myconn, $loanTypesQuery);
+$stmt = $myconn->prepare($loanTypesQuery);
+$stmt->bind_param("i", $customer_id);
+$stmt->execute();
+$loanTypesResult = $stmt->get_result();
 
-// Initialize loan counts with all types set to 0
 $loanCounts = array_fill_keys($allLoanTypes, 0);
-
-if ($loanTypesResult) {
-    while ($row = mysqli_fetch_assoc($loanTypesResult)) {
-        $loanType = $row['loan_type'];
-        if (array_key_exists($loanType, $loanCounts)) {
-            $loanCounts[$loanType] = (int)$row['loan_count'];
-        }
+while ($row = $loanTypesResult->fetch_assoc()) {
+    if (array_key_exists($row['loan_type'], $loanCounts)) {
+        $loanCounts[$row['loan_type']] = (int)$row['loan_count'];
     }
 }
 
-
-// Pie Chart
-// Get loan status distribution for the current lender
+// Pie chart data
 $statusQuery = "SELECT status, COUNT(*) as count 
                 FROM loans 
-                WHERE customer_id = '$customer_id' 
+                WHERE customer_id = ? 
                 GROUP BY status";
-$statusResult = mysqli_query($myconn, $statusQuery);
+$stmt = $myconn->prepare($statusQuery);
+$stmt->bind_param("i", $customer_id);
+$stmt->execute();
+$statusResult = $stmt->get_result();
+
 $statusData = [];
 $totalLoans = 0;
-
-while ($row = mysqli_fetch_assoc($statusResult)) {
+while ($row = $statusResult->fetch_assoc()) {
     $statusData[$row['status']] = (int)$row['count'];
     $totalLoans += (int)$row['count'];
 }
 
-// Calculate percentages for each status
+// Calculate percentages for pie chart
 $pieData = [
     'pending' => isset($statusData['pending']) ? ($statusData['pending'] / $totalLoans * 100) : 0,
     'approved' => isset($statusData['approved']) ? ($statusData['approved'] / $totalLoans * 100) : 0,
     'rejected' => isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0
 ];
 
-// Fetch customer profile data
-$profileQuery = "SELECT * FROM customers WHERE customer_id = '$customer_id'";
-$profileResult = mysqli_query($myconn, $profileQuery);
-$customerProfile = mysqli_fetch_assoc($profileResult);
-
-// Check for messages
-if (isset($_SESSION['loan_message'])) {
-    $loan_message = $_SESSION['loan_message'];
+// MESSAGES HANDLING
+// Clear any existing messages if they were shown
+if (isset($_SESSION['loan_application_message_shown'])) {
     unset($_SESSION['loan_message']);
-} else {
-    $loan_message = null;
+    unset($_SESSION['loan_application_message_shown']);
 }
 
-// Close the database connection
-mysqli_close($myconn);
+if (isset($_SESSION['loan_details_message_shown'])) {
+    unset($_SESSION['loan_details_message']);
+    unset($_SESSION['loan_details_message_shown']);
+}
+
+if (isset($_SESSION['profile_message_shown'])) {
+    unset($_SESSION['profile_message']);
+    unset($_SESSION['profile_message_type']);
+    unset($_SESSION['profile_message_shown']);
+}
+
+// Close connection
+// mysqli_close($myconn);
 ?>
+
 
 
 <!DOCTYPE html>
@@ -334,32 +388,101 @@ mysqli_close($myconn);
                         
                         <!-- Loan Lenders display and filter functionality -->
                         <div class="loan-lenders" id="lendersContainer">
-                            <!-- Content will be loaded dynamically - Javascript and Css--> 
-                                <div class="loading"></div>
-                                <div class="error"></div>
-                        </div>
+    <?php
+    // Display messages
+    if (isset($_SESSION['loan_message'])): ?>
+        <div class="alert <?= $_SESSION['message_type'] ?? 'info' ?>">
+            <?= htmlspecialchars($_SESSION['loan_message']) ?>
+        </div>
+        <?php 
+        unset($_SESSION['loan_message']);
+        unset($_SESSION['message_type']);
+    endif;
+
+    if (isset($_SESSION['filters_applied']) && $_SESSION['filters_applied']): 
+        // Filtered view
+        if (!empty($_SESSION['filtered_lenders'])): ?>
+            <?php foreach ($_SESSION['filtered_lenders'] as $lender): ?>
+                <div class="lender">
+                    <span><?= $lender['name'] ?></span>
+                    <span><?= $lender['type'] ?></span>
+                    <span>Rate: <?= $lender['rate'] ?>%</span>
+                    <span>Max Amt: <?= number_format($lender['amount']) ?></span>
+                    <span>Max Dur: <?= $lender['duration'] ?> months</span>
+                    <button class="applynow" 
+                        data-product="<?= $lender['product_id'] ?>"
+                        data-lender="<?= $lender['lender_id'] ?>"
+                        data-rate="<?= $lender['rate'] ?>"
+                        data-name="<?= $lender['name'] ?>"
+                        data-type="<?= $lender['type'] ?>"
+                        data-maxamount="<?= $lender['amount'] ?>"
+                        data-maxduration="<?= $lender['duration'] ?>">
+                        Apply Now
+                    </button>
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="no-results">
+                No lenders match your current filters.
+            </div>
+        <?php endif; ?>
+    <?php else: 
+        // Default view - show all lenders
+        $query = "SELECT loan_products.*, lenders.name AS lender_name
+                  FROM loan_products
+                  JOIN lenders ON loan_products.lender_id = lenders.lender_id
+                  ORDER BY loan_products.product_id DESC";
+        $result = $myconn->query($query);
+        
+        if ($result && $result->num_rows > 0): ?>
+            <?php while ($lender = $result->fetch_assoc()): ?>
+                <div class="lender">
+                    <span><?= htmlspecialchars($lender['lender_name']) ?></span>
+                    <span><?= htmlspecialchars($lender['loan_type']) ?></span>
+                    <span>Rate: <?= $lender['interest_rate'] ?>%</span>
+                    <span>Max Amt: <?= number_format($lender['max_amount']) ?></span>
+                    <span>Max Dur: <?= $lender['max_duration'] ?> months</span>
+                    <button class="applynow" 
+                        data-product="<?= $lender['product_id'] ?>"
+                        data-lender="<?= $lender['lender_id'] ?>"
+                        data-rate="<?= $lender['interest_rate'] ?>"
+                        data-name="<?= htmlspecialchars($lender['lender_name']) ?>"
+                        data-type="<?= htmlspecialchars($lender['loan_type']) ?>"
+                        data-maxamount="<?= $lender['max_amount'] ?>"
+                        data-maxduration="<?= $lender['max_duration'] ?>">
+                        Apply Now
+                    </button>
+                </div>
+            <?php endwhile; ?>
+        <?php else: ?>
+            <div class="error">No lenders currently available in the system</div>
+        <?php endif; ?>
+    <?php endif; ?>
+</div>
 
                         <!-- Loan Application Popup -->
-                        <div class="popup-overlay2" id="loanPopup">
+                        <div class="popup-overlay2" id="loanPopup" style="display: none;">
                             <div class="popup-content">
                                 <h2>Loan Application</h2>
-                            
-                                <!-- Message Reporting -->
-                                <div id="loanMessage" class="message-container">
-                                    <?php if (isset($_SESSION['loan_message'])): ?>
-                                        <div class="alert <?= $_SESSION['message_type'] ?? 'info' ?>">
-                                            <?= htmlspecialchars($_SESSION['loan_message']) ?>
-                                        </div>
-                                        <?php 
-                                            // Immediately unset after displaying
-                                            unset($_SESSION['loan_message']);
-                                            unset($_SESSION['message_type']);
-                                        ?>
-                                    <?php endif; ?>
-                                </div>
+                        
+
+                                
+                                <?php if (isset($_SESSION['loan_message'])): ?>
+            <div class="alert <?= $_SESSION['message_type'] ?? 'info' ?>">
+                <?= htmlspecialchars($_SESSION['loan_message']) ?>
+            </div>
+
+           
+            <?php $_SESSION['loan_application_message_shown'] = true; ?>
+            <script>
+                setTimeout(() => {
+                    document.querySelector('#loanPopup .alert').style.display = 'none';
+                }, 2000);
+            </script>
+        <?php endif; ?>
                                 
                             <!-- Loan Application Form -->
-                            <form id="loanApplicationForm">
+                            <form id="loanApplicationForm" action="applyLoan.php" method="post">
                                 <!-- Hidden fields for submission -->
                                 <div class="form-group">
                                         <input type="hidden" id="productId" name="product_id">
@@ -448,31 +571,140 @@ mysqli_close($myconn);
                             <a href="customerDashboard.php#loanHistory"><button type="button" class="reset">Reset</button></a>
                         </form>
                     </div>
+                    <!-- Loan History -->
                     <div class="loanhistory" id="loanHistoryContainer">
-                        <!-- Content will be loaded dynamically -->
-                        <div class="loading">loading...</div>
+                        <?php if (empty($loans)): ?>
+                            <div class="no-loans">No loan history found</div>
+                        <?php else: ?>
+                            <table class="simple-loan-table">
+                                <thead>
+                                    <tr>
+                                        <th>Loan ID</th>
+                                        <th>Type</th>
+                                        <th>Lender</th>
+                                        <th>Amount (KES)</th>
+                                        <th>Interest</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($loans as $loan): ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($loan['loan_id']) ?></td>
+                                            <td><?= htmlspecialchars($loan['loan_type']) ?></td>
+                                            <td><?= htmlspecialchars($loan['lender_name']) ?></td>
+                                            <td><?= number_format($loan['amount']) ?></td>
+                                            <td><?= htmlspecialchars($loan['interest_rate']) ?>%</td>
+                                            <td>
+                                                <span class="loan-status <?= strtolower($loan['loan_status']) ?>">
+                                                    <?= htmlspecialchars($loan['loan_status']) ?>
+                                                </span>
+                                            </td>
+                                            <td><?= date('j M Y', strtotime($loan['created_at'])) ?></td>
+                                            <td>
+                                                <button class="view-btn" onclick="showLoanDetails(<?= $loan['loan_id'] ?>)">
+                                                    View
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        <?php endif; ?>
                     </div>
-                </div>
-                
-                <!-- Loan Details Popup (hidden by default) -->
-                <div id="loanDetailsPopup" class="popup-overlay3" style="display: none;">
-                    <div class="popup-content3">
-                        
-                        <!-- Message Display has Issues -->
+                    
+                    <!-- Loan Details Popup -->
+<div id="loanDetailsPopup" class="popup-overlay3" style="display: <?= isset($_SESSION['loan_details']) ? 'flex' : 'none' ?>;">
+    <div class="popup-content3">
+        <h2>Loan Details for ID <span id="popupLoanId"><?= $_SESSION['loan_details']['loan_id'] ?? '' ?></span></h2>
+        <button id="closePopupBtn" class="close-btn">&times;</button>
 
-                    <!-- <div id="loanMessage" class="message-container">
-                                        <div class="alert"></div>
-                        </div> -->
-
-                        <h2>Loan Details for ID <span id="popupLoanId"></span></h2>
-                        
-                        <button id="closePopupBtn" class="close-btn">&times;</button>
-                        <div id="loanDetailsContent" class="popup-body"></div>
-                        <div id="loanActionButtons" class="popup-actions">
-                            <!-- Delete form will be inserted here by JavaScript -->
-                        </div>
+        <?php if (isset($_SESSION['loan_details_message'])): ?>
+            <div class="alert <?= $_SESSION['loan_details_message_type'] ?? 'info' ?>">
+                <?= htmlspecialchars($_SESSION['loan_details_message']) ?>
+            </div>
+            <?php $_SESSION['loan_details_message_shown'] = true; ?>
+            <script>
+                setTimeout(() => {
+                    document.querySelector('#loanDetailsPopup .alert').style.display = 'none';
+                }, 2000);
+            </script>
+        <?php endif; ?>
+        
+        <div id="loanDetailsContent" class="popup-body">
+            <?php if (isset($_SESSION['loan_details'])): ?>
+                <div class="loan-details-grid">
+                    <div class="detail-row">
+                        <span class="detail-label">Loan Type:</span>
+                        <span class="detail-value"><?= $_SESSION['loan_details']['loan_type'] ?></span>
                     </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Lender:</span>
+                        <span class="detail-value"><?= $_SESSION['loan_details']['lender_name'] ?></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Amount:</span>
+                        <span class="detail-value">KES <?= $_SESSION['loan_details']['amount'] ?></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Interest Rate:</span>
+                        <span class="detail-value"><?= $_SESSION['loan_details']['interest_rate'] ?>%</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Duration:</span>
+                        <span class="detail-value"><?= $_SESSION['loan_details']['duration'] ?> months</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Monthly Installment:</span>
+                        <span class="detail-value">KES <?= $_SESSION['loan_details']['installments'] ?></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Collateral Value:</span>
+                        <span class="detail-value">KES <?= $_SESSION['loan_details']['collateral_value'] ?></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Collateral Description:</span>
+                        <span class="detail-value"><?= $_SESSION['loan_details']['collateral_description'] ?></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Status:</span>
+                        <span class="detail-value loan-status <?= strtolower($_SESSION['loan_details']['status']) ?>">
+                            <?= $_SESSION['loan_details']['status'] ?>
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Application Date:</span>
+                        <span class="detail-value"><?= $_SESSION['loan_details']['created_at'] ?></span>
+                    </div>
+                    
                 </div>
+            <?php endif; ?>
+        </div>
+        
+        <div id="loanActionButtons" class="popup-actions">
+            <?php if (isset($_SESSION['loan_details']) && in_array(strtolower($_SESSION['loan_details']['status']), ['pending', 'rejected'])): ?>
+                <form action="deleteApplication.php" method="post" class="delete-form">
+                    <input type="hidden" name="loan_id" value="<?= $_SESSION['loan_details']['loan_id'] ?>">
+                    <button type="submit" class="delete-btn" onclick="return confirm('Are you sure you want to delete this application?')">
+                         Delete Application
+                    </button>
+                </form>
+            <?php endif; ?>
+            
+        </div>
+    </div>
+</div>
+
+<?php 
+// Clear the loan details from session after display
+if (isset($_SESSION['loan_details'])) {
+    unset($_SESSION['loan_details']);
+}
+?>
+                </div>
+
                 
         
                 
@@ -546,19 +778,20 @@ mysqli_close($myconn);
                     <div class="popup-content3">
                         <!-- Message container -->
                         <div id="profileMessage" class="message-container">
-                            <?php if (isset($_SESSION['profile_message'])): ?>
-                                <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
-                                    <?= htmlspecialchars($_SESSION['profile_message']) ?>
-                                </div>
-                                <?php 
-                                    // Clear the message after displaying
-                                    unset($_SESSION['profile_message']);
-                                    unset($_SESSION['profile_message_type']);
-                                ?>
-                            <?php endif; ?>
+                        <?php if (isset($_SESSION['profile_message'])): ?>
+            <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
+                <?= htmlspecialchars($_SESSION['profile_message']) ?>
+            </div>
+            <?php $_SESSION['profile_message_shown'] = true; ?>
+            <script>
+                setTimeout(() => {
+                    document.querySelector('#profileOverlay .alert').style.display = 'none';
+                }, 2000);
+            </script>
+        <?php endif; ?>
                         </div>
                         <h2>Edit Profile</h2>
-                        <form id="profileEditForm" action="updateProfile.php" method="post">
+                        <form id="profileEditForm" action="custUpdateProfile.php" method="post">
                             <input type="hidden" name="customer_id" value="<?php echo $customer_id; ?>">
                             
                             <div class="form-group">
@@ -698,369 +931,338 @@ mysqli_close($myconn);
 
 
 
-        <!-- Container metrics overflow handling  -->
-        <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const metricValues = document.querySelectorAll('.metrics .span-2');
-            
-            function adjustSizes() {
-                metricValues.forEach(span => {
-                    // Reset to default size for measurement
-                    span.style.fontSize = '';
-                    
-                    const container = span.closest('.metrics > div');
-                    const containerWidth = container.offsetWidth;
-                    const textWidth = span.scrollWidth;
-                    
-                    // Only scale if text overflows (with 5px buffer)
-                    if (textWidth > containerWidth - 10) {
-                        const scaleRatio = (containerWidth - 10) / textWidth;
-                        const newSize = Math.max(2, 4 * scaleRatio); // Never below 2em
-                        span.style.fontSize = `${newSize}em`;
-                    } else {
-                        span.style.fontSize = '4em'; // Reset to original if fits
-                    }
-                });
-            }
-        
-            // Run on load and resize
-            adjustSizes();
-            window.addEventListener('resize', adjustSizes);
-        });
-        </script>
-    <!-- barchart -->
-     
-
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const loanCounts = <?php echo json_encode($loanCounts); ?>;
-        const loanTypes = Object.keys(loanCounts);
-        const counts = Object.values(loanCounts);
-        
-        const barCanvas = document.getElementById('barChart');
-        const barCtx = barCanvas.getContext('2d');
-        
-        // Clear any previous chart
-        barCtx.clearRect(0, 0, barCanvas.width, barCanvas.height);
-        
-        // Chart dimensions
-        const barWidth = 30;
-        const barSpacing = 20;
-        const startX = 50;
-        const startY = barCanvas.height - 80;
-        const axisPadding = 5;
-        
-        // Calculate Y-axis max (minimum of 5 for visibility)
-        const maxCount = Math.max(5, ...counts);
-        const yAxisMax = Math.ceil(maxCount / 5) * 5;
-        
-        // Draw bars
-        counts.forEach((value, index) => {
-            const x = startX + (barWidth + barSpacing) * index;
-            const barHeight = (value / yAxisMax) * (startY - 20);
-            const y = startY - barHeight;
-            
-            barCtx.fillStyle = '#74C0FC';
-            barCtx.fillRect(x, y, barWidth, barHeight);
-            
-      
-        });
-        
-        // X-axis labels (abbreviated)
-        barCtx.fillStyle = 'white';
-        barCtx.font = '16px Trebuchet MS';
-        loanTypes.forEach((type, index) => {
-            const label = type.substring(0, 2).toUpperCase();
-            const x = startX + (barWidth + barSpacing) * index + barWidth / 5;
-            barCtx.fillText(label, x, startY + 20);
-        });
-        
-        // Y-axis and grid
-        barCtx.strokeStyle = 'white';
-        barCtx.beginPath();
-        barCtx.moveTo(startX - axisPadding, startY);
-        barCtx.lineTo(startX - axisPadding, 20);
-        barCtx.stroke();
-        
-        // Y-axis labels
-        barCtx.fillStyle = 'whitesmoke';
-        barCtx.textAlign = 'right';
-        barCtx.font = '16px Trebuchet MS';
-        
-        for (let i = 0; i <= yAxisMax; i += (yAxisMax > 10 ? 2 : 1)) {
-            const y = startY - (i / yAxisMax) * (startY - 20);
-            barCtx.fillText(i, startX - axisPadding - 5, y + 5);
-            
-            // Grid lines
-            barCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-            barCtx.beginPath();
-            barCtx.moveTo(startX - axisPadding, y);
-            barCtx.lineTo(barCanvas.width - 250, y);
-            barCtx.stroke();
-        }
-        
-        // Legend
-        const legendX = barCanvas.width - 250;
-        const legendY = 40;
-        const legendSpacing = 20;
-        
-        barCtx.font = '16px Trebuchet MS';
-        barCtx.textAlign = 'left';
-        loanTypes.forEach((type, index) => {
-            const label = type.substring(0, 2).toUpperCase();
-            barCtx.fillStyle = 'lightgray';
-            barCtx.fillText(`${label}: ${type}`, legendX + 20, legendY + index * legendSpacing + 12);
-        });
-    })
-    </script>
 
 
- <!-- pie chart -->
- <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const pieCanvas = document.getElementById('pieChart');
-        const pieCtx = pieCanvas.getContext('2d');
-        
-        // Get the actual data from PHP
-        const pieData = {
-            labels: ['Pending', 'Approved', 'Rejected'
-            ],
-            values: [
-                <?php echo round($pieData['pending'], 2); ?>,
-                <?php echo round($pieData['approved'], 2); ?>,
-                <?php echo round($pieData['rejected'], 2); ?>,
-                
-            ]
-        };
+// GENERAL UTILITY FUNCTIONS
 
-        // Define colors for each status
-        const statusColors = {
-            'Pending': '#ddd',  
-            'Approved': 'teal',
-            'Rejected': 'tomato', 
-        };
-
-        // Extract labels and values from pieData
-        const labels = pieData.labels;
-        const values = pieData.values;
-
-        // Calculate the total for percentage calculations
-        const total = values.reduce((sum, value) => sum + value, 0);
-
-        // Draw the pie chart
-        let startAngle = 0;
-        const centerX = pieCanvas.width / 4;
-        const centerY = pieCanvas.height / 2;
-        const radius = Math.min(pieCanvas.width / 3, pieCanvas.height / 2) - 10;
-
-        values.forEach((value, index) => {
-            if (value > 0) {  // Only draw slices for non-zero values
-                const sliceAngle = (2 * Math.PI * value) / total;
-                pieCtx.beginPath();
-                pieCtx.moveTo(centerX, centerY);
-                pieCtx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
-                pieCtx.closePath();
-                pieCtx.fillStyle = statusColors[labels[index]];
-                pieCtx.fill();
-                startAngle += sliceAngle;
-            }
-        });
-
-        // Add a legend
-        pieCtx.font = '16px Trebuchet MS';
-        let legendY = 20;
-        const legendX = centerX + radius + 20;
-        const legendSpacing = 20;
-
-        values.forEach((value, index) => {
-            if (value > 0) {  // Only show legend items for non-zero values
-                pieCtx.fillStyle = statusColors[labels[index]];
-                pieCtx.fillRect(legendX, legendY, 15, 15);
-                pieCtx.fillStyle = 'whitesmoke';
-                pieCtx.fillText(`${labels[index]}: ${value.toFixed(1)}%`, legendX + 20, legendY + 12);
-                legendY += legendSpacing;
-            }
-        });
-
-       
-    });
-</script>
-
-<!-- Filter, Lenders Display and Application Popup Logic -->
-<script>
-// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    loadLenders();
+    // Initialize metrics font size adjustment
+    adjustMetricsFontSize();
     
-
-    // Reloads lenders page when Apply For Loan is clicked
-    document.getElementById('applyLoanLink').addEventListener('click', function(e) {
-        e.preventDefault(); // Prevent default anchor behavior
-        loadLenders(); // Reload lenders
-        window.location.hash = '#applyLoan'; // Update URL hash
-    });
-    //Reloads loan history when Loan History is clicked
-    document.getElementById('loanHistoryLink').addEventListener('click', function(e) {
-    e.preventDefault(); // Prevent default anchor behavior
-    loadLoanHistory(); // 
-    window.location.hash = '#loanHistory'; // Update URL hash
+    // Initialize charts
+    initializeBarChart();
+    initializePieChart();
+    
+    // Set up event listeners
+    setupEventListeners();
+    
+    // Handle any existing messages
+    handleMessages();
+    
+    // Initialize popup functionality
+    initPopups();
+    
+    // Check if we need to show loan details from PHP session
+    <?php if (isset($_SESSION['loan_details'])): ?>
+        document.getElementById('loanDetailsPopup').style.display = 'flex';
+        document.body.classList.add('popup-open');
+    <?php endif; ?>
 });
 
+// SIMPLIFIED POPUP MANAGEMENT
 
+function initPopups() {
+    // Close buttons
+    document.querySelectorAll('.popup-close, .cancel-btn').forEach(btn => {
+        btn.addEventListener('click', closeAllPopups);
+    });
 
-    // Filter form submission
-    document.querySelector('.sub').addEventListener('click', function(e) {
-        e.preventDefault();
-        loadLenders();
+    // Close when clicking outside content
+    document.querySelectorAll('.popup-overlay').forEach(popup => {
+        popup.addEventListener('click', function(e) {
+            if (e.target === this) closeAllPopups();
+        });
+    });
+
+    // Close with ESC key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeAllPopups();
+    });
+
+    // Apply Now buttons
+    document.querySelectorAll('.applynow').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Get lender data from button attributes
+            document.getElementById('productId').value = this.dataset.product;
+            document.getElementById('lenderId').value = this.dataset.lender;
+            document.getElementById('interestRate').value = this.dataset.rate;
+            
+            // Update display fields
+            document.getElementById('displayLenderName').textContent = this.dataset.name;
+            document.getElementById('displayType').textContent = this.dataset.type;
+            document.getElementById('displayInterestRate').textContent = this.dataset.rate + '%';
+            document.getElementById('displayMaxAmount').textContent = numberWithCommas(this.dataset.maxamount);
+            document.getElementById('displayMaxDuration').textContent = this.dataset.maxduration + ' months';
+            
+            // Show popup
+            document.getElementById('loanPopup').style.display = 'flex';
+            document.body.classList.add('popup-open');
+        });
+    });
+
+    // View buttons
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const loanId = this.closest('tr').getAttribute('data-loan-id') || 
+                          this.getAttribute('data-loan-id') ||
+                          this.getAttribute('onclick').match(/showLoanDetails\((\d+)\)/)[1];
+            
+            // Redirect to same page with loan_id parameter
+            window.location.href = 'customerDashboard.php?loan_id=' + loanId + '#loanHistory';
+        });
+    });
+
+    // Profile edit button
+    document.getElementById('editProfileBtn')?.addEventListener('click', function() {
+        document.getElementById('profileOverlay').style.display = 'flex';
+        document.body.classList.add('popup-open');
+    });
+
+    // PHP-triggered popups
+    <?php if (isset($_SESSION['loan_message'])): ?>
+        document.getElementById('loanPopup').style.display = 'flex';
+        document.body.classList.add('popup-open');
+        <?php unset($_SESSION['loan_message']); ?>
+    <?php endif; ?>
+}
+
+function closeAllPopups() {
+    document.querySelectorAll('.popup-overlay').forEach(popup => {
+        popup.style.display = 'none';
+    });
+    document.body.classList.remove('popup-open');
+}
+
+function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+function confirmDelete() {
+    return confirm('Are you sure you want to delete this application?');
+}
+
+// METRICS AND CHART FUNCTIONS
+
+function adjustMetricsFontSize() {
+    const metricValues = document.querySelectorAll('.metrics .span-2');
+    
+    function adjustSizes() {
+        metricValues.forEach(span => {
+            span.style.fontSize = '';
+            const container = span.closest('.metrics > div');
+            const containerWidth = container.offsetWidth;
+            const textWidth = span.scrollWidth;
+            
+            if (textWidth > containerWidth - 10) {
+                const scaleRatio = (containerWidth - 10) / textWidth;
+                const newSize = Math.max(2, 4 * scaleRatio);
+                span.style.fontSize = `${newSize}em`;
+            } else {
+                span.style.fontSize = '4em';
+            }
+        });
+    }
+    
+    adjustSizes();
+    window.addEventListener('resize', adjustSizes);
+}
+
+function initializeBarChart() {
+    const loanCounts = <?= json_encode($loanCounts) ?>;
+    const loanTypes = Object.keys(loanCounts);
+    const counts = Object.values(loanCounts);
+    
+    const barCanvas = document.getElementById('barChart');
+    const barCtx = barCanvas.getContext('2d');
+    
+    // Clear any previous chart
+    barCtx.clearRect(0, 0, barCanvas.width, barCanvas.height);
+    
+    // Chart dimensions
+    const barWidth = 30;
+    const barSpacing = 20;
+    const startX = 50;
+    const startY = barCanvas.height - 80;
+    const axisPadding = 5;
+    
+    // Calculate Y-axis max
+    const maxCount = Math.max(5, ...counts);
+    const yAxisMax = Math.ceil(maxCount / 5) * 5;
+    
+    // Draw bars
+    counts.forEach((value, index) => {
+        const x = startX + (barWidth + barSpacing) * index;
+        const barHeight = (value / yAxisMax) * (startY - 20);
+        const y = startY - barHeight;
+        
+        barCtx.fillStyle = '#74C0FC';
+        barCtx.fillRect(x, y, barWidth, barHeight);
     });
     
-    // Reset button
-    document.querySelector('.res').addEventListener('click', function(e) {
+    // X-axis labels
+    barCtx.fillStyle = 'white';
+    barCtx.font = '16px Trebuchet MS';
+    loanTypes.forEach((type, index) => {
+        const label = type.substring(0, 2).toUpperCase();
+        const x = startX + (barWidth + barSpacing) * index + barWidth / 5;
+        barCtx.fillText(label, x, startY + 20);
+    });
+    
+    // Y-axis and grid
+    barCtx.strokeStyle = 'white';
+    barCtx.beginPath();
+    barCtx.moveTo(startX - axisPadding, startY);
+    barCtx.lineTo(startX - axisPadding, 20);
+    barCtx.stroke();
+    
+    // Y-axis labels
+    barCtx.fillStyle = 'whitesmoke';
+    barCtx.textAlign = 'right';
+    barCtx.font = '16px Trebuchet MS';
+    
+    for (let i = 0; i <= yAxisMax; i += (yAxisMax > 10 ? 2 : 1)) {
+        const y = startY - (i / yAxisMax) * (startY - 20);
+        barCtx.fillText(i, startX - axisPadding - 5, y + 5);
+        
+        // Grid lines
+        barCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        barCtx.beginPath();
+        barCtx.moveTo(startX - axisPadding, y);
+        barCtx.lineTo(barCanvas.width - 250, y);
+        barCtx.stroke();
+    }
+    
+    // Legend
+    const legendX = barCanvas.width - 250;
+    const legendY = 40;
+    const legendSpacing = 20;
+    
+    barCtx.font = '16px Trebuchet MS';
+    barCtx.textAlign = 'left';
+    loanTypes.forEach((type, index) => {
+        const label = type.substring(0, 2).toUpperCase();
+        barCtx.fillStyle = 'lightgray';
+        barCtx.fillText(`${label}: ${type}`, legendX + 20, legendY + index * legendSpacing + 12);
+    });
+}
+
+function initializePieChart() {
+    const pieData = <?= json_encode($pieData) ?>;
+    const pieCanvas = document.getElementById('pieChart');
+    const pieCtx = pieCanvas.getContext('2d');
+    
+    const labels = ['Pending', 'Approved', 'Rejected'];
+    const values = [
+        pieData.pending,
+        pieData.approved,
+        pieData.rejected
+    ];
+    
+    const statusColors = {
+        'Pending': '#ddd',
+        'Approved': 'teal',
+        'Rejected': 'tomato'
+    };
+
+    const total = values.reduce((sum, value) => sum + value, 0);
+    let startAngle = 0;
+    const centerX = pieCanvas.width / 4;
+    const centerY = pieCanvas.height / 2;
+    const radius = Math.min(pieCanvas.width / 3, pieCanvas.height / 2) - 10;
+
+    values.forEach((value, index) => {
+        if (value > 0) {
+            const sliceAngle = (2 * Math.PI * value) / total;
+            pieCtx.beginPath();
+            pieCtx.moveTo(centerX, centerY);
+            pieCtx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+            pieCtx.closePath();
+            pieCtx.fillStyle = statusColors[labels[index]];
+            pieCtx.fill();
+            startAngle += sliceAngle;
+        }
+    });
+
+    // Add a legend
+    pieCtx.font = '16px Trebuchet MS';
+    let legendY = 20;
+    const legendX = centerX + radius + 20;
+    const legendSpacing = 20;
+
+    values.forEach((value, index) => {
+        if (value > 0) {
+            pieCtx.fillStyle = statusColors[labels[index]];
+            pieCtx.fillRect(legendX, legendY, 15, 15);
+            pieCtx.fillStyle = 'whitesmoke';
+            pieCtx.fillText(`${labels[index]}: ${value.toFixed(1)}%`, legendX + 20, legendY + 12);
+            legendY += legendSpacing;
+        }
+    });
+}
+
+// LOAN APPLICATION FUNCTIONS
+
+function setupEventListeners() {
+    // Navigation links
+    document.getElementById('applyLoanLink')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.hash = '#applyLoan';
+    });
+    
+    document.getElementById('loanHistoryLink')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.hash = '#loanHistory';
+    });
+
+    // Loan filter form
+    document.querySelector('.sub')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelector('.loan-filter form').submit();
+    });
+    
+    document.querySelector('.res')?.addEventListener('click', function(e) {
         e.preventDefault();
         document.querySelector('.loan-filter form').reset();
-        loadLenders();
+        document.querySelector('.loan-filter form').submit();
     });
-    
+
     // Quick amount buttons
     document.querySelectorAll('.quick-amounts button').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelector('[name="min_amount"]').value = this.dataset.min;
             document.querySelector('[name="max_amount"]').value = this.dataset.max;
-            loadLenders();
+            document.querySelector('.loan-filter form').submit();
         });
     });
     
-    // Calculate installments when amount or duration changes
-    document.getElementById('amountNeeded').addEventListener('input', calculateInstallments);
-    document.getElementById('duration').addEventListener('input', calculateInstallments);
+    // Loan application form
+    document.getElementById('amountNeeded')?.addEventListener('input', calculateInstallments);
+    document.getElementById('duration')?.addEventListener('input', calculateInstallments);
     
-    // Form submission handler
-    document.getElementById('loanApplicationForm').addEventListener('submit', handleLoanSubmission);
-    
-    // Cancel button
-    document.getElementById('cancelBtn').addEventListener('click', function() {
+    // Popup controls
+    document.getElementById('cancelBtn')?.addEventListener('click', function() {
         document.getElementById('loanPopup').style.display = 'none';
+        document.body.classList.remove('popup-open');
     });
     
-    // Handle any existing messages on page load
-    handleLoanMessage();
-});
-
-let loadingStartTime; // Keep track of when loading started
-
-// Load lenders based on filters
-function loadLenders() {
-    const container = document.getElementById('lendersContainer');
-    container.innerHTML = '<div class="loading">loading ...</div>';
-    loadingStartTime = Date.now(); // Record start time
+    document.getElementById('closePopupBtn')?.addEventListener('click', function() {
+        document.getElementById('loanDetailsPopup').style.display = 'none';
+        document.body.classList.remove('popup-open');
+    });
     
-    const formData = new FormData(document.querySelector('.loan-filter form'));
-    const params = new URLSearchParams();
+    // Profile edit controls
+    document.getElementById('editProfileBtn')?.addEventListener('click', function() {
+        document.getElementById('profileOverlay').style.display = 'flex';
+        document.body.classList.add('popup-open');
+    });
     
-    formData.getAll('loan_type[]').forEach(type => params.append('loan_type[]', type));
-    formData.getAll('interest_range[]').forEach(range => params.append('interest_range[]', range));
-    if (formData.get('min_amount')) params.append('min_amount', formData.get('min_amount'));
-    if (formData.get('max_amount')) params.append('max_amount', formData.get('max_amount'));
-
-    fetch(`fetchLenders.php?${params.toString()}`)
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(result => {
-            const elapsed = Date.now() - loadingStartTime;
-            const remainingDelay = Math.max(0, 1000 - elapsed); // Maintain minimum 1s loading time
-            
-            setTimeout(() => {
-                if (!result.success) throw new Error(result.error || 'Unknown error');
-                if (!Array.isArray(result.data)) throw new Error('Invalid data format');
-                renderLenders(result.data);
-            }, remainingDelay);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            container.innerHTML = `<div class="error">${error.message}</div>`;
-        });
-}
-
-// Render lenders in the container
-function renderLenders(lenders) {
-    const container = document.getElementById('lendersContainer');
-    
-    if (!lenders || !Array.isArray(lenders)) {
-        container.innerHTML = '<div class="error">No lenders data available</div>';
-        return;
-    }
-    
-    if (lenders.length === 0) {
-        container.innerHTML = '<div class="no-lenders">No results matching your filters</div>';
-        return;
-    }
-    
-    container.innerHTML = lenders.map(lender => `
-        <div class="lender">
-            <div class="lender-info">
-                <span>${lender.name}</span>
-                <span>${lender.type}</span>
-                <span>Rate: ${lender.rate}%</span>
-                <span>MD: ${lender.duration} months</span>
-                <span>MA: ${lender.amount.toLocaleString()} KES</span>
-                <a href="alert.html">More Info</a>
-            </div>
-            <button class="applynow" 
-                    data-product-id="${lender.id}"
-                    data-lender-id="${lender.lender_id}"
-                    data-name="${lender.name}"
-                    data-type="${lender.type}"
-                    data-rate="${lender.rate}"
-                    data-duration="${lender.duration}"
-                    data-amount="${lender.amount}">
-                Apply Now
-            </button>
-        </div>
-    `).join('');
-    
-    // Add click handlers to all Apply Now buttons
-    document.querySelectorAll('.applynow').forEach(btn => {
-        btn.addEventListener('click', function() {
-            showLoanPopup(this);
-        });
+    document.getElementById('cancelEditBtn')?.addEventListener('click', function() {
+        document.getElementById('profileOverlay').style.display = 'none';
+        document.body.classList.remove('popup-open');
     });
 }
 
-// Show the loan application popup with visible lender info
-function showLoanPopup(button) {
-    // Set hidden form fields
-    document.getElementById('productId').value = button.dataset.productId;
-    document.getElementById('lenderId').value = button.dataset.lenderId;
-    document.getElementById('interestRate').value = button.dataset.rate;
-    
-    // Set VISIBLE lender information
-    document.getElementById('displayLenderName').textContent = button.dataset.name;
-    document.getElementById('displayType').textContent = button.dataset.type;
-    document.getElementById('displayInterestRate').textContent = button.dataset.rate + '%';
-    document.getElementById('displayMaxAmount').textContent = 'KES ' + parseFloat(button.dataset.amount).toLocaleString();
-    document.getElementById('displayMaxDuration').textContent = button.dataset.duration + ' months';
-    
-    // Set max values for validation
-    document.getElementById('amountNeeded').max = button.dataset.amount;
-    document.getElementById('duration').max = button.dataset.duration;
-    
-    // Reset form fields
-    document.getElementById('amountNeeded').value = '';
-    document.getElementById('duration').value = '';
-    document.getElementById('installments').value = '';
-    document.getElementById('collateralValue').value = '';
-    document.getElementById('collateralDesc').value = '';
-    
-    // Clear any existing messages
-    document.getElementById('loanMessage').innerHTML = '';
-    
-    // Show popup
-    document.getElementById('loanPopup').style.display = 'flex';
-}
-
-// Calculate monthly installments
 function calculateInstallments() {
     const amount = parseFloat(document.getElementById('amountNeeded').value) || 0;
     const duration = parseInt(document.getElementById('duration').value) || 1;
@@ -1072,365 +1274,29 @@ function calculateInstallments() {
         const denominator = Math.pow(1 + monthlyRate, duration) - 1;
         const monthlyInstallment = numerator / denominator;
         
-        document.getElementById('installments').value = monthlyInstallment.toFixed(2);
+        document.getElementById('installments').value = numberWithCommas(monthlyInstallment.toFixed(2));
     } else {
         document.getElementById('installments').value = '';
     }
 }
 
-// Handle loan application form submission
-async function handleLoanSubmission(e) {
-    e.preventDefault();
-    
-    const form = e.target;
-    const submitBtn = form.querySelector('.submit-btn');
-    const messageDiv = document.getElementById('loanMessage');
-    
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Processing...';
-    messageDiv.innerHTML = ''; // Clear previous messages
+// MESSAGE HANDLING
 
-    try {
-        const formData = new FormData(form);
-        
-        // Client-side validation
-        const required = ['product_id', 'lender_id', 'amount', 'duration', 
-                         'collateral_value', 'collateral_description'];
-        const missing = [];
-        
-        required.forEach(field => {
-            if (!formData.get(field)) missing.push(field);
-        });
-
-        if (missing.length > 0) {
-            throw new Error(`Please fill in all required fields: ${missing.join(', ')}`);
-        }
-
-        const response = await fetch('applyLoan.php', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-
-        const result = await response.json();
-        
-        if (!response.ok || !result.success) {
-            throw new Error(result.message || 'Application failed');
-        }
-        
-        // Show success message
-        messageDiv.innerHTML = `
-            <div class="alert success">${result.message}</div>
-        `;
-        
-        // Hide the popup after a delay
+function handleMessages() {
+    // Auto-hide alert messages after 3 seconds
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
         setTimeout(() => {
-            document.getElementById('loanPopup').style.display = 'none';
-            window.location.href = result.redirect || 'customerDashboard.php#applyLoan';
-        }, 2000);
-        
-    } catch (error) {
-        messageDiv.innerHTML = `
-            <div class="alert error">${error.message}</div>
-        `;
-        console.error('Error:', error);
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit Application';
-        // Start the message fade-out timer
-        handleLoanMessage();
-    }
-}
-
-// Handle loan message display and fading
-function handleLoanMessage() {
-    const loanMessage = document.getElementById('loanMessage');
-    if (loanMessage) {
-        const alert = loanMessage.querySelector('.alert');
-        if (alert) {
+            alert.style.opacity = '0';
             setTimeout(() => {
-                alert.style.opacity = '0';
-                setTimeout(() => {
-                    alert.remove();
-                }, 700);
-            }, 2000); // Message will fade out after 2 seconds
-        }
-    }
-}
-// Load and render loan history 
-function loadLoanHistory() {
-    const container = document.getElementById('loanHistoryContainer');
-    container.innerHTML = '<div class="loading">loading history...</div>';
-    const loadingStart = Date.now();
-
-    // Get the current status filter value
-    const statusFilter = document.getElementById('status').value;
-    let url = 'loanHistory.php';
-    
-    // Add status filter to URL if specified
-    if (statusFilter) {
-        url += `?status=${encodeURIComponent(statusFilter)}`;
-    }
-
-    fetch(url)
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
-            // Ensure loading displays for at least 1 seconds
-            const elapsed = Date.now() - loadingStart;
-            const remainingDelay = Math.max(0, 1000 - elapsed);
-
-            setTimeout(() => {
-                if (!data.success) {
-                    throw new Error(data.message || 'Failed to load loan history');
-                }
-                
-                if (!data.loans || data.loans.length === 0) {
-                    container.innerHTML = `<div class="no-loans">${data.message || 'No loan history found'}</div>`;
-                    return;
-                }
-                
-                renderLoanHistory(data.loans);
-            }, remainingDelay);
-        })
-        .catch(error => {
-            container.innerHTML = `
-                <div class="error">
-                    <p>Failed to load loan history</p>
-                    ${error.message ? `<p class="error-detail">${error.message}</p>` : ''}
-                </div>
-            `;
-        });
-}
-
-// Render loan table 
-function renderLoanHistory(loans) {
-    const container = document.getElementById('loanHistoryContainer');
-    
-    container.innerHTML = `
-        <table class="simple-loan-table">
-            <thead>
-                <tr>
-                    <th>Loan ID</th>
-                    <th>Type</th>
-                    <th>Lender</th>
-                    <th>Amount (KES)</th>
-                    <th>Interest</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${loans.map(loan => `
-                    <tr>
-                        <td>${loan.loan_id}</td>
-                        <td>${loan.loan_type}</td> 
-                        <td>${loan.lender_name}</td>
-                        <td>${loan.amount.toLocaleString()}</td> 
-                        <td>${loan.interest_rate}%</td>
-                        <td><span class="loan-status ${loan.status.toLowerCase()}">${loan.status}</span></td>
-                        <td>${new Date(loan.created_at).toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'})}</td>
-                        <td><button class="view-btn" onclick="showLoanDetails(${loan.loan_id})">View</button></td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
-    `;
-}
-
-// Show loan details in popup with error handling
-function showLoanDetails(loanId) {
-    const popup = document.getElementById('loanDetailsPopup');
-    const content = document.getElementById('loanDetailsContent');
-    const actionButtons = document.getElementById('loanActionButtons');
-    
-    // Show loading state
-    popup.style.display = 'flex';
-    content.innerHTML = 'loading details...';
-    actionButtons.innerHTML = '';
-    
-    fetch(`loanHistory.php?loan_id=${loanId}`)
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
-            if (!data.success) {
-                throw new Error(data.message || 'Loan not found');
-            }
-            
-            document.getElementById('popupLoanId').textContent = `${data.loan.loan_id}`;
-            content.innerHTML = `
-                <p>Type: <strong>${data.loan.loan_type}</strong></p>
-                <p>Lender:<strong>${data.loan.lender_name}</strong> </p>
-                <p>Amount: <strong>KES ${data.loan.amount.toLocaleString()}</strong> </p>
-                <p>Interest: <strong>${data.loan.interest_rate}%</strong> </p>
-                <p>Collateral Value: <strong>${data.loan.collateral_value}</strong> </p>
-                <p>Collateral Description: <strong>${data.loan.collateral_description}</strong> </p>
-                <p>Status: <strong><span class="loan-status ${data.loan.status.toLowerCase()}">
-                    ${data.loan.status}
-                </span></strong> </p>
-                <p>Application Date: <strong>${new Date(data.loan.created_at).toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'})}</strong> </p>
-            `;
-            
-            // Add delete button if status is pending or rejected
-            if (data.loan.status === 'pending' || data.loan.status === 'rejected') {
-                actionButtons.innerHTML = `
-                    <button class="delete-btn" onclick="deleteLoanApplication(${data.loan.loan_id})">
-                        Delete Application
-                    </button>
-                `;
-            }
-        })
-        .catch(error => {
-            content.innerHTML = `
-                <div class="error">
-                    <p>Failed to load loan details</p>
-                    ${error.message ? `<p class="error-detail">${error.message}</p>` : ''}
-                </div>
-            `;
-        });
-}
-
-//  Loan deletion
-
-// BUG ALERT!! Loan Deletion Message
-
-function deleteLoanApplication(loanId) {
-    const messageDiv = document.getElementById('loanMessage');
-    
-    
-    messageDiv.innerHTML = ''; // Clear previous messages
-    
-    fetch('deleteApplication.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `loan_id=${loanId}`
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            messageDiv.innerHTML = `
-            <div class="alert error">Loan deleted, you can re-apply</div>
-        `;
-            closePopup();
-            loadLoanHistory(); // Refresh the loan history
-        } else {
-            alert('Error: ' + (data.message || 'Failed to delete loan application'));
-        }
-    })
-    .catch(error => {
-        alert('Error: ' + error.message);
-    });
-}
-
-// Close popup 
-function closePopup() {
-    document.getElementById('loanDetailsPopup').style.display = 'none';
-}
-
-// Event listeners 
-document.getElementById('closePopupBtn').addEventListener('click', closePopup);
-document.getElementById('loanDetailsPopup').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('loanDetailsPopup')) {
-        closePopup();
-    }
-});
-
-// Initialize on page load 
-document.addEventListener('DOMContentLoaded', () => {
-    if (window.location.hash === '#loanHistory') {
-        loadLoanHistory();
-    }
-});
-// Attach to form
-document.getElementById('loanApplicationForm')?.addEventListener('submit', handleLoanSubmission);
-
-document.getElementById('editProfileBtn').addEventListener('click', function() {
-    document.getElementById('profileOverlay').style.display = 'flex';
-});
-
-document.getElementById('cancelEditBtn').addEventListener('click', function() {
-    document.getElementById('profileOverlay').style.display = 'none';
-});
-
-// Handle profile edit form submission
-document.getElementById('profileEditForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const form = e.target;
-    const submitBtn = form.querySelector('.save-btn');
-    const messageDiv = document.getElementById('profileMessage');
-    const overlay = document.getElementById('profileOverlay');
-    
-    // Clear previous messages
-    messageDiv.innerHTML = '';
-    
-    // Disable button during submission
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Saving...';
-    
-    // Collect form data
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
-    
-    // Simple client-side validation
-    if (!data.name || !data.email || !data.phone) {
-        messageDiv.innerHTML = '<div class="alert error">Please fill in all required fields</div>';
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Save Changes';
-        return;
-    }
-    
-    // Send update request
-    fetch('custUpdateProfile.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(result => {
-        if (result.success) {
-            // Show success message
-            messageDiv.innerHTML = '<div class="alert success">Profile updated successfully</div>';
-            
-            // Close overlay after delay
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                window.location.reload();
-            }, 2000);
-        } else {
-            // Show error message
-            messageDiv.innerHTML = `<div class="alert error">${result.message || 'Update failed'}</div>`;
-        }
-    })
-    .catch(() => {
-        messageDiv.innerHTML = '<div class="alert error">Network error occurred</div>';
-    })
-    .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Save Changes';
-        
-        // Auto-fade messages after 3 seconds
-        setTimeout(() => {
-            const alerts = messageDiv.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                alert.style.opacity = '0';
-                setTimeout(() => alert.remove(), 500);
-            });
+                alert.remove();
+            }, 500);
         }, 3000);
     });
-});
+}
 </script>
+
+     
 
 </body>
 </html>

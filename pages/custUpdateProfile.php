@@ -1,27 +1,21 @@
 <?php
-header('Content-Type: application/json');
 session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 
 // Database connection
 $conn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
 if (!$conn) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Database connection failed'
-    ]);
-    exit();
+    die("Connection failed: " . mysqli_connect_error());
 }
 
-// Get the POST data
-$data = json_decode(file_get_contents('php://input'), true);
-
 // Basic validation
-if (!isset($_SESSION['user_id']) || !isset($data['customer_id'])) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Unauthorized access'
-    ]);
-    exit();
+if (!isset($_SESSION['user_id']) || empty($_POST['customer_id'])) {
+    $_SESSION['profile_message'] = "Unauthorized access";
+    $_SESSION['profile_message_type'] = "error";
+    header("Location: customerDashboard.php#profile");
+    exit;
 }
 
 // Initialize success flag
@@ -30,16 +24,16 @@ $message = '';
 
 // Update customers table
 $customerUpdates = [];
-foreach ($data as $field => $value) {
+foreach ($_POST as $field => $value) {
     if (in_array($field, ['name', 'email', 'phone', 'address', 'bank_account'])) {
-        $customerUpdates[] = "$field = '" . mysqli_real_escape_string($conn, $value) . "'";
+        $customerUpdates[] = "$field = '" . $conn->real_escape_string($value) . "'";
     }
 }
 
 if (!empty($customerUpdates)) {
     $query = "UPDATE customers SET " . implode(', ', $customerUpdates) . 
-            " WHERE customer_id = " . (int)$data['customer_id'];
-    if (!mysqli_query($conn, $query)) {
+            " WHERE customer_id = " . (int)$_POST['customer_id'];
+    if (!$conn->query($query)) {
         $success = false;
         $message = 'Failed to update customer details';
     }
@@ -47,46 +41,39 @@ if (!empty($customerUpdates)) {
 
 // Update users table
 $userUpdates = [];
-if (isset($data['name'])) {
-    $userUpdates[] = "user_name = '" . mysqli_real_escape_string($conn, $data['name']) . "'";
+if (isset($_POST['name'])) {
+    $userUpdates[] = "user_name = '" . $conn->real_escape_string($_POST['name']) . "'";
 }
-if (isset($data['email'])) {
-    $userUpdates[] = "email = '" . mysqli_real_escape_string($conn, $data['email']) . "'";
+if (isset($_POST['email'])) {
+    $userUpdates[] = "email = '" . $conn->real_escape_string($_POST['email']) . "'";
 }
-if (isset($data['phone'])) {
-    $userUpdates[] = "phone = '" . mysqli_real_escape_string($conn, $data['phone']) . "'";
+if (isset($_POST['phone'])) {
+    $userUpdates[] = "phone = '" . $conn->real_escape_string($_POST['phone']) . "'";
 }
 
 if (!empty($userUpdates)) {
     $query = "UPDATE users SET " . implode(', ', $userUpdates) . 
             " WHERE user_id = " . (int)$_SESSION['user_id'];
-    if (!mysqli_query($conn, $query)) {
+    if (!$conn->query($query)) {
         $success = false;
         $message = 'Failed to update user account';
     }
 }
 
 // Update session data
-if (isset($data['name'])) {
-    $_SESSION['user_name'] = $data['name'];
+if (isset($_POST['name'])) {
+    $_SESSION['user_name'] = $_POST['name'];
 }
 
 // Set response
 if ($success) {
     $_SESSION['profile_message'] = 'Profile updated successfully';
     $_SESSION['profile_message_type'] = 'success';
-    echo json_encode([
-        'success' => true,
-        'newName' => $data['name'] ?? null
-    ]);
 } else {
     $_SESSION['profile_message'] = $message ?: 'Profile update failed';
     $_SESSION['profile_message_type'] = 'error';
-    echo json_encode([
-        'success' => false,
-        'message' => $message ?: 'Profile update failed'
-    ]);
 }
 
-mysqli_close($conn);
+header("Location: customerDashboard.php#profile");
+exit;
 ?>

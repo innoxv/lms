@@ -653,14 +653,12 @@ iframe {
 .lender button{
     width: 96%;
     margin: .2em;
-}
-.lender .applynow{
     background: transparent;
     color: #74C0FC;
     outline: 1px solid #74C0FC;
     border-radius: 0 0 .2em .2em;
 }
-.lender .applynow:hover{
+.lender button:hover{
     background: #74C0FC;
     color: #2C2C2C;
     outline: 1px solid #74C0FC;
@@ -679,7 +677,7 @@ iframe {
 
 }
 
-.no-lenders {
+.no-lenders, .no-results {
     color: tomato;
     font-size: 1.5em;
     font-weight: 900;
