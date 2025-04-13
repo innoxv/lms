@@ -397,7 +397,7 @@ mysqli_close($myconn);
                     </form>
                 </div>
 
-
+                <!-- Loan Request -->
                 <div id="loanRequests" class="margin">
                     <h1>Loan Requests</h1>
                     <p>Loan applications from customers for your loan products.</p>
@@ -620,52 +620,52 @@ mysqli_close($myconn);
                 
 
                 <!-- Profile Edit Overlay -->
-<div class="popup-overlay3" id="profileOverlay"></div>
-<div class="popup-content3" id="profilePopup">
-    <!-- Message container -->
-    <div id="profileMessage" class="message-container">
-        <?php if (isset($_SESSION['profile_message'])): ?>
-            <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
-                <?= htmlspecialchars($_SESSION['profile_message']) ?>
-            </div>
-            <?php 
-                // Clear the message after displaying
-                unset($_SESSION['profile_message']);
-                unset($_SESSION['profile_message_type']);
-            ?>
-        <?php endif; ?>
-    </div>
-    <h2>Edit Profile</h2>
-    <form id="profileEditForm" action="lendUpdateProfile.php" method="post">
-        <input type="hidden" name="lender_id" value="<?php echo $lender_id; ?>">
-        
-        <div class="form-group">
-            <label for="editName">Full Name</label>
-            <input type="text" id="editName" name="name" value="<?php echo htmlspecialchars($lenderProfile['name']); ?>">
-        </div>
-        
-        <div class="form-group">
-            <label for="editEmail">Email</label>
-            <input type="email" id="editEmail" name="email" value="<?php echo htmlspecialchars($lenderProfile['email']); ?>">
-        </div>
-        
-        <div class="form-group">
-            <label for="editPhone">Phone</label>
-            <input type="tel" id="editPhone" name="phone" value="<?php echo htmlspecialchars($lenderProfile['phone']); ?>">
-        </div>
-        <div class="form-group">
-            <label for="editPhone">Address</label>
-            <input type="text" id="editAddress" name="address" value="<?php echo htmlspecialchars($lenderProfile['address']); ?>">
-        </div>
-        
-
-        
-        <div class="form-actions">
-            <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
-            <button type="submit" class="save-btn">Save Changes</button>
-        </div>
-    </form>
-</div>
+                <div class="popup-overlay3" id="profileOverlay"></div>
+                <div class="popup-content3" id="profilePopup">
+                    <!-- Message container -->
+                    <div id="profileMessage" class="message-container">
+                        <?php if (isset($_SESSION['profile_message'])): ?>
+                            <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
+                                <?= htmlspecialchars($_SESSION['profile_message']) ?>
+                            </div>
+                            <?php 
+                                // Clear the message after displaying
+                                unset($_SESSION['profile_message']);
+                                unset($_SESSION['profile_message_type']);
+                            ?>
+                        <?php endif; ?>
+                    </div>
+                    <h2>Edit Profile</h2>
+                    <form id="profileEditForm" action="lendUpdateProfile.php" method="post">
+                        <input type="hidden" name="lender_id" value="<?php echo $lender_id; ?>">
+                        
+                        <div class="form-group">
+                            <label for="editName">Full Name</label>
+                            <input type="text" id="editName" name="name" value="<?php echo htmlspecialchars($lenderProfile['name']); ?>">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editEmail">Email</label>
+                            <input type="email" id="editEmail" name="email" value="<?php echo htmlspecialchars($lenderProfile['email']); ?>">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editPhone">Phone</label>
+                            <input type="tel" id="editPhone" name="phone" value="<?php echo htmlspecialchars($lenderProfile['phone']); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label for="editPhone">Address</label>
+                            <input type="text" id="editAddress" name="address" value="<?php echo htmlspecialchars($lenderProfile['address']); ?>">
+                        </div>
+                        
+                
+                        
+                        <div class="form-actions">
+                            <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
+                            <button type="submit" class="save-btn">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
 
                 <!-- Feedback -->
                 <div id="feedback" class="margin">
@@ -786,6 +786,8 @@ mysqli_close($myconn);
     <script src="../js/validinput.js"></script>
 
     <!-- Page Reloads with JS PHP -->
+
+    <!-- Loan Requests Filter -->
     <script>
         // Update the iframe reload handler to preserve both filters
 window.onload = function() {

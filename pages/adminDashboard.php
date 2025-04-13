@@ -2,9 +2,9 @@
 // Start the session
 session_start();
 
-// error_reporting(E_ALL);
-// ini_set('display_errors', 1);
-// ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 
 
 
@@ -24,7 +24,8 @@ if (!$myconn) {
 }
 
 // Fetch current user data from the database
-$userId = $_SESSION['user_id'];
+$userId = $_SESSION['user_id'];  
+
 $query = "SELECT user_name FROM users WHERE user_id = '$userId'";
 $result = mysqli_query($myconn, $query);
 
@@ -35,6 +36,14 @@ if ($result && mysqli_num_rows($result) > 0) {
     $_SESSION['user_name'] = "Guest";
 }
 
+// Count total users 
+$totalUsersQuery = "SELECT COUNT(*) as total_users FROM users";
+$totalUsersResult = mysqli_query($myconn, $totalUsersQuery);
+$totalUsersCount = 0;
+if ($totalUsersResult && mysqli_num_rows($totalUsersResult) > 0) {
+    $countData = mysqli_fetch_assoc($totalUsersResult);
+    $totalUsersCount = $countData['total_users'];
+}
 // Count active users 
 $activeUsersQuery = "SELECT COUNT(*) as active_users FROM users where status='active'";
 $activeUsersResult = mysqli_query($myconn, $activeUsersQuery);
@@ -68,6 +77,15 @@ if ($lendersResult && mysqli_num_rows($lendersResult) > 0) {
     $totalLenders = $countData['total_lenders'];
 }
 
+// Count total admins
+$adminsQuery = "SELECT COUNT(*) as total_admins FROM users WHERE role='Admin'";
+$adminsResult = mysqli_query($myconn, $adminsQuery);
+$totalAdmins = 0;
+if ($adminsResult && mysqli_num_rows($adminsResult) > 0) {
+    $countData = mysqli_fetch_assoc($adminsResult);
+    $totalAdmins = $countData['total_admins'];
+}
+
 
 // Fetch all users from the database for the View Users section
 $roleFilter = isset($_GET['role']) ? $_GET['role'] : '';
@@ -75,6 +93,7 @@ $roleFilter = isset($_GET['role']) ? $_GET['role'] : '';
 $usersQuery = "SELECT 
                users.user_id, 
                users.user_name, 
+               users.email, 
                users.phone, 
                users.role,
                CASE 
@@ -91,6 +110,7 @@ if (!empty($roleFilter) && in_array($roleFilter, ['Admin', 'Lender', 'Customer']
     $usersQuery = "SELECT 
                    users.user_id, 
                    users.user_name, 
+                   users.email, 
                    users.phone, 
                    users.role,
                    CASE 
@@ -129,7 +149,6 @@ $activityQuery = "SELECT
 FROM activity
 JOIN users ON activity.user_id = users.user_id
 ORDER BY activity.activity_time DESC";
-// LIMIT 50"; // Limit to 50 most recent logs
 
 $activityResult = mysqli_query($myconn, $activityQuery);
 
@@ -141,6 +160,54 @@ if ($activityResult && mysqli_num_rows($activityResult) > 0) {
     }
 }
 
+
+// Recent Activity Logs - for the Dashboard
+
+$recentActivityQuery = "SELECT 
+    activity.log_id, 
+    users.email,
+    activity.activity_time, 
+    activity.activity_type
+FROM activity
+JOIN users ON activity.user_id = users.user_id
+ORDER BY activity.activity_time DESC
+LIMIT 12"; // Limit to 12 most recent logs
+
+$recentActivityResult = mysqli_query($myconn, $recentActivityQuery);
+
+// Initialize activity logs array
+$recentActivityLogs = [];
+if ($recentActivityResult && mysqli_num_rows($recentActivityResult) > 0) {
+    while ($row = mysqli_fetch_assoc($recentActivityResult)) {
+        $recentActivityLogs[] = $row;
+    }
+}
+
+
+// Pie chart data
+$roleQuery = "SELECT role, COUNT(*) as count FROM users GROUP BY role";
+$roleResult = mysqli_query($myconn, $roleQuery);
+
+$roleData = [];
+$totalUsers = 0;
+while ($row = mysqli_fetch_assoc($roleResult)) {
+    $roleData[$row['role']] = (int)$row['count'];
+    $totalUsers += (int)$row['count'];
+}
+
+// Calculate percentages for pie chart
+$pieData = [
+    'Admin' => isset($roleData['Admin']) ? ($roleData['Admin'] / $totalUsers * 100) : 0,
+    'Customer' => isset($roleData['Customer']) ? ($roleData['Customer'] / $totalUsers * 100) : 0,
+    'Lender' => isset($roleData['Lender']) ? ($roleData['Lender'] / $totalUsers * 100) : 0
+];
+
+
+
+// Fetch admin profile data
+$adminProfileQuery = "SELECT * FROM users WHERE user_id = '$userId'";
+$adminProfileResult = mysqli_query($myconn, $adminProfileQuery);
+$adminProfile = mysqli_fetch_assoc($adminProfileResult);
 
 // Close the database connection
 mysqli_close($myconn);
@@ -211,13 +278,14 @@ mysqli_close($myconn);
                 <div class="user-filter">
                     <form method="get" action="#viewUsers">
                         <label for="role">Filter by Role:</label>
-                        <select name="role" id="role">
+                        <select name="role" id="role" onchange="this.form.submit()">  <!-- this submits the form on select -->
                             <option value="">All Users</option>
                             <option value="Admin" <?php echo (isset($_GET['role']) && $_GET['role'] === 'Admin') ? 'selected' : ''; ?>>Admin</option>
                             <option value="Lender" <?php echo (isset($_GET['role']) && $_GET['role'] === 'Lender') ? 'selected' : ''; ?>>Lender</option>
                             <option value="Customer" <?php echo (isset($_GET['role']) && $_GET['role'] === 'Customer') ? 'selected' : ''; ?>>Customer</option>
                         </select>
-                        <button type="submit">Apply Filter</button>
+                        <a href="adminDashboard.php#viewUsers"><button type="button" class="reset">Reset</button></a>
+
                     </form>
                 </div>
                 
@@ -228,6 +296,7 @@ mysqli_close($myconn);
                             <tr>
                                 <th>User ID</th>
                                 <th>Username</th>
+                                <th>Email</th>
                                 <th>Phone</th>
                                 <th>Role</th>
                                 <th>Status</th>
@@ -240,6 +309,7 @@ mysqli_close($myconn);
                                     <tr>
                                         <td><?= htmlspecialchars($user['user_id']) ?></td>
                                         <td><?= htmlspecialchars($user['user_name']) ?></td>
+                                        <td><?= htmlspecialchars($user['email']) ?></td>
                                         <td><?= htmlspecialchars($user['phone']) ?></td>
                                         <td><?= htmlspecialchars($user['role']) ?></td>
                                         <td class="status-<?= 
@@ -321,114 +391,139 @@ mysqli_close($myconn);
 
 
                 <!-- Add Users -->
-                 <div id="addUsers" class="margin">
+                <div id="addUsers" class="margin">
                     <h1>Add Users</h1>
                     <p>Add a new user to the system.</p>
-    
                     <form action="users.php" id="signupForm" method="post" onsubmit="return validateFormUsers()">
-                <table>
-                    <!-- Error tag for displaying validation errors -->
-                    <div id="error" style="color: tomato; font-weight:700;"></div>
-                    <tr>
-                        <td><label>Register as?</label></td>
-                        <td>
-                            <select name="role" id="user-role" class="select">
-                                <option value="--select option--" selected>--select option--</option>
-                                <option value="Admin">Admin</option>
-                                <option value="Customer">Customer</option>
-                                <option value="Lender">Lender</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><label for="firstName">First Name</label></td>
-                        <td><input type="text" id="firstName" name="firstName"></td>
-                        <td><label for="secondName">Second Name</label></td>
-                        <td><input type="text" id="secondName" name="secondName"></td>
-                    </tr>
-                    <tr>
-                        <td><label for="email">Email</label></td>
-                        <td><input type="text" id="email" name="email"></td>
-                        <td><label for="phone">Phone</label></td>
-                        <td><input type="text" id="phone" name="phone"></td>
-                    </tr>
-                    <tr>
-                        <td><label for="address">Address</label></td>
-                        <td><input type="text" id="address" name="address"></td>
-                        <!-- Fields only relevant to customers are in class hidden -->
-                        <td id="customerFields" class="hidden"><label for="dob">Date of Birth</label></td>
-                        <td id="customerFields" class="hidden"><input type="text" id="dob" name="dob"></td>
-                    </tr>
-                    <tr id="customerFields" class="hidden">
-                        <td><label for="nationalId">National ID</label></td>
-                        <td><input type="text" id="nationalId" name="nationalId"></td>
-                        <td><label for="accountNumber">Account No.</label></td>
-                        <td><input type="text" id="accountNumber" name="accountNumber"></td>
-                    </tr>
-                    <tr>
-                        <td><label for="password">Password</label></td>
-                        <td><input type="password" id="password" name="password"></td>
-                    </tr>
-                    <tr>
-                        <td><label for="confPassword">Confirm <br> Password</label></td>
-                        <td><input type="password" id="confPassword" name="confPassword"></td>
-                    </tr>
-                    <tr class="submit-action">
-                        <td><button type="submit" name="submit">REGISTER</button></td>
-                    </tr>
-                </table>
-            </form>
-                 </div>
+                        <table>
+                            <!-- Error tag for displaying validation errors -->
+                            <div id="error" style="color: tomato; font-weight:700;"></div>
+                            <tr>
+                                <td><label>Register as?</label></td>
+                                <td>
+                                    <select name="role" id="user-role" class="select">
+                                        <option value="--select option--" selected>--select option--</option>
+                                        <option value="Admin">Admin</option>
+                                        <option value="Customer">Customer</option>
+                                        <option value="Lender">Lender</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><label for="firstName">First Name</label></td>
+                                <td><input type="text" id="firstName" name="firstName"></td>
+                                <td><label for="secondName">Second Name</label></td>
+                                <td><input type="text" id="secondName" name="secondName"></td>
+                            </tr>
+                            <tr>
+                                <td><label for="email">Email</label></td>
+                                <td><input type="text" id="email" name="email"></td>
+                                <td><label for="phone">Phone</label></td>
+                                <td><input type="text" id="phone" name="phone"></td>
+                            </tr>
+                            <tr>
+                                <td><label for="address">Address</label></td>
+                                <td><input type="text" id="address" name="address"></td>
+                                <!-- Fields only relevant to customers are in class hidden -->
+                                <td id="customerFields" class="hidden"><label for="dob">Date of Birth</label></td>
+                                <td id="customerFields" class="hidden"><input type="text" placeholder="dd-mm-yyyy" id="dob" name="dob"></td>
+                            </tr>
+                            <tr id="customerFields" class="hidden">
+                                <td><label for="nationalId">National ID</label></td>
+                                <td><input type="text" id="nationalId" name="nationalId"></td>
+                                <td><label for="accountNumber">Account No.</label></td>
+                                <td><input type="text" id="accountNumber" name="accountNumber"></td>
+                            </tr>
+                            <tr>
+                                <td><label for="password">Password</label></td>
+                                <td><input type="password" id="password" name="password"></td>
+                            </tr>
+                            <tr>
+                                <td><label for="confPassword">Confirm <br> Password</label></td>
+                                <td><input type="password" id="confPassword" name="confPassword"></td>
+                            </tr>
+                            <tr class="submit-action">
+                                <td><button type="submit" name="submit">REGISTER</button></td>
+                            </tr>
+                        </table>
+                    </form>
+                </div>
+                                    
+                <!-- Activity Logs -->
+                <div id="activityLogs" class="margin">
+                    <h1>Activity Logs</h1>
+                    <p>View user activity logs.</p>
                     
-<!-- Activity Logs -->
-<div id="activityLogs" class="margin">
-    <h1>Activity Logs</h1>
-    <p>View user activity logs.</p>
-    
-    <?php if (!empty($activityLogs)): ?>
-        <div class="activity-logs-container">
-            <table class="activity-table">
-                <thead>
-                    <tr>
-                        <th>Log ID</th>
-                        <th>User</th>
-                        <th>Email</th>
-                        <th>Activity</th>
-                        <th>Type</th>
-                        <th>Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($activityLogs as $log): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($log['log_id']) ?></td>
-                            <td><?= htmlspecialchars($log['user_name']) ?></td>
-                            <td><?= htmlspecialchars($log['email']) ?></td>
-                            <td><?= htmlspecialchars($log['activity']) ?></td>
-                            <td class="log-type-<?= strtolower($log['activity_type']) ?>">
-                                <?= htmlspecialchars($log['activity_type']) ?>
-                            </td>
-                            <td><?= date('M j, Y g:i A', strtotime($log['activity_time'])) ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    <?php else: ?>
-        <p>No activity logs found.</p>
-    <?php endif; ?>
-</div>
+                    <?php if (!empty($activityLogs)): ?>
+                        <div class="activity-logs-container">
+                            <table class="activity-table">
+                                <thead>
+                                    <tr>
+                                        <th>Log ID</th>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Activity</th>
+                                        <th>Type</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($activityLogs as $log): ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($log['log_id']) ?></td>
+                                            <td><?= htmlspecialchars($log['user_name']) ?></td>
+                                            <td><?= htmlspecialchars($log['email']) ?></td>
+                                            <td><?= htmlspecialchars($log['activity']) ?></td>
+                                            <td class="log-type-<?= strtolower($log['activity_type']) ?>">
+                                                <?= htmlspecialchars($log['activity_type']) ?>
+                                            </td>
+                                            <td><?= date('M j, Y G:i ', strtotime($log['activity_time'])) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <p>No activity logs found.</p>
+                    <?php endif; ?>
+                </div>
 
                 <!-- Notifications -->
                 <div id="notifications" class="margin">
                     <h1>Notifications</h1>
                     <p>View your alerts and reminders.</p>
                 </div>
-
-                <!-- Profile -->
-                <div id="profile" class="margin">
+ <!-- Profile -->
+ <div id="profile" class="margin">
                     <h1>Profile</h1>
-                    <p>Update your personal information and settings.</p>
+                    <p>View and update your personal information.</p>
+                    
+                    
+                    <div class="profile-container">
+                        <div class="profile-details">
+                            <h2>Personal Information</h2>
+                            <div class="profile-row">
+                                <span class="profile-label">Full Name:</span>
+                                <span class="profile-value"><?php echo htmlspecialchars($adminProfile['user_name']); ?></span>
+                            </div>
+                            <div class="profile-row">
+                                <span class="profile-label">Email:</span>
+                                <span class="profile-value"><?php echo htmlspecialchars($adminProfile['email']); ?></span>
+                            </div>
+                            <div class="profile-row">
+                                <span class="profile-label">Phone:</span>
+                                <span class="profile-value"><?php echo htmlspecialchars($adminProfile['phone']); ?></span>
+                            </div>
+                            
+                            <button id="editProfileBtn" >Edit Profile</button>
+                            
+                        </div>
+                        <div class="additional-settings">
+                                <h2>Additional Settings</h2>
+                                <p class="change">Change Password</p>
+                                <p class="delete">Delete Account</p>
+                            </div>
+                    </div>
                 </div>
 
                 <!-- Feedback -->
@@ -475,7 +570,11 @@ mysqli_close($myconn);
                             </p>
                         </div>
                     </div>
-                    <div class="metrics">
+                    <div class="metrics" style="height:unset;">
+                    <div>
+                            <p>Total Users</p>
+                            <span class="span-2"><?php echo $totalUsersCount; ?></span>
+                        </div>
                         <div>
                             <p>Active Users</p>
                             <span class="span-2"><?php echo $activeUsersCount; ?></span>
@@ -485,23 +584,59 @@ mysqli_close($myconn);
                             <span class="span-2"><?php echo $blockedUsersCount; ?></span>
                         </div>
                         <div>
-                            <p>Total Registered Borrowers</p>
+                            <p>Total Borrowers</p>
                             <span class="span-2"><?php echo $totalCustomers; ?></span>
                         </div>
                         <div>
-                            <p>Total Registered Lenders</p>
+                            <p>Total Lenders</p>
                             <span class="span-2"><?php echo $totalLenders; ?></span>
                         </div>
-                    </div>
-                    <div class="visuals">
                         <div>
-                        <canvas id="barChart" width="400" height="200"></canvas>
-                        <p>dummy bar graph</p>
+                            <p>Total Admins</p>
+                            <span class="span-2"><?php echo $totalAdmins; ?></span>
                         </div>
+                    </div>
+                    <div class="admin-visuals">
+                        <div class="visuals-left">
+                            <p><span>Recent Activities</span><span><a href="#activityLogs"><button>View All &#9660</button></a></span></p>
+                            <div class="recent-activities">
+                                <?php if (!empty($recentActivityLogs)): ?>
+                                <div class="activity-logs-container">
+                                    <table class="recent-activity-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Log ID</th>
+                                                <th>Email</th>
+                                                <th>Type</th>
+                                                <th style="text-align:center;">Time</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($recentActivityLogs as $log): ?>
+                                                <tr>
+                                                    <td><?= htmlspecialchars($log['log_id']) ?></td>
+                                                    <td><?= htmlspecialchars($log['email']) ?></td>
+                                                    <td class="log-type-<?= strtolower($log['activity_type']) ?>">
+                                                        <?= htmlspecialchars($log['activity_type']) ?>
+                                                    </td>
+                                                    <td style="text-align:right;"><?= date('M j, Y G:i ', strtotime($log['activity_time'])) ?></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <?php else: ?>
+                                    <p>No activity logs found.</p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
                         <div>
-                             <canvas id="pieChart" width="400" height="200"></canvas>
-                             <p>dummy pie chart</p>
-                            
+                        <div class="visuals-right">
+                        <p>User Distribution</p>
+                        
+                        <canvas id="pieChart" width="400" height="200"></canvas>
+                        </div>
                         </div>
                     
 
@@ -521,15 +656,78 @@ mysqli_close($myconn);
                     </p>
                 </div>
 
-                <!-- PHP page reloads -->
-                <iframe name="hiddenFrame" style="display:none; border: none; outline:none;"></iframe>
 
                  
     </main>
 
     <!-- External JavaScript for validation -->
     <script src="../js/validinput.js"></script>
+   
+<!-- Pie Chart for user Distribution -->
+<script>
+    function initializePieChart() {
+    const pieData = <?= json_encode($pieData) ?>;
+    const pieCanvas = document.getElementById('pieChart');
+    const pieCtx = pieCanvas.getContext('2d');
     
+    // Corrected labels to match your data
+    const labels = ['Admin', 'Lender', 'Customer'];
+    const values = [
+        pieData.Admin,
+        pieData.Lender,
+        pieData.Customer
+    ];
+    
+    // Assign colors to the correct labels
+    const statusColors = {
+        'Admin': 'tomato',    
+        'Lender': 'teal',  
+        'Customer': '#ddd' 
+    };
+
+    const total = values.reduce((sum, value) => sum + value, 0);
+    let startAngle = 0;
+    const centerX = pieCanvas.width / 4;
+    const centerY = pieCanvas.height / 2;
+    const radius = Math.min(pieCanvas.width / 3, pieCanvas.height / 2) - 10;
+
+    // Draw pie slices
+    labels.forEach((label, index) => {
+        const value = values[index];
+        if (value > 0) {
+            const sliceAngle = (2 * Math.PI * value) / total;
+            pieCtx.beginPath();
+            pieCtx.moveTo(centerX, centerY);
+            pieCtx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+            pieCtx.closePath();
+            pieCtx.fillStyle = statusColors[label];
+            pieCtx.fill();
+            startAngle += sliceAngle;
+        }
+    });
+
+    // Add legend
+    pieCtx.font = '16px Trebuchet MS';
+    let legendY = 20;
+    const legendX = centerX + radius + 20;
+    const legendSpacing = 20;
+
+    labels.forEach((label, index) => {
+        const value = values[index];
+        if (value > 0) {
+            pieCtx.fillStyle = statusColors[label];
+            pieCtx.fillRect(legendX, legendY, 15, 15);
+            pieCtx.fillStyle = 'whitesmoke';
+            pieCtx.fillText(`${label}: ${value.toFixed(1)}%`, legendX + 20, legendY + 12);
+            legendY += legendSpacing;
+        }
+    });
+}
+
+// Make sure to call this when the page loads
+document.addEventListener('DOMContentLoaded', initializePieChart);
+</script>
+
     <script>
     
         // Show/hide fields based on role selection

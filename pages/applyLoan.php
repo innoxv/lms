@@ -88,7 +88,7 @@ $existing_loan_check = $conn->query(
 
 if ($existing_loan_check && $existing_loan_check->num_rows > 0) {
     $existing_loan = $existing_loan_check->fetch_assoc();
-    $_SESSION['loan_message'] = "Loan is active, pay first to reapply.";
+    $_SESSION['loan_message'] = "Loan is already active, pay first to reapply.";
     $_SESSION['message_type'] = "error";
     header("Location: customerDashboard.php#applyLoan");
     exit;
@@ -110,7 +110,7 @@ $insert_query = "INSERT INTO loans (
 if ($conn->query($insert_query)) {
     // ACTIVITY LOGGING 
     $loan_id = $conn->insert_id;
-    $activity_description = "Applied for loan #$loan_id: $loan_type";
+    $activity_description = "Applied for loan, Loan ID $loan_id";
     $conn->query(
         "INSERT INTO activity (user_id, activity, activity_time, activity_type)
         VALUES ($user_id, '$activity_description', NOW(), 'loan application')"

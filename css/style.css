@@ -1402,9 +1402,16 @@ iframe {
 .user-filter button{
     padding: .7em;
     border-radius: 0 .5em .5em 0;
+    background-color: tomato;
+    color: #28282B;
+}
+.user-filter button:hover{
+    background: transparent;
+    outline: 1px solid tomato;
+    color: tomato;
 }
 .users-table {
-    width: 80%;
+    width: 98%;
     border: none;
     border-collapse: collapse;
     outline: none;
@@ -1498,6 +1505,67 @@ iframe {
     
 }
 .activity-table td{
+    color: lightgray;
+    text-align: left;
+    padding: .2em 0 ;
+
+}
+
+.admin-visuals{
+    margin: 0;
+    height: 60%;
+    width: 100%;
+    /* outline: 1px solid blue; */
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+.visuals-left{
+    width: 48%;
+}
+.visuals-right{
+    margin-top: 20%;
+    /* flex-direction: column; */
+}
+.admin-visuals P{
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin: .8em 0 .5em 0;
+}
+.admin-visuals button{
+padding: .5em;
+margin: unset;
+background: transparent;
+color: lightgray;
+border-bottom: 1px solid lightgray;
+}
+.admin-visuals button:hover{
+    background: transparent;
+    color: #74C0FC;
+    border-bottom: 1px solid #74C0FC;
+    outline: none;
+    }
+.recent-activity-table {
+    border: none;
+    border-collapse: collapse;
+    outline: none;
+    width: 100%;
+}
+
+.recent-activity-table thead th {
+    position: sticky;
+    top: 0;
+    background: #3A3A3A;
+    z-index: 10;
+    padding: .5em 0;
+    text-align: left;
+    color: whitesmoke;
+    border: none;
+    
+}
+.recent-activity-table td{
     color: lightgray;
     text-align: left;
     padding: .2em 0 ;
