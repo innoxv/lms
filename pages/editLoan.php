@@ -67,7 +67,7 @@ if (!empty($updates)) {
     if (mysqli_query($conn, $update_query)) {
         // Log the edit activity
         if (!empty($changes)) {
-            $activity = "Edited loan offer #$product_id";
+            $activity = "Edited loan offer, Product ID $product_id";
             $conn->query(
                 "INSERT INTO activity (user_id, activity, activity_time, activity_type)
                 VALUES ($user_id, '$activity', NOW(), 'loan offer edit')"

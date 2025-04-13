@@ -49,7 +49,7 @@ $status = strtolower($loan['status']);
 $delete_query = "DELETE FROM loans WHERE loan_id = $loan_id";
 if ($conn->query($delete_query)) {
     // Log the deletion activity
-    $activity = "Deleted loan application #$loan_id ";
+    $activity = "Deleted loan application, Loan ID $loan_id ";
     $conn->query(
         "INSERT INTO activity (user_id, activity, activity_time, activity_type)
         VALUES ($user_id, '$activity', NOW(), 'application deletion')"

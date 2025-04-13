@@ -57,7 +57,7 @@ $deleteQuery = "DELETE FROM loan_products WHERE product_id = $product_id";
 
 if (mysqli_query($myconn, $deleteQuery)) {
     // Log the deletion activity
-    $activity = "Deleted loan offer #$product_id";
+    $activity = "Deleted loan offer, Product ID $product_id";
     $myconn->query(
         "INSERT INTO activity (user_id, activity, activity_time, activity_type)
         VALUES ({$_SESSION['user_id']}, '$activity', NOW(), 'loan offer deletion')"

@@ -388,86 +388,85 @@ if (isset($_SESSION['profile_message_shown'])) {
                         
                         <!-- Loan Lenders display and filter functionality -->
                         <div class="loan-lenders" id="lendersContainer">
-    <?php
+                        <?php
+                            if (isset($_SESSION['filters_applied']) && $_SESSION['filters_applied']): 
+                                // Filtered view
+                                if (!empty($_SESSION['filtered_lenders'])): ?>
+                                    <?php foreach ($_SESSION['filtered_lenders'] as $lender): ?>
+                                        <div class="lender">
+                                            <span><?= $lender['name'] ?></span>
+                                            <span><?= $lender['type'] ?></span>
+                                            <span>Rate: <?= $lender['rate'] ?>%</span>
+                                            <span>Max Amt: <?= number_format($lender['amount']) ?></span>
+                                            <span>Max Dur: <?= $lender['duration'] ?> months</span>
+                                            <button class="applynow" 
+                                                data-product="<?= $lender['product_id'] ?>"
+                                                data-lender="<?= $lender['lender_id'] ?>"
+                                                data-rate="<?= $lender['rate'] ?>"
+                                                data-name="<?= $lender['name'] ?>"
+                                                data-type="<?= $lender['type'] ?>"
+                                                data-maxamount="<?= $lender['amount'] ?>"
+                                                data-maxduration="<?= $lender['duration'] ?>">
+                                                Apply Now
+                                            </button>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="no-results">
+                                        No lenders match your current filters.
+                                    </div>
+                                <?php endif; ?>
+                            <?php else: 
 
-
-    if (isset($_SESSION['filters_applied']) && $_SESSION['filters_applied']): 
-        // Filtered view
-        if (!empty($_SESSION['filtered_lenders'])): ?>
-            <?php foreach ($_SESSION['filtered_lenders'] as $lender): ?>
-                <div class="lender">
-                    <span><?= $lender['name'] ?></span>
-                    <span><?= $lender['type'] ?></span>
-                    <span>Rate: <?= $lender['rate'] ?>%</span>
-                    <span>Max Amt: <?= number_format($lender['amount']) ?></span>
-                    <span>Max Dur: <?= $lender['duration'] ?> months</span>
-                    <button class="applynow" 
-                        data-product="<?= $lender['product_id'] ?>"
-                        data-lender="<?= $lender['lender_id'] ?>"
-                        data-rate="<?= $lender['rate'] ?>"
-                        data-name="<?= $lender['name'] ?>"
-                        data-type="<?= $lender['type'] ?>"
-                        data-maxamount="<?= $lender['amount'] ?>"
-                        data-maxduration="<?= $lender['duration'] ?>">
-                        Apply Now
-                    </button>
-                </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <div class="no-results">
-                No lenders match your current filters.
-            </div>
-        <?php endif; ?>
-    <?php else: 
-        // Default view - show all lenders
-        $query = "SELECT loan_products.*, lenders.name AS lender_name
-                  FROM loan_products
-                  JOIN lenders ON loan_products.lender_id = lenders.lender_id
-                  ORDER BY loan_products.product_id DESC";
-        $result = $myconn->query($query);
-        
-        if ($result && $result->num_rows > 0): ?>
-            <?php while ($lender = $result->fetch_assoc()): ?>
-                <div class="lender">
-                    <span><?= htmlspecialchars($lender['lender_name']) ?></span>
-                    <span><?= htmlspecialchars($lender['loan_type']) ?></span>
-                    <span>Rate: <?= $lender['interest_rate'] ?>%</span>
-                    <span>Max Amt: <?= number_format($lender['max_amount']) ?></span>
-                    <span>Max Dur: <?= $lender['max_duration'] ?> months</span>
-                    <button class="applynow" 
-                        data-product="<?= $lender['product_id'] ?>"
-                        data-lender="<?= $lender['lender_id'] ?>"
-                        data-rate="<?= $lender['interest_rate'] ?>"
-                        data-name="<?= htmlspecialchars($lender['lender_name']) ?>"
-                        data-type="<?= htmlspecialchars($lender['loan_type']) ?>"
-                        data-maxamount="<?= $lender['max_amount'] ?>"
-                        data-maxduration="<?= $lender['max_duration'] ?>">
-                        Apply Now
-                    </button>
-                </div>
-            <?php endwhile; ?>
-        <?php else: ?>
-            <div class="error">No lenders currently available in the system</div>
-        <?php endif; ?>
-    <?php endif; ?>
-</div>
+                            // Default view - show all lenders
+                            $query = "SELECT loan_products.*, lenders.name AS lender_name
+                                    FROM loan_products
+                                    JOIN lenders ON loan_products.lender_id = lenders.lender_id
+                                    ORDER BY loan_products.product_id DESC";
+                            $result = $myconn->query($query);
+            
+                            if ($result && $result->num_rows > 0): ?>
+                                <?php while ($lender = $result->fetch_assoc()): ?>
+                                    <div class="lender">
+                                        <span><?= htmlspecialchars($lender['lender_name']) ?></span>
+                                        <span><?= htmlspecialchars($lender['loan_type']) ?></span>
+                                        <span>Rate: <?= $lender['interest_rate'] ?>%</span>
+                                        <span>Max Amt: <?= number_format($lender['max_amount']) ?></span>
+                                        <span>Max Dur: <?= $lender['max_duration'] ?> months</span>
+                                        <button class="applynow" 
+                                            data-product="<?= $lender['product_id'] ?>"
+                                            data-lender="<?= $lender['lender_id'] ?>"
+                                            data-rate="<?= $lender['interest_rate'] ?>"
+                                            data-name="<?= htmlspecialchars($lender['lender_name']) ?>"
+                                            data-type="<?= htmlspecialchars($lender['loan_type']) ?>"
+                                            data-maxamount="<?= $lender['max_amount'] ?>"
+                                            data-maxduration="<?= $lender['max_duration'] ?>">
+                                            Apply Now
+                                        </button>
+                                    </div>
+                                <?php endwhile; ?>
+                            <?php else: ?>
+                                <div class="error">No lenders currently available in the system</div>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
 
                         <!-- Loan Application Popup -->
                         <div class="popup-overlay2" id="loanPopup" style="display: none;">
                             <div class="popup-content">
                                 <h2>Loan Application</h2>
                         
-<?php
-    // Display messages
-    if (isset($_SESSION['loan_message'])): ?>
-        <div class="alert <?= $_SESSION['message_type'] ?? 'info' ?>">
-            <?= htmlspecialchars($_SESSION['loan_message']) ?>
-        </div>
-        <?php 
-        unset($_SESSION['loan_message']);
-        unset($_SESSION['message_type']);
-    endif; ?>
-
+                        <?php
+                            // Display messages
+                            if (isset($_SESSION['loan_message'])): ?>
+                                <div class="alert <?= $_SESSION['message_type'] ?? 'info' ?>">
+                                    <?= htmlspecialchars($_SESSION['loan_message']) ?>
+                                </div>
+                                <?php 
+                                unset($_SESSION['loan_message']);
+                                unset($_SESSION['message_type']);
+                            endif; ?>
+                        
                                 
                             <!-- Loan Application Form -->
                             <form id="loanApplicationForm" action="applyLoan.php" method="post">
@@ -542,7 +541,6 @@ if (isset($_SESSION['profile_message_shown'])) {
 
                 
                 <!-- Loan History -->
-                                
                 <div id="loanHistory" class="margin">
                     <h1>Loan History</h1>
                     <p>View your loan history</p>
@@ -551,7 +549,7 @@ if (isset($_SESSION['profile_message_shown'])) {
                         <form method="get" action="#loanHistory">
                             <input type="hidden" name="status" value="<?php echo htmlspecialchars($statusFilter); ?>">
                             <label for="status">Filter by Status:</label>
-                            <select name="status" id="status" onchange="this.form.submit()">
+                            <select name="status" id="status" onchange="this.form.submit()"> <!-- this submits the form on select -->
                                 <option value="">All Loans</option>
                                 <option value="pending" <?php echo ($statusFilter === 'pending') ? 'selected' : ''; ?>>Pending</option>
                                 <option value="approved" <?php echo ($statusFilter === 'approved') ? 'selected' : ''; ?>>Approved</option>
@@ -606,98 +604,94 @@ if (isset($_SESSION['profile_message_shown'])) {
                     </div>
                     
                     <!-- Loan Details Popup -->
-<div id="loanDetailsPopup" class="popup-overlay3" style="display: <?= isset($_SESSION['loan_details']) ? 'flex' : 'none' ?>;">
-    <div class="popup-content3">
-        <h2>Loan Details for ID <span id="popupLoanId"><?= $_SESSION['loan_details']['loan_id'] ?? '' ?></span></h2>
-        <button id="closePopupBtn" class="close-btn">&times;</button>
-
-        <?php if (isset($_SESSION['loan_details_message'])): ?>
-            <div class="alert <?= $_SESSION['loan_details_message_type'] ?? 'info' ?>">
-                <?= htmlspecialchars($_SESSION['loan_details_message']) ?>
-            </div>
-            <?php $_SESSION['loan_details_message_shown'] = true; ?>
-            <script>
-                setTimeout(() => {
-                    document.querySelector('#loanDetailsPopup .alert').style.display = 'none';
-                }, 2000);
-            </script>
-        <?php endif; ?>
-        
-        <div id="loanDetailsContent" class="popup-body">
-            <?php if (isset($_SESSION['loan_details'])): ?>
-                <div class="loan-details-grid">
-                    <div class="detail-row">
-                        <span class="detail-label">Loan Type:</span>
-                        <span class="detail-value"><?= $_SESSION['loan_details']['loan_type'] ?></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Lender:</span>
-                        <span class="detail-value"><?= $_SESSION['loan_details']['lender_name'] ?></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Amount:</span>
-                        <span class="detail-value">KES <?= $_SESSION['loan_details']['amount'] ?></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Interest Rate:</span>
-                        <span class="detail-value"><?= $_SESSION['loan_details']['interest_rate'] ?>%</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Duration:</span>
-                        <span class="detail-value"><?= $_SESSION['loan_details']['duration'] ?> months</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Monthly Installment:</span>
-                        <span class="detail-value">KES <?= $_SESSION['loan_details']['installments'] ?></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Collateral Value:</span>
-                        <span class="detail-value">KES <?= $_SESSION['loan_details']['collateral_value'] ?></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Collateral Description:</span>
-                        <span class="detail-value"><?= $_SESSION['loan_details']['collateral_description'] ?></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Status:</span>
-                        <span class="detail-value loan-status <?= strtolower($_SESSION['loan_details']['status']) ?>">
-                            <?= $_SESSION['loan_details']['status'] ?>
-                        </span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Application Date:</span>
-                        <span class="detail-value"><?= $_SESSION['loan_details']['created_at'] ?></span>
+                    <div id="loanDetailsPopup" class="popup-overlay3" style="display: <?= isset($_SESSION['loan_details']) ? 'flex' : 'none' ?>;">
+                        <div class="popup-content3">
+                            <h2>Loan Details for ID <span id="popupLoanId"><?= $_SESSION['loan_details']['loan_id'] ?? '' ?></span></h2>
+                            <button id="closePopupBtn" class="close-btn">&times;</button>
+                    
+                            <?php if (isset($_SESSION['loan_details_message'])): ?>
+                                <div class="alert <?= $_SESSION['loan_details_message_type'] ?? 'info' ?>">
+                                    <?= htmlspecialchars($_SESSION['loan_details_message']) ?>
+                                </div>
+                                <?php $_SESSION['loan_details_message_shown'] = true; ?>
+                                <script>
+                                    setTimeout(() => {
+                                        document.querySelector('#loanDetailsPopup .alert').style.display = 'none';
+                                    }, 2000);
+                                </script>
+                            <?php endif; ?>
+                            
+                            <div id="loanDetailsContent" class="popup-body">
+                                <?php if (isset($_SESSION['loan_details'])): ?>
+                                    <div class="loan-details-grid">
+                                        <div class="detail-row">
+                                            <span class="detail-label">Loan Type:</span>
+                                            <span class="detail-value"><?= $_SESSION['loan_details']['loan_type'] ?></span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="detail-label">Lender:</span>
+                                            <span class="detail-value"><?= $_SESSION['loan_details']['lender_name'] ?></span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="detail-label">Amount:</span>
+                                            <span class="detail-value">KES <?= $_SESSION['loan_details']['amount'] ?></span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="detail-label">Interest Rate:</span>
+                                            <span class="detail-value"><?= $_SESSION['loan_details']['interest_rate'] ?>%</span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="detail-label">Duration:</span>
+                                            <span class="detail-value"><?= $_SESSION['loan_details']['duration'] ?> months</span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="detail-label">Monthly Installment:</span>
+                                            <span class="detail-value">KES <?= $_SESSION['loan_details']['installments'] ?></span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="detail-label">Collateral Value:</span>
+                                            <span class="detail-value">KES <?= $_SESSION['loan_details']['collateral_value'] ?></span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="detail-label">Collateral Description:</span>
+                                            <span class="detail-value"><?= $_SESSION['loan_details']['collateral_description'] ?></span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="detail-label">Status:</span>
+                                            <span class="detail-value loan-status <?= strtolower($_SESSION['loan_details']['status']) ?>">
+                                                <?= $_SESSION['loan_details']['status'] ?>
+                                            </span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="detail-label">Application Date:</span>
+                                            <span class="detail-value"><?= $_SESSION['loan_details']['created_at'] ?></span>
+                                        </div>
+                                        
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <div id="loanActionButtons" class="popup-actions">
+                                <?php if (isset($_SESSION['loan_details']) && in_array(strtolower($_SESSION['loan_details']['status']), ['pending', 'rejected'])): ?>
+                                    <form action="deleteApplication.php" method="post" class="delete-form">
+                                        <input type="hidden" name="loan_id" value="<?= $_SESSION['loan_details']['loan_id'] ?>">
+                                        <button type="submit" class="delete-btn" onclick="return confirm('Are you sure you want to delete this application?')">
+                                            Delete Application
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                                
+                            </div>
+                        </div>
                     </div>
                     
+                    <?php 
+                    // Clear the loan details from session after display
+                    if (isset($_SESSION['loan_details'])) {
+                        unset($_SESSION['loan_details']);
+                    }
+                    ?>
                 </div>
-            <?php endif; ?>
-        </div>
-        
-        <div id="loanActionButtons" class="popup-actions">
-            <?php if (isset($_SESSION['loan_details']) && in_array(strtolower($_SESSION['loan_details']['status']), ['pending', 'rejected'])): ?>
-                <form action="deleteApplication.php" method="post" class="delete-form">
-                    <input type="hidden" name="loan_id" value="<?= $_SESSION['loan_details']['loan_id'] ?>">
-                    <button type="submit" class="delete-btn" onclick="return confirm('Are you sure you want to delete this application?')">
-                         Delete Application
-                    </button>
-                </form>
-            <?php endif; ?>
-            
-        </div>
-    </div>
-</div>
-
-<?php 
-// Clear the loan details from session after display
-if (isset($_SESSION['loan_details'])) {
-    unset($_SESSION['loan_details']);
-}
-?>
-                </div>
-
-                
-        
-                
 
                 <!-- Notifications -->
                 <div id="notifications" class="margin">
@@ -711,9 +705,6 @@ if (isset($_SESSION['loan_details'])) {
                     <p>View and update your personal information.</p>
                     
                     <div class="profile-container">
-                
-                        
-                        
                         <div class="profile-details">
                         <h2>Personal Information</h2>
                             <div class="profile-row">
@@ -766,19 +757,19 @@ if (isset($_SESSION['loan_details'])) {
                 <div class="popup-overlay3" id="profileOverlay">
                     
                     <div class="popup-content3">
-                        <!-- Message container -->
-        <!-- Message container -->
-        <div id="profileMessage" class="message-container">
-            <?php if (isset($_SESSION['profile_message'])): ?>
-                <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
-                    <?= htmlspecialchars($_SESSION['profile_message']) ?>
-                </div>
-                <?php 
-                    unset($_SESSION['profile_message']);
-                    unset($_SESSION['profile_message_type']);
-                ?>
-            <?php endif; ?>
-        </div>
+                    <!-- Message container -->
+                    <div id="profileMessage" class="message-container">
+                        <?php if (isset($_SESSION['profile_message'])): ?>
+                            <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
+                                <?= htmlspecialchars($_SESSION['profile_message']) ?>
+                            </div>
+                            <?php 
+                                unset($_SESSION['profile_message']);
+                                unset($_SESSION['profile_message_type']);
+                            ?>
+                        <?php endif; ?>
+                    </div>
+
                         <h2>Edit Profile</h2>
                         <form id="profileEditForm" action="custUpdateProfile.php" method="post">
                             <input type="hidden" name="customer_id" value="<?php echo $customer_id; ?>">
@@ -890,40 +881,39 @@ if (isset($_SESSION['loan_details'])) {
                 </div>
 
                 <div class="visuals">
-        <div>
-            <p>Number of Active Loans per Loan Type</p>
-            <canvas id="barChart" width="800" height="300"></canvas>
-        </div>
-        <div>
-            <p>Loan Status</p>
-            <canvas id="pieChart" width="400" height="200"></canvas>
-        </div>
-    </div>
+                    <div>
+                        <p>Number of Active Loans per Loan Type</p>
+                        <canvas id="barChart" width="800" height="300"></canvas>
+                    </div>
+                    <div>
+                        <p>Loan Status</p>
+                        <canvas id="pieChart" width="400" height="200"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
         
 
         <!-- Copyright -->
         <div class="copyright">
-                    <p><?php
-                        $currentYear = date("Y");
-                        echo "&copy; $currentYear";
-                        ?>
-                        <a href="mailto:innocentmukabwa@gmail.com">dev</a>
-                    </p>
-                </div>
+            <p><?php
+                $currentYear = date("Y");
+                echo "&copy; $currentYear";
+                ?>
+                <a href="mailto:innocentmukabwa@gmail.com">dev</a>
+            </p>
+        </div>
 
 
                 
-    </main>
+</main>
 
 
 
-    <script>
+<script>
 
-
-// GENERAL UTILITY FUNCTIONS
+// Initializations
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize metrics font size adjustment
@@ -987,7 +977,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
 
 
-// SIMPLIFIED POPUP MANAGEMENT
+// POPUP MANAGEMENT
 
 function initPopups() {
     // Close buttons
@@ -1002,10 +992,6 @@ function initPopups() {
         });
     });
 
-    // Close with ESC key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeAllPopups();
-    });
 
     // Apply Now buttons
     document.querySelectorAll('.applynow').forEach(btn => {

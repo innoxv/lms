@@ -1,8 +1,8 @@
 <?php
 // Enable error reporting for debugging
-// ini_set('display_errors', 1);
-// ini_set('display_startup_errors', 1);
-// error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 // Start the session
 session_start();
@@ -39,7 +39,7 @@ if (isset($_POST['submit'])) {  // isset is a PHP function that determines if a 
 
     if (mysqli_num_rows($result) > 0) { //mysqli_num_rows() is a PHP function that returns the number of rows in the result set
         // Email already exists, show an error message
-        echo "<script>alert('Email already exists. Please use a different email.'); window.location.href = 'signup.html';</script>";
+        echo "<script>alert('Email already exists. Please use a different email.'); </script>";
         exit();
     }
 
@@ -102,12 +102,12 @@ if (isset($_POST['submit'])) {  // isset is a PHP function that determines if a 
         // Execute the query if needed
         if ($sql === true || mysqli_query($myconn, $sql)) {
             // Log successful registration
-            $activity = "Successfully registered $role: $userName";
+            $activity = "Registered $role: $email";
             $user_id = $_SESSION['user_id'] ?? $userId;
 
             mysqli_query($myconn, 
                 "INSERT INTO activity (user_id, activity, activity_time, activity_type)
-                VALUES ($user_id, '$activity', NOW(), 'registration success')"
+                VALUES ($user_id, '$activity', NOW(), 'user registration')"
             );
 
             // Redirect based on role
