@@ -132,7 +132,7 @@ $lenders = $result->fetch_all(MYSQLI_ASSOC);
 
 // After executing the query:
 if (empty($lenders)) {
-    $_SESSION['loan_message'] = "No loans match your filter criteria";
+    // $_SESSION['loan_message'] = "No loans match your filter criteria";
     $_SESSION['message_type'] = "error";
     $_SESSION['filtered_lenders'] = []; // Explicit empty array
     $_SESSION['filters_applied'] = true; // Track that filters were applied
@@ -148,8 +148,8 @@ unset($_SESSION['filtered_lenders']);
 
 if (empty($lenders)) {
     // No lenders matched the filter criteria
-    $_SESSION['loan_message'] = "No loans available matching your filter criteria";
-    $_SESSION['message_type'] = "info";
+    // $_SESSION['loan_message'] = "No loans available matching your filter criteria";
+    // $_SESSION['message_type'] = "info";
 } else {
     // Store lenders in session to display on page reload
     $_SESSION['filtered_lenders'] = array_map(function($lender) {

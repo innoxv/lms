@@ -65,6 +65,7 @@ $statusFilter = isset($_GET['status']) && in_array($_GET['status'], ['approved',
     : '';
 
 // Fetch loan history
+// Base query
 $loansQuery = "SELECT 
     loans.loan_id,
     loan_products.loan_type,
@@ -78,17 +79,76 @@ JOIN loan_products ON loans.product_id = loan_products.product_id
 JOIN lenders ON loans.lender_id = lenders.lender_id
 WHERE loans.customer_id = ?";
 
+// Add filters dynamically
+$params = [$customer_id];
+$types = "i"; // Start with customer_id as integer
+
+// Status filter
 if ($statusFilter) {
     $loansQuery .= " AND loans.status = ?";
-    $stmt = $myconn->prepare($loansQuery);
-    $stmt->bind_param("is", $customer_id, $statusFilter);
-} else {
-    $loansQuery .= " ORDER BY loans.created_at DESC";
-    $stmt = $myconn->prepare($loansQuery);
-    $stmt->bind_param("i", $customer_id);
+    $params[] = $statusFilter;
+    $types .= "s";
 }
 
-// Loan History Query 
+// Loan type filter
+if (isset($_GET['loan_type']) && $_GET['loan_type']) {
+    $loansQuery .= " AND loan_products.loan_type = ?";
+    $params[] = $_GET['loan_type'];
+    $types .= "s";
+}
+
+// Date range filter
+if (isset($_GET['date_range']) && $_GET['date_range']) {
+    switch ($_GET['date_range']) {
+        case 'today':
+            $loansQuery .= " AND DATE(loans.created_at) = CURDATE()";
+            break;
+        case 'week':
+            $loansQuery .= " AND YEARWEEK(loans.created_at, 1) = YEARWEEK(CURDATE(), 1)";
+            break;
+        case 'month':
+            $loansQuery .= " AND MONTH(loans.created_at) = MONTH(CURDATE()) AND YEAR(loans.created_at) = YEAR(CURDATE())";
+            break;
+        case 'year':
+            $loansQuery .= " AND YEAR(loans.created_at) = YEAR(CURDATE())";
+            break;
+    }
+}
+
+// Amount range filter
+if (isset($_GET['amount_range']) && $_GET['amount_range']) {
+    list($minAmount, $maxAmount) = explode('-', str_replace('+', '-', $_GET['amount_range']));
+    $loansQuery .= " AND loans.amount >= ?";
+    $params[] = $minAmount;
+    $types .= "d";
+    
+    if (is_numeric($maxAmount)) {
+        $loansQuery .= " AND loans.amount <= ?";
+        $params[] = $maxAmount;
+        $types .= "d";
+    }
+}
+
+// Interest rate filter
+if (isset($_GET['interest_rate']) && $_GET['interest_rate']) {
+    list($minRate, $maxRate) = explode('-', str_replace('+', '-', $_GET['interest_rate']));
+    $loansQuery .= " AND loans.interest_rate >= ?";
+    $params[] = $minRate;
+    $types .= "d";
+    
+    if (is_numeric($maxRate)) {
+        $loansQuery .= " AND loans.interest_rate <= ?";
+        $params[] = $maxRate;
+        $types .= "d";
+    }
+}
+
+// Add sorting
+$loansQuery .= " ORDER BY loans.created_at DESC";
+
+// Prepare and execute
+$stmt = $myconn->prepare($loansQuery);
+$stmt->bind_param($types, ...$params);
 $stmt->execute();
 $loans = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
@@ -275,7 +335,8 @@ if (isset($_SESSION['profile_message_shown'])) {
                             </a>
                         </li>
                         <li><a href="#loanHistory" id="loanHistoryLink">Loan History</a></li>
-                        <li><a href="#notifications">Notifications</a></li>
+                        <li class="disabled-link"><a href="" id="">Payment Tracking</a></li> <!-- this is still in production -->
+                        <li class="disabled-link"><a href="#notifications">Notifications</a></li>  <!-- this is still in production -->
                         <li><a href="#profile">Profile</a></li>
                     </div>
                     <div class="bottom">
@@ -545,20 +606,72 @@ if (isset($_SESSION['profile_message_shown'])) {
                     <h1>Loan History</h1>
                     <p>View your loan history</p>
                    <!-- Loan Status Filter -->
-                    <div class="loan-filter-container">
-                        <form method="get" action="#loanHistory">
-                            <input type="hidden" name="status" value="<?php echo htmlspecialchars($statusFilter); ?>">
-                            <label for="status">Filter by Status:</label>
-                            <select name="status" id="status" onchange="this.form.submit()"> <!-- this submits the form on select -->
-                                <option value="">All Loans</option>
-                                <option value="pending" <?php echo ($statusFilter === 'pending') ? 'selected' : ''; ?>>Pending</option>
-                                <option value="approved" <?php echo ($statusFilter === 'approved') ? 'selected' : ''; ?>>Approved</option>
-                                <option value="rejected" <?php echo ($statusFilter === 'rejected') ? 'selected' : ''; ?>>Rejected</option>
-                            </select>
-                            <!-- <button type="submit">Apply Filter</button> -->
-                            <a href="customerDashboard.php#loanHistory"><button type="button" class="reset">Reset</button></a>
-                        </form>
-                    </div>
+                   <div class="loan-filter-container">
+    <form method="get" action="#loanHistory">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="status">Status:</label>
+                <select name="status" id="status" onchange="this.form.submit()">
+                    <option value="">All Loans</option>
+                    <option value="pending" <?= ($statusFilter === 'pending') ? 'selected' : '' ?>>Pending</option>
+                    <option value="approved" <?= ($statusFilter === 'approved') ? 'selected' : '' ?>>Approved</option>
+                    <option value="rejected" <?= ($statusFilter === 'rejected') ? 'selected' : '' ?>>Rejected</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="loan_type">Type:</label>
+                <select name="loan_type" id="loan_type" onchange="this.form.submit()">
+                    <option value="">All Types</option>
+                    <?php foreach ($allLoanTypes as $type): ?>
+                        <option value="<?= $type ?>" <?= (isset($_GET['loan_type']) && $_GET['loan_type'] === $type) ? 'selected' : '' ?>>
+                            <?= $type ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+
+            <div class="filter-group">
+                <label for="date_range">Date Range:</label>
+                <select name="date_range" id="date_range" onchange="this.form.submit()">
+                    <option value="">All Time</option>
+                    <option value="today" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'today') ? 'selected' : '' ?>>Today</option>
+                    <option value="week" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'week') ? 'selected' : '' ?>>This Week</option>
+                    <option value="month" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'month') ? 'selected' : '' ?>>This Month</option>
+                    <option value="year" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'year') ? 'selected' : '' ?>>This Year</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="amount_range">Amount Range:</label>
+                <select name="amount_range" id="amount_range" onchange="this.form.submit()">
+                    <option value="">Any Amount</option>
+                    <option value="0-5000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '0-5000') ? 'selected' : '' ?>>0 - 5,000</option>
+                    <option value="5000-20000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '5000-20000') ? 'selected' : '' ?>>5,000 - 20,000</option>
+                    <option value="20000-50000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '20000-50000') ? 'selected' : '' ?>>20,000 - 50,000</option>
+                    <option value="50000-100000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '50000-100000') ? 'selected' : '' ?>>50,000 - 100,000</option>
+                    <option value="100000+" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '100000+') ? 'selected' : '' ?>>100,000+</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="interest_rate">Interest Rate:</label>
+                <select name="interest_rate" id="interest_rate" onchange="this.form.submit()">
+                    <option value="">Any</option>
+                    <option value="0-5" <?= (isset($_GET['interest_rate']) && $_GET['interest_rate'] === '0-5') ? 'selected' : '' ?>>0-5%</option>
+                    <option value="5-10" <?= (isset($_GET['interest_rate']) && $_GET['interest_rate'] === '5-10') ? 'selected' : '' ?>>5-10%</option>
+                    <option value="10+" <?= (isset($_GET['interest_rate']) && $_GET['interest_rate'] === '10+') ? 'selected' : '' ?>>10%+</option>
+                </select>
+            </div>
+            
+            <div class="filter-actions">
+                <a href="customerDashboard.php#loanHistory"><button type="button" class="reset">Reset</button></a>
+            </div>
+
+        </div>
+        
+    </form>
+</div>
                     <!-- Loan History -->
                     <div class="loanhistory" id="loanHistoryContainer">
                         <?php if (empty($loans)): ?>
@@ -1022,7 +1135,7 @@ function initPopups() {
                           this.getAttribute('onclick').match(/showLoanDetails\((\d+)\)/)[1];
             
             // Redirect to same page with loan_id parameter
-            window.location.href = 'customerDashboard.php?loan_id=' + loanId + '#loanHistory';
+            window.location.href = 'customerDashboard.php?loan_id=' + loanId + '#loanHistory';  // theres a bug here, It refreshes the filtered
         });
     });
 

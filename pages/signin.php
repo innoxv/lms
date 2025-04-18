@@ -86,7 +86,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $logStmt->execute();
                 $logStmt->close();
                 
-                echo "<script>alert('Invalid password.'); window.location.href = 'signin.html';</script>";
+                echo "<script>alert('Invalid email or password.'); window.location.href = 'signin.html';</script>";
                 exit();
             }
         } else {
