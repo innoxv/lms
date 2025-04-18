@@ -154,17 +154,62 @@ JOIN loan_products ON loans.product_id = loan_products.product_id
 JOIN customers ON loans.customer_id = customers.customer_id
 WHERE loans.lender_id = '$lender_id'";
 
-// Add status filter if specified
+// Status filter
 if (!empty($statusFilter) && in_array($statusFilter, ['pending', 'approved', 'rejected'])) {
     $loanRequestsQuery .= " AND loans.status = '$statusFilter'";
 }
 
-// loan type filter if specified
+// Loan type filter
 if (!empty($loanTypeFilter)) {
     $loanRequestsQuery .= " AND loan_products.loan_type = '$loanTypeFilter'";
 }
 
-$loanRequestsQuery .= " ORDER BY loans.created_at DESC";
+// Date range filter
+if (isset($_GET['date_range']) && $_GET['date_range']) {
+    switch ($_GET['date_range']) {
+        case 'today':
+            $loanRequestsQuery .= " AND DATE(loans.created_at) = CURDATE()";
+            break;
+        case 'week':
+            $loanRequestsQuery .= " AND YEARWEEK(loans.created_at, 1) = YEARWEEK(CURDATE(), 1)";
+            break;
+        case 'month':
+            $loanRequestsQuery .= " AND MONTH(loans.created_at) = MONTH(CURDATE()) AND YEAR(loans.created_at) = YEAR(CURDATE())";
+            break;
+        case 'year':
+            $loanRequestsQuery .= " AND YEAR(loans.created_at) = YEAR(CURDATE())";
+            break;
+    }
+}
+
+// Amount range filter
+if (isset($_GET['amount_range']) && $_GET['amount_range']) {
+    list($minAmount, $maxAmount) = explode('-', str_replace('+', '-', $_GET['amount_range']));
+    $loanRequestsQuery .= " AND loans.amount >= $minAmount";
+    if (is_numeric($maxAmount)) {
+        $loanRequestsQuery .= " AND loans.amount <= $maxAmount";
+    }
+}
+
+// Duration filter
+if (isset($_GET['duration_range']) && $_GET['duration_range']) {
+    list($minDuration, $maxDuration) = explode('-', str_replace('+', '-', $_GET['duration_range']));
+    $loanRequestsQuery .= " AND loans.duration >= $minDuration";
+    if (is_numeric($maxDuration)) {
+        $loanRequestsQuery .= " AND loans.duration <= $maxDuration";
+    }
+}
+
+// Collateral filter
+if (isset($_GET['collateral_range']) && $_GET['collateral_range']) {
+    list($minCollateral, $maxCollateral) = explode('-', str_replace('+', '-', $_GET['collateral_range']));
+    $loanRequestsQuery .= " AND loans.collateral_value >= $minCollateral";
+    if (is_numeric($maxCollateral)) {
+        $loanRequestsQuery .= " AND loans.collateral_value <= $maxCollateral";
+    }
+}
+ $loanRequestsQuery .= " ORDER BY loans.created_at DESC";
+
 
 // Execute the query
 $loanRequestsResult = mysqli_query($myconn, $loanRequestsQuery);
@@ -258,7 +303,7 @@ mysqli_close($myconn);
                             </a>
                         </li>
                         <li><a href="#loanRequests">Loan Requests</a></li>
-                        <li><a href="#notifications">Notifications</a></li>
+                        <li class="disabled-link"><a href="#notifications">Notifications</a></li>  <!-- this is still in production -->
                         <li><a href="#profile">Profile</a></li>
                     </div>
                     <div class="bottom">
@@ -406,7 +451,7 @@ mysqli_close($myconn);
                             <div class="filter-row">
                                 <div class="filter-group">
                                     <label for="status">Status:</label>
-                                    <select name="status" id="status">
+                                    <select name="status" id="status"  onchange="this.form.submit()">  <!-- this submits the form on select -->
                                         <option value="">All Statuses</option>
                                         <option value="pending" <?= ($statusFilter === 'pending') ? 'selected' : '' ?>>Pending</option>
                                         <option value="approved" <?= ($statusFilter === 'approved') ? 'selected' : '' ?>>Approved</option>
@@ -416,7 +461,7 @@ mysqli_close($myconn);
                                 
                                 <div class="filter-group">
                                     <label for="loan_type">Loan Type:</label>
-                                    <select name="loan_type" id="loan_type">
+                                    <select name="loan_type" id="loan_type"  onchange="this.form.submit()">  <!-- this submits the form on select -->
                                         <option value="">All Types</option>
                                         <option value="Personal Loan" <?= ($loanTypeFilter === 'Personal Loan') ? 'selected' : '' ?>>Personal</option>
                                         <option value="Business Loan" <?= ($loanTypeFilter === 'Business Loan') ? 'selected' : '' ?>>Business</option>
@@ -430,9 +475,55 @@ mysqli_close($myconn);
                                         <option value="Agricultural Loan" <?= ($loanTypeFilter === 'Agricultural Loan') ? 'selected' : '' ?>>Agricultural</option>
                                     </select>
                                 </div>
-                                
+
+                                <div class="filter-group">
+                                    <label for="date_range">Date Range:</label>
+                                    <select name="date_range" id="date_range" onchange="this.form.submit()">
+                                        <option value="">All Time</option>
+                                        <option value="today" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'today') ? 'selected' : '' ?>>Today</option>
+                                        <option value="week" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'week') ? 'selected' : '' ?>>This Week</option>
+                                        <option value="month" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'month') ? 'selected' : '' ?>>This Month</option>
+                                        <option value="year" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'year') ? 'selected' : '' ?>>This Year</option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-group">
+                                    <label for="amount_range">Amount Range:</label>
+                                    <select name="amount_range" id="amount_range" onchange="this.form.submit()">
+                                        <option value="">Any Amount</option>
+                                        <option value="0-5000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '0-5000') ? 'selected' : '' ?>>0 - 5,000</option>
+                                        <option value="5000-20000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '5000-20000') ? 'selected' : '' ?>>5,000 - 20,000</option>
+                                        <option value="20000-50000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '20000-50000') ? 'selected' : '' ?>>20,000 - 50,000</option>
+                                        <option value="50000-100000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '50000-100000') ? 'selected' : '' ?>>50,000 - 100,000</option>
+                                        <option value="100000+" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '100000+') ? 'selected' : '' ?>>100,000+</option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-group">
+                                    <label for="duration_range">Duration:</label>
+                                    <select name="duration_range" id="duration_range" onchange="this.form.submit()">
+                                        <option value="">Any Duration</option>
+                                        <option value="0-6" <?= (isset($_GET['duration_range']) && $_GET['duration_range'] === '0-6') ? 'selected' : '' ?>>0-6 months</option>
+                                        <option value="6-12" <?= (isset($_GET['duration_range']) && $_GET['duration_range'] === '6-12') ? 'selected' : '' ?>>6-12 months</option>
+                                        <option value="12-24" <?= (isset($_GET['duration_range']) && $_GET['duration_range'] === '12-24') ? 'selected' : '' ?>>12-24 months</option>
+                                        <option value="24+" <?= (isset($_GET['duration_range']) && $_GET['duration_range'] === '24+') ? 'selected' : '' ?>>24+ months</option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-group">
+                                    <label for="collateral_range">Collateral Range:</label>
+                                    <select name="collateral_range" id="collateral_range" onchange="this.form.submit()">
+                                        <option value="">Any Collateral</option>
+                                        <option value="0-5000" <?= (isset($_GET['collateral_range']) && $_GET['collateral_range'] === '0-5000') ? 'selected' : '' ?>>0 - 5,000</option>
+                                        <option value="5000-20000" <?= (isset($_GET['collateral_range']) && $_GET['collateral_range'] === '5000-20000') ? 'selected' : '' ?>>5,000 - 20,000</option>
+                                        <option value="20000-50000" <?= (isset($_GET['collateral_range']) && $_GET['collateral_range'] === '20000-50000') ? 'selected' : '' ?>>20,000 - 50,000</option>
+                                        <option value="50000+" <?= (isset($_GET['collateral_range']) && $_GET['collateral_range'] === '50000+') ? 'selected' : '' ?>>50,000+</option>
+                                    </select>
+                                </div>
+
+
                                 <div class="filter-actions">
-                                    <button type="submit" class="apply-btn">Apply Filters</button>
+                                    <!-- <button type="submit" class="apply-btn">Apply Filters</button>  FALL BACK 16 4 1851HRS-->
                                     <a href="lenderDashboard.php#loanRequests"><button type="button" class="reset-btn">Reset</button></a>
                                 </div>
                             </div>

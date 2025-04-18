@@ -382,10 +382,7 @@ img{
 .display > div:target ~ #dashboard {
     display: none;
 }
-.active-section {
-    color: white;
-    font-weight: 700;
-}
+
 
 .display h1{
     color: whitesmoke;
@@ -1329,7 +1326,7 @@ iframe {
 .filter-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 5px;
     align-items: flex-end;
 }
 
@@ -1354,7 +1351,15 @@ iframe {
     outline: none;
 
 }
+.filter-group #status{ 
+    border-radius: .5em 0 0 .5em;
 
+}
+.filter-group #loan_type, .filter-group #amount_range, .filter-group #interest_rate
+,.filter-group #date_range, .filter-group #duration_range, .filter-group #collateral_range{ 
+    border-radius: 0;
+
+}
 .filter-actions {
     display: flex;
     gap: .2em;
@@ -1397,6 +1402,10 @@ iframe {
     color: #28282B;
     border-radius: .5em 0 0 .5em ;
     outline: none;
+
+}
+.filter-group #status2{ 
+    border-radius: 0;
 
 }
 .user-filter button{
@@ -1513,21 +1522,18 @@ iframe {
 
 .admin-visuals{
     margin: 0;
-    height: 60%;
+    height: 55%;
     width: 100%;
     /* outline: 1px solid blue; */
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
 }
 .visuals-left{
     width: 48%;
 }
-.visuals-right{
-    margin-top: 20%;
-    /* flex-direction: column; */
-}
+
 .admin-visuals P{
     display: flex;
     justify-content: space-between;
@@ -1569,5 +1575,30 @@ border-bottom: 1px solid lightgray;
     color: lightgray;
     text-align: left;
     padding: .2em 0 ;
+
+}
+
+.activity-filter select {
+    padding: .7em;
+    border: none;
+    background-color: lightgray;
+    color: #28282B;
+    border-radius: .5em 0 0 .5em ;
+    outline: none;
+    margin-bottom: .5em;
+
+}
+.activity-filter button{
+    background-color: tomato;
+    border-radius: 0  .5em .5em 0;
+
+}
+.activity-filter button:hover{
+    background: transparent;
+    color: tomato;
+    outline: 1px solid tomato;
+}
+.activity-filter label{
+    font-size: 1em;
 
 }

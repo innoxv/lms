@@ -88,8 +88,10 @@ if ($adminsResult && mysqli_num_rows($adminsResult) > 0) {
 
 
 // Fetch all users from the database for the View Users section
-$roleFilter = isset($_GET['role']) ? $_GET['role'] : '';
+$roleFilter = isset($_GET['role']) ? $_GET['role'] : '';    // role
+$statusFilter = isset($_GET['status']) ? $_GET['status'] : '';  // status
 
+// Base query
 $usersQuery = "SELECT 
                users.user_id, 
                users.user_name, 
@@ -103,28 +105,36 @@ $usersQuery = "SELECT
                END as status
                FROM users
                LEFT JOIN customers ON users.user_id = customers.user_id AND users.role = 'Customer'
-               LEFT JOIN lenders ON users.user_id = lenders.user_id AND users.role = 'Lender'
-               ORDER BY users.user_id DESC";
-// Add role filter if specified
+               LEFT JOIN lenders ON users.user_id = lenders.user_id AND users.role = 'Lender'";
+
+// Build WHERE conditions
+$whereConditions = [];
+
+// Role filter
 if (!empty($roleFilter) && in_array($roleFilter, ['Admin', 'Lender', 'Customer'])) {
-    $usersQuery = "SELECT 
-                   users.user_id, 
-                   users.user_name, 
-                   users.email, 
-                   users.phone, 
-                   users.role,
-                   CASE 
-                       WHEN users.role = 'Customer' THEN customers.status
-                       WHEN users.role = 'Lender' THEN lenders.status
-                       ELSE 'active'
-                   END as status
-                   FROM users
-                   LEFT JOIN customers ON users.user_id = customers.user_id AND users.role = 'Customer'
-                   LEFT JOIN lenders ON users.user_id = lenders.user_id AND users.role = 'Lender'
-                   WHERE users.role = '$roleFilter'
-                   ORDER BY users.user_id DESC";
+    $whereConditions[] = "users.role = '$roleFilter'";
 }
 
+// Status filter
+if (!empty($statusFilter)) {
+    if ($statusFilter === 'active') {
+        $whereConditions[] = "(customers.status = 'active' OR lenders.status = 'active' OR users.role = 'Admin')";
+    } 
+    elseif ($statusFilter === 'restricted') {
+        $whereConditions[] = "(customers.status LIKE '%restricted%' OR lenders.status LIKE '%restricted%')";
+    } 
+    elseif ($statusFilter === 'blocked') {
+        $whereConditions[] = "(customers.status = 'inactive' OR lenders.status = 'inactive')";
+    }
+}
+
+// Combine WHERE conditions
+if (!empty($whereConditions)) {
+    $usersQuery .= " WHERE " . implode(' AND ', $whereConditions);
+}
+
+// Add sorting in descending order based on the user_id
+$usersQuery .= " ORDER BY users.user_id DESC";
 
 $usersResult = mysqli_query($myconn, $usersQuery);
 
@@ -139,6 +149,10 @@ if ($usersResult && mysqli_num_rows($usersResult) > 0) {
 
 
 // Fetch activity logs 
+// Get activity type filter
+$activityFilter = isset($_GET['activity_type']) ? $_GET['activity_type'] : '';
+
+// Activity log query
 $activityQuery = "SELECT 
     activity.log_id, 
     users.user_name, 
@@ -147,8 +161,14 @@ $activityQuery = "SELECT
     activity.activity_time, 
     activity.activity_type
 FROM activity
-JOIN users ON activity.user_id = users.user_id
-ORDER BY activity.activity_time DESC";
+JOIN users ON activity.user_id = users.user_id";
+
+// Add activity type filter if specified
+if (!empty($activityFilter)) {
+    $activityQuery .= " WHERE activity.activity_type = '$activityFilter'";
+}
+
+$activityQuery .= " ORDER BY activity.activity_time DESC";
 
 $activityResult = mysqli_query($myconn, $activityQuery);
 
@@ -171,7 +191,7 @@ $recentActivityQuery = "SELECT
 FROM activity
 JOIN users ON activity.user_id = users.user_id
 ORDER BY activity.activity_time DESC
-LIMIT 12"; // Limit to 12 most recent logs
+LIMIT 10"; // Limit to 10 most recent logs
 
 $recentActivityResult = mysqli_query($myconn, $recentActivityQuery);
 
@@ -255,11 +275,10 @@ mysqli_close($myconn);
                         <li><a href="#viewUsers">View Users</a></li>
                         <li><a href="#addUsers">Add New User</a></li>
                         <li><a href="#activityLogs">Activity Logs</a></li>
-                        <li><a href="#notifications">Notifications</a></li>
+                        <li class="disabled-link"><a href="#notifications">Notifications</a></li>  <!-- this is still in production -->
                         <li><a href="#profile">Profile</a></li>
                     </div>
                     <div class="bottom">
-                        <li><a href="#feedback">Feedback</a></li>
                         <li><a href="#contactSupport">Contact Support</a></li>
                     </div>
                 </ul>
@@ -277,15 +296,28 @@ mysqli_close($myconn);
                 <!-- Role Filter Form -->
                 <div class="user-filter">
                     <form method="get" action="#viewUsers">
-                        <label for="role">Filter by Role:</label>
-                        <select name="role" id="role" onchange="this.form.submit()">  <!-- this submits the form on select -->
-                            <option value="">All Users</option>
-                            <option value="Admin" <?php echo (isset($_GET['role']) && $_GET['role'] === 'Admin') ? 'selected' : ''; ?>>Admin</option>
-                            <option value="Lender" <?php echo (isset($_GET['role']) && $_GET['role'] === 'Lender') ? 'selected' : ''; ?>>Lender</option>
-                            <option value="Customer" <?php echo (isset($_GET['role']) && $_GET['role'] === 'Customer') ? 'selected' : ''; ?>>Customer</option>
-                        </select>
-                        <a href="adminDashboard.php#viewUsers"><button type="button" class="reset">Reset</button></a>
+                    <div class="filter-row">
 
+                        <div class="filter-group">
+                        <label for="role">Role:</label>
+                        <select name="role" id="role" onchange="this.form.submit()">  <!-- this submits the form on select -->
+                            <option value="">All Roles</option>
+                            <option value="Admin" <?= $roleFilter==='Admin'?'selected':'' ?>>Admin</option>
+                            <option value="Lender" <?= $roleFilter==='Lender'?'selected':'' ?>>Lender</option>
+                            <option value="Customer" <?= $roleFilter==='Customer'?'selected':'' ?>>Customer</option>
+                        </select>
+                        </div>
+                        <div class="filter-group">
+                        <label for="status">Status:</label>
+                        <select name="status" id="status2" onchange="this.form.submit()">  <!-- this submits the form on select -->
+                            <option value="">All Statuses</option>
+                            <option value="active" <?= $statusFilter==='active'?'selected':'' ?>>Active</option>
+                            <option value="restricted" <?= $statusFilter==='restricted'?'selected':'' ?>>Restricted</option>
+                            <option value="blocked" <?= $statusFilter==='blocked'?'selected':'' ?>>Blocked</option>
+                        </select>
+                        </div>
+                        <a href="adminDashboard.php#viewUsers"><button type="button" class="reset">Reset</button></a>
+                    </div>
                     </form>
                 </div>
                 
@@ -384,7 +416,7 @@ mysqli_close($myconn);
                             </tbody>
                     </table>
                 <?php else: ?>
-                        <p>No users found<?= !empty($roleFilter) ? " with role '$roleFilter'" : '' ?>.</p>
+                        <p style="color: tomato; font-size: 1.2em;">No users found<?= !empty($roleFilter) ? " with role $roleFilter" : '' ?>.</p>
                 <?php endif; ?>
             </div>
 
@@ -454,6 +486,44 @@ mysqli_close($myconn);
                     <h1>Activity Logs</h1>
                     <p>View user activity logs.</p>
                     
+                    <!-- Activity Type Filter -->
+                    <div class="activity-filter">
+                        <form method="get" action="#activityLogs">
+                            <label for="activity_type">Filter:</label>
+                            <select name="activity_type" id="activity_type" onchange="this.form.submit()">
+                                <option value="">All Activities</option>
+                                
+                                <optgroup label="Authentication">
+                                    <option value="login" <?= $activityFilter==='login'?'selected':'' ?>>Log In</option>
+                                    <option value="logout" <?= $activityFilter==='logout'?'selected':'' ?>>Log Out</option>
+                                    <option value="failed login" <?= $activityFilter==='failed login'?'selected':'' ?>>Failed Log In</option>
+                                </optgroup>
+                                
+                                <optgroup label="Loan Activities">
+                                    <option value="loan application" <?= $activityFilter==='loan application'?'selected':'' ?>>Loan Application</option>
+                                    <option value="application deletion" <?= $activityFilter==='application deletion'?'selected':'' ?>>Application Deletion</option>
+                                    <option value="loan approval" <?= $activityFilter==='loan approval'?'selected':'' ?>>Loan Approval</option>
+                                    <option value="loan rejection" <?= $activityFilter==='loan rejection'?'selected':'' ?>>Loan Rejection</option>
+                                    <option value="loan offer creation" <?= $activityFilter==='loan offer creation'?'selected':'' ?>>Loan Offer Creation</option>
+                                    <option value="loan offer edit" <?= $activityFilter==='loan offer edit'?'selected':'' ?>>Loan Offer Edit</option>
+                                    <option value="loan offer deletion" <?= $activityFilter==='loan offer deletion'?'selected':'' ?>>Loan Offer Deletion</option>
+
+                                </optgroup>
+                                
+                                <optgroup label="User Management">
+                                    <option value="account registration" <?= $activityFilter==='account registration'?'selected':'' ?>>Account Registration</option>
+                                    <option value="user registration" <?= $activityFilter==='user registration'?'selected':'' ?>>User Registration</option>
+                                    <option value="profile update" <?= $activityFilter==='profile update'?'selected':'' ?>>Profile Update</option>
+                                    <option value="user restriction" <?= $activityFilter==='user restriction'?'selected':'' ?>>User Restriction</option>
+                                    <option value="user block" <?= $activityFilter==='user block'?'selected':'' ?>>User Block</option>
+                                    <option value="user unblock" <?= $activityFilter==='user unblock'?'selected':'' ?>>User Unblock</option>
+                                </optgroup>
+                            </select>
+                            <a href="adminDashboard.php#activityLogs"><button type="button" class="reset">Reset</button></a>
+                        </form>
+                    </div>
+    
+                    <!-- Activity Logs Display -->
                     <?php if (!empty($activityLogs)): ?>
                         <div class="activity-logs-container">
                             <table class="activity-table">
@@ -492,9 +562,9 @@ mysqli_close($myconn);
                 <div id="notifications" class="margin">
                     <h1>Notifications</h1>
                     <p>View your alerts and reminders.</p>
-                </div>
- <!-- Profile -->
- <div id="profile" class="margin">
+                                </div>
+                <!-- Profile -->
+                <div id="profile" class="margin">
                     <h1>Profile</h1>
                     <p>View and update your personal information.</p>
                     
@@ -515,7 +585,7 @@ mysqli_close($myconn);
                                 <span class="profile-value"><?php echo htmlspecialchars($adminProfile['phone']); ?></span>
                             </div>
                             
-                            <button id="editProfileBtn" >Edit Profile</button>
+                            <button id="editProfileBtn" style="cursor:not-allowed;">Edit Profile</button>
                             
                         </div>
                         <div class="additional-settings">
@@ -526,11 +596,7 @@ mysqli_close($myconn);
                     </div>
                 </div>
 
-                <!-- Feedback -->
-                <div id="feedback" class="margin">
-                    <h1>Feedback</h1>
-                    <p>Share your feedback with us.</p>
-                </div>
+                
 
                 <!-- Contact Support -->
                 <div id="contactSupport" class="margin">
