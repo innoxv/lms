@@ -365,7 +365,7 @@ if (isset($_SESSION['profile_message_shown'])) {
                 <p>Loan Type</p>
                 <?php
                 $current_filters = $_SESSION['current_filters'] ?? [];
-                $selected_loan_types = $current_filters['loan_types'] ?? ($_GET['loan_type'] ?? []);
+                $selected_loan_types = $current_filters['loan_types'] ?? (isset($_GET['loan_type']) ? (is_array($_GET['loan_type']) ? $_GET['loan_type'] : [$_GET['loan_type']]) : []);
                 ?>
                 <span>
                     <input type="checkbox" name="loan_type[]" value="Personal Loan" id="personal" 
