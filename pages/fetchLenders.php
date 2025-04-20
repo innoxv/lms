@@ -4,14 +4,12 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
-// Don't start a new session if one already exists
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 // Check authentication
 if (!isset($_SESSION['user_id'])) {
-    // Store error message and redirect
     $_SESSION['loan_message'] = "Unauthorized access";
     $_SESSION['message_type'] = "error";
     header("Location: /lms/pages/signin.html");
@@ -21,17 +19,23 @@ if (!isset($_SESSION['user_id'])) {
 // Database connection
 $mysqli = new mysqli('localhost', 'root', 'figureitout', 'LMSDB');
 if ($mysqli->connect_error) {
-    // Store error in session and redirect
     $_SESSION['loan_message'] = "Database connection failed";
     $_SESSION['message_type'] = "error";
     header("Location: /lms/pages/customerDashboard.php#applyLoan");
     exit;
 }
 
-// Initialize filters with default values
+// Handle reset request
+if (isset($_GET['reset_filters']) && $_GET['reset_filters'] === 'true') {
+    unset($_SESSION['filtered_lenders']);
+    unset($_SESSION['current_filters']);
+    unset($_SESSION['filters_applied']);
+    header("Location: customerDashboard.php#applyLoan");
+    exit;
+}
+
+// Initialize filters
 $filters = [
-    'min_amount' => 0,
-    'max_amount' => PHP_INT_MAX,
     'loan_types' => [],
     'interest_ranges' => []
 ];
@@ -43,13 +47,16 @@ if (isset($_GET['loan_type']) && is_array($_GET['loan_type'])) {
     }, $_GET['loan_type']);
 }
 
-// Process amount filters
+// Process amount filters - don't set defaults
+$amountConditions = [];
 if (isset($_GET['min_amount']) && is_numeric($_GET['min_amount'])) {
     $filters['min_amount'] = max(0, (int)$_GET['min_amount']);
+    $amountConditions[] = "loan_products.max_amount >= ?";
 }
 
 if (isset($_GET['max_amount']) && is_numeric($_GET['max_amount'])) {
-    $filters['max_amount'] = max($filters['min_amount'], (int)$_GET['max_amount']);
+    $filters['max_amount'] = (int)$_GET['max_amount'];
+    $amountConditions[] = "loan_products.max_amount <= ?";
 }
 
 // Process interest rate filter
@@ -64,13 +71,22 @@ $query = "SELECT
             loan_products.*, 
             lenders.name AS lender_name
           FROM loan_products
-          JOIN lenders ON loan_products.lender_id = lenders.lender_id
-          WHERE loan_products.max_amount BETWEEN ? AND ?";
+          JOIN lenders ON loan_products.lender_id = lenders.lender_id";
+
+// Add WHERE conditions only if we have any filters
+$whereConditions = [];
+$params = [];
+$paramTypes = '';
+
+// Add amount conditions if they exist
+if (!empty($amountConditions)) {
+    $whereConditions = array_merge($whereConditions, $amountConditions);
+}
 
 // Add loan type condition if specified
 if (!empty($filters['loan_types'])) {
     $placeholders = implode(',', array_fill(0, count($filters['loan_types']), '?'));
-    $query .= " AND loan_products.loan_type IN ($placeholders)";
+    $whereConditions[] = "loan_products.loan_type IN ($placeholders)";
 }
 
 // Add interest rate conditions if specified
@@ -89,7 +105,12 @@ if (!empty($filters['interest_ranges'])) {
                 break;
         }
     }
-    $query .= " AND (" . implode(' OR ', $conditions) . ")";
+    $whereConditions[] = "(" . implode(' OR ', $conditions) . ")";
+}
+
+// Combine all conditions
+if (!empty($whereConditions)) {
+    $query .= " WHERE " . implode(' AND ', $whereConditions);
 }
 
 // Add sorting
@@ -105,8 +126,19 @@ if (!$stmt) {
 }
 
 // Bind parameters
-$paramTypes = 'ii'; // min_amount and max_amount are integers
-$params = [$filters['min_amount'], $filters['max_amount']];
+$params = [];
+$paramTypes = '';
+
+// Add amount parameters if they exist
+if (isset($filters['min_amount'])) {
+    $params[] = $filters['min_amount'];
+    $paramTypes .= 'i';
+}
+
+if (isset($filters['max_amount'])) {
+    $params[] = $filters['max_amount'];
+    $paramTypes .= 'i';
+}
 
 // Add loan types to parameters if they exist
 if (!empty($filters['loan_types'])) {
@@ -126,32 +158,15 @@ if (!$stmt->execute()) {
     header("Location: customerDashboard.php#applyLoan");
     exit();
 }
+
 // Get results
 $result = $stmt->get_result();
 $lenders = $result->fetch_all(MYSQLI_ASSOC);
 
-// After executing the query:
-if (empty($lenders)) {
-    // $_SESSION['loan_message'] = "No loans match your filter criteria";
-    $_SESSION['message_type'] = "error";
-    $_SESSION['filtered_lenders'] = []; // Explicit empty array
-    $_SESSION['filters_applied'] = true; // Track that filters were applied
-} else {
-    $_SESSION['filtered_lenders'] = array_map(function($lender) {
-        // Your existing mapping code
-    }, $lenders);
-    $_SESSION['filters_applied'] = true; // Track that filters were applied
-}
-
-// Clear any previous filtered lenders
+// Clear previous filtered lenders
 unset($_SESSION['filtered_lenders']);
 
-if (empty($lenders)) {
-    // No lenders matched the filter criteria
-    // $_SESSION['loan_message'] = "No loans available matching your filter criteria";
-    // $_SESSION['message_type'] = "info";
-} else {
-    // Store lenders in session to display on page reload
+if (!empty($lenders)) {
     $_SESSION['filtered_lenders'] = array_map(function($lender) {
         return [
             'product_id' => (int)$lender['product_id'],
@@ -165,13 +180,12 @@ if (empty($lenders)) {
     }, $lenders);
 }
 
-// Store the filter criteria to maintain filter state
-$_SESSION['current_filters'] = [
-    'min_amount' => $filters['min_amount'],
-    'max_amount' => $filters['max_amount'],
-    'loan_types' => $filters['loan_types'],
-    'interest_ranges' => $filters['interest_ranges']
-];
+// Store filter state only if filters were actually applied
+if (!empty($_GET['loan_type']) || isset($_GET['min_amount']) || 
+    isset($_GET['max_amount']) || !empty($_GET['interest_range'])) {
+    $_SESSION['current_filters'] = $filters;
+    $_SESSION['filters_applied'] = true;
+}
 
 $stmt->close();
 $mysqli->close();
