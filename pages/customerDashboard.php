@@ -359,127 +359,141 @@ if (isset($_SESSION['profile_message_shown'])) {
                     <div class="loan-filter">
                     <p style="color: whitesmoke; font-weight: 900; line-height: 1;">Filters</p>
                     <form method="GET" action="fetchLenders.php" id="loanFilterForm">
-    <div>
-        <ul>
-            <li>
-                <p>Loan Type</p>
-                <?php
-                $current_filters = $_SESSION['current_filters'] ?? [];
-                $selected_loan_types = $current_filters['loan_types'] ?? (isset($_GET['loan_type']) ? (is_array($_GET['loan_type']) ? $_GET['loan_type'] : [$_GET['loan_type']]) : []);
-                ?>
-                <span>
-                    <input type="checkbox" name="loan_type[]" value="Personal Loan" id="personal" 
-                        <?= in_array('Personal Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                    <label for="personal">Personal</label>
-                </span>
-                <span>
-                    <input type="checkbox" name="loan_type[]" value="Business Loan" id="business" 
-                        <?= in_array('Business Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                    <label for="business">Business</label>
-                </span>
-                <span>
-                    <input type="checkbox" name="loan_type[]" value="Mortgage Loan" id="mortgage" 
-                        <?= in_array('Mortgage Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                    <label for="mortgage">Mortgage</label>
-                </span>
-                <span>
-                    <input type="checkbox" name="loan_type[]" value="MicroFinance Loan" id="microfinance" 
-                        <?= in_array('MicroFinance Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                    <label for="microfinance">MicroFinance</label>
-                </span>
-                <span>
-                    <input type="checkbox" name="loan_type[]" value="Student Loan" id="student" 
-                        <?= in_array('Student Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                    <label for="student">Student</label>
-                </span>
-                <span>
-                    <input type="checkbox" name="loan_type[]" value="Construction Loan" id="construction" 
-                        <?= in_array('Construction Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                    <label for="construction">Construction</label>
-                </span>
-                <span>
-                    <input type="checkbox" name="loan_type[]" value="Green Loan" id="green" 
-                        <?= in_array('Green Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                    <label for="green">Green</label>
-                </span>
-                <span>
-                    <input type="checkbox" name="loan_type[]" value="Medical Loan" id="medical" 
-                        <?= in_array('Medical Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                    <label for="medical">Medical</label>
-                </span>
-                <span>
-                    <input type="checkbox" name="loan_type[]" value="Startup Loan" id="startup" 
-                        <?= in_array('Startup Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                    <label for="startup">Startup</label>
-                </span>
-                <span>
-                    <input type="checkbox" name="loan_type[]" value="Agricultural Loan" id="agricultural" 
-                        <?= in_array('Agricultural Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                    <label for="agricultural">Agricultural</label>
-                </span>
-            </li>
-            <li>
-                <p>Amount Range (sh)</p>
-                <span class="range">
-                    <div>
-                        <input type="text" name="min_amount" placeholder="500" min="500" 
-                            value="<?= htmlspecialchars($current_filters['min_amount'] ?? ($_GET['min_amount'] ?? '')) ?>">
-                        <span>-</span>
-                        <input type="text" name="max_amount" placeholder="100000" min="500" 
-                            value="<?= htmlspecialchars($current_filters['max_amount'] ?? ($_GET['max_amount'] ?? '')) ?>">
-                    </div>
-                    <div>
-                        <div class="quick-amounts">
-                            <button class="one" type="button" data-min="1000" data-max="5000">1k-5k</button>
-                            <button class="two" type="button" data-min="5000" data-max="20000">5k-20k</button>
-                            <button class="three" type="button" data-min="20000" data-max="100000">20k-100k</button>
-                        </div>
-                    </div>
-                </span>
-            </li>
-            <li>
-                <p>Interest Rates</p>
-                <?php
-                $selected_interest = $current_filters['interest_ranges'][0] ?? ($_GET['interest_range'] ?? '');
-                ?>
-                <span>
-                    <input type="radio" name="interest_range[]" value="0-5" id="0-5" 
-                        <?= $selected_interest === '0-5' ? 'checked' : '' ?>>
-                    <label for="0-5">0 - 5%</label>
-                </span>
-                <span>
-                    <input type="radio" name="interest_range[]" value="5-10" id="5-10" 
-                        <?= $selected_interest === '5-10' ? 'checked' : '' ?>>
-                    <label for="5-10">5 - 10%</label>
-                </span>
-                <span>
-                    <input type="radio" name="interest_range[]" value="10+" id="10+" 
-                        <?= $selected_interest === '10+' ? 'checked' : '' ?>>
-                    <label for="10+">10% +</label>
-                </span>
-            </li>
-            <li>
-                <div class="subres">
-                    <button class="sub" type="submit">Apply Filters</button>
-                    <button type="button" class="res"><a href="fetchLenders.php?reset_filters=true">Reset</a></button>
-
-                </div>
-            </li>
-        </ul>
-    </div>
-</form>
-                    </div>
-
+                        <div>
+                            <ul>
+                                <li>
+                                    <p>Loan Type</p>
+                                    <?php
+                                    $current_filters = $_SESSION['current_filters'] ?? [];
+                                    $selected_loan_types = $current_filters['loan_types'] ?? (isset($_GET['loan_type']) ? (is_array($_GET['loan_type']) ? $_GET['loan_type'] : [$_GET['loan_type']]) : []);
+                                    ?>
+                                    <span>
+                                        <input type="checkbox" name="loan_type[]" value="Personal Loan" id="personal" 
+                                            <?= in_array('Personal Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                        <label for="personal">Personal</label>
+                                    </span>
+                                    <span>
+                                        <input type="checkbox" name="loan_type[]" value="Business Loan" id="business" 
+                                            <?= in_array('Business Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                        <label for="business">Business</label>
+                                    </span>
+                                    <span>
+                                        <input type="checkbox" name="loan_type[]" value="Mortgage Loan" id="mortgage" 
+                                            <?= in_array('Mortgage Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                        <label for="mortgage">Mortgage</label>
+                                    </span>
+                                    <span>
+                                        <input type="checkbox" name="loan_type[]" value="MicroFinance Loan" id="microfinance" 
+                                            <?= in_array('MicroFinance Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                        <label for="microfinance">MicroFinance</label>
+                                    </span>
+                                    <span>
+                                        <input type="checkbox" name="loan_type[]" value="Student Loan" id="student" 
+                                            <?= in_array('Student Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                        <label for="student">Student</label>
+                                    </span>
+                                    <span>
+                                        <input type="checkbox" name="loan_type[]" value="Construction Loan" id="construction" 
+                                            <?= in_array('Construction Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                        <label for="construction">Construction</label>
+                                    </span>
+                                    <span>
+                                        <input type="checkbox" name="loan_type[]" value="Green Loan" id="green" 
+                                            <?= in_array('Green Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                        <label for="green">Green</label>
+                                    </span>
+                                    <span>
+                                        <input type="checkbox" name="loan_type[]" value="Medical Loan" id="medical" 
+                                            <?= in_array('Medical Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                        <label for="medical">Medical</label>
+                                    </span>
+                                    <span>
+                                        <input type="checkbox" name="loan_type[]" value="Startup Loan" id="startup" 
+                                            <?= in_array('Startup Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                        <label for="startup">Startup</label>
+                                    </span>
+                                    <span>
+                                        <input type="checkbox" name="loan_type[]" value="Agricultural Loan" id="agricultural" 
+                                            <?= in_array('Agricultural Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                        <label for="agricultural">Agricultural</label>
+                                    </span>
+                                </li>
+                                <li>
+                                    <p>Amount Range (sh)</p>
+                                    <span class="range">
+                                        <div>
+                                            <input type="text" name="min_amount" placeholder="500" min="500" 
+                                                value="<?= htmlspecialchars($current_filters['min_amount'] ?? ($_GET['min_amount'] ?? '')) ?>">
+                                            <span>-</span>
+                                            <input type="text" name="max_amount" placeholder="100000" min="500" 
+                                                value="<?= htmlspecialchars($current_filters['max_amount'] ?? ($_GET['max_amount'] ?? '')) ?>">
+                                        </div>
+                                        <div>
+                                            <div class="quick-amounts">
+                                                <button class="one" type="button" data-min="1000" data-max="5000">1k-5k</button>
+                                                <button class="two" type="button" data-min="5000" data-max="20000">5k-20k</button>
+                                                <button class="three" type="button" data-min="20000" data-max="100000">20k-100k</button>
+                                            </div>
+                                        </div>
+                                    </span>
+                                </li>
+                                <li>
+                                    <p>Interest Rates</p>
+                                    <?php
+                                    $selected_interest = $current_filters['interest_ranges'][0] ?? ($_GET['interest_range'] ?? '');
+                                    ?>
+                                    <span>
+                                        <input type="radio" name="interest_range[]" value="0-5" id="0-5" 
+                                            <?= $selected_interest === '0-5' ? 'checked' : '' ?>>
+                                        <label for="0-5">0 - 5%</label>
+                                    </span>
+                                    <span>
+                                        <input type="radio" name="interest_range[]" value="5-10" id="5-10" 
+                                            <?= $selected_interest === '5-10' ? 'checked' : '' ?>>
+                                        <label for="5-10">5 - 10%</label>
+                                    </span>
+                                    <span>
+                                        <input type="radio" name="interest_range[]" value="10+" id="10+" 
+                                            <?= $selected_interest === '10+' ? 'checked' : '' ?>>
+                                        <label for="10+">10% +</label>
+                                    </span>
+                                </li>
+                                <li>
+                                    <div class="subres">
+                                        <button class="sub" type="submit">Apply Filters</button>
+                                        <button type="button" class="res"><a href="fetchLenders.php?reset_filters=true">Reset</a></button>
                     
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </form>
+                    </div>
+
+                                            
                         <!-- Loan Lenders display and filter functionality -->
                         <div class="loan-lenders" id="lendersContainer">
-                        <?php
+                            <?php
                             if (isset($_SESSION['filters_applied']) && $_SESSION['filters_applied']): 
                                 // Filtered view
                                 if (!empty($_SESSION['filtered_lenders'])): ?>
-                                    <?php foreach ($_SESSION['filtered_lenders'] as $lender): ?>
+                                    <?php foreach ($_SESSION['filtered_lenders'] as $lender): 
+                                        // Generate initials
+                                        $nameParts = explode(' ', $lender['name']);
+                                        $initials = '';
+                                        foreach ($nameParts as $part) {
+                                            if (!empty($part)) {
+                                                $initials .= strtoupper($part[0]);
+                                            }
+                                        }
+                                    ?>
                                         <div class="lender">
-                                            <span><?= $lender['name'] ?></span>
+                                            <span>
+                                            <!-- initials -->
+                                            <div class="lender-icon">
+                                                <?= $initials ?>
+                                            </div> 
+                                            <?= $lender['name'] ?></span>
                                             <span><?= $lender['type'] ?></span>
                                             <span>Rate: <?= $lender['rate'] ?>%</span>
                                             <span>Max Amt: <?= number_format($lender['amount']) ?></span>
@@ -503,38 +517,52 @@ if (isset($_SESSION['profile_message_shown'])) {
                                 <?php endif; ?>
                             <?php else: 
 
-                            // Default view - show all lenders
-                            $query = "SELECT loan_products.*, lenders.name AS lender_name
-                                    FROM loan_products
-                                    JOIN lenders ON loan_products.lender_id = lenders.lender_id
-                                    ORDER BY loan_products.product_id DESC";
-                            $result = $myconn->query($query);
-            
-                            if ($result && $result->num_rows > 0): ?>
-                                <?php while ($lender = $result->fetch_assoc()): ?>
-                                    <div class="lender">
-                                        <span><?= htmlspecialchars($lender['lender_name']) ?></span>
-                                        <span><?= htmlspecialchars($lender['loan_type']) ?></span>
-                                        <span>Rate: <?= $lender['interest_rate'] ?>%</span>
-                                        <span>Max Amt: <?= number_format($lender['max_amount']) ?></span>
-                                        <span>Max Dur: <?= $lender['max_duration'] ?> months</span>
-                                        <button class="applynow" 
-                                            data-product="<?= $lender['product_id'] ?>"
-                                            data-lender="<?= $lender['lender_id'] ?>"
-                                            data-rate="<?= $lender['interest_rate'] ?>"
-                                            data-name="<?= htmlspecialchars($lender['lender_name']) ?>"
-                                            data-type="<?= htmlspecialchars($lender['loan_type']) ?>"
-                                            data-maxamount="<?= $lender['max_amount'] ?>"
-                                            data-maxduration="<?= $lender['max_duration'] ?>">
-                                            Apply Now
-                                        </button>
-                                    </div>
-                                <?php endwhile; ?>
-                            <?php else: ?>
-                                <div class="error">No lenders currently available in the system</div>
+                                // Default view - show all lenders
+                                $query = "SELECT loan_products.*, lenders.name AS lender_name
+                                        FROM loan_products
+                                        JOIN lenders ON loan_products.lender_id = lenders.lender_id
+                                        ORDER BY loan_products.product_id DESC";
+                                $result = $myconn->query($query);
+                        
+                                if ($result && $result->num_rows > 0): ?>
+                                    <?php while ($lender = $result->fetch_assoc()): 
+                                        // Generate initials
+                                        $nameParts = explode(' ', $lender['lender_name']);
+                                        $initials = '';
+                                        foreach ($nameParts as $part) {
+                                            if (!empty($part)) {
+                                                $initials .= strtoupper($part[0]);
+                                            }
+                                        }
+                                    ?>
+                                        <div class="lender">
+                                            <span>
+                                            <!-- initials -->
+                                            <div class="lender-icon"> 
+                                                <?= $initials ?>
+                                            </div>    
+                                            <?= htmlspecialchars($lender['lender_name']) ?></span>
+                                            <span><?= htmlspecialchars($lender['loan_type']) ?></span>
+                                            <span>Rate: <?= $lender['interest_rate'] ?>%</span>
+                                            <span>Max Amt: <?= number_format($lender['max_amount']) ?></span>
+                                            <span>Max Dur: <?= $lender['max_duration'] ?> months</span>
+                                            <button class="applynow" 
+                                                data-product="<?= $lender['product_id'] ?>"
+                                                data-lender="<?= $lender['lender_id'] ?>"
+                                                data-rate="<?= $lender['interest_rate'] ?>"
+                                                data-name="<?= htmlspecialchars($lender['lender_name']) ?>"
+                                                data-type="<?= htmlspecialchars($lender['loan_type']) ?>"
+                                                data-maxamount="<?= $lender['max_amount'] ?>"
+                                                data-maxduration="<?= $lender['max_duration'] ?>">
+                                                Apply Now
+                                            </button>
+                                        </div>
+                                    <?php endwhile; ?>
+                                <?php else: ?>
+                                    <div class="error">No lenders currently available in the system</div>
+                                <?php endif; ?>
                             <?php endif; ?>
-                        <?php endif; ?>
-                    </div>
+                        </div>
 
                         <!-- Loan Application Popup -->
                         <div class="popup-overlay2" id="loanPopup" style="display: none;">
