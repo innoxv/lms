@@ -47,7 +47,7 @@ if (isset($_GET['loan_type']) && is_array($_GET['loan_type'])) {
     }, $_GET['loan_type']);
 }
 
-// Process amount filters - don't set defaults
+// Process amount filters 
 $amountConditions = [];
 if (isset($_GET['min_amount']) && is_numeric($_GET['min_amount'])) {
     $filters['min_amount'] = max(0, (int)$_GET['min_amount']);
