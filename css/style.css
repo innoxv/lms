@@ -144,6 +144,7 @@ a{
 /* Landingpage */
 main{
     margin: 1.5em 3em;
+    height: 85vh;
 }
 .header{
     display: flex;
@@ -267,6 +268,8 @@ img{
     .display2 {
         display: flex;
         flex-direction: column;
+        height: 100%;
+        /* outline: 1px solid blue; */
     }
     
     .content-section {
@@ -274,21 +277,33 @@ img{
         padding: 2rem;
         animation: fadeIn 0.5s ease-in-out;
     }
+    /* display home by default */
+    #home{  
+        display: block;
+    }
     
-    #home:target,
+    /* Display other sections while removing the home sections */
+    .display2 > div:target ~ #home {
+        display: none;
+    }
+    
+    
     #features:target,
     #about:target,
     #blog:target,
     #contact:target,
     #faqs:target {
         display: block;
+    }
+    
+    #features,
+    #about,
+    #blog,
+    #contact,
+    #faqs{
         height: 100%;
     }
     
-    /* Default to home section when no hash is present */
-    .display:not(:has(:target)) #home {
-        display: block;
-    }
     
     @keyframes fadeIn {
         from { opacity: 0; }
@@ -322,7 +337,7 @@ img{
         color: whitesmoke;
     }
     .content-section p{
-        color: gray;
+        color: lightgray;
     }
     .content-section h3{
         color: lightgray;
@@ -336,10 +351,13 @@ img{
     }
     
     .feature-card {
-        background: #2C2C2C;
+        background: #3A3A3A;
         border-radius: 8px;
         padding: 1.5rem;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .feature-card:hover {
+        background: #2C2C2C;
     }
     
     /* Home section */
@@ -367,7 +385,7 @@ img{
     }
     
     .blog-card {
-        background: lightgray;
+        background: #3A3A3A;
         border-radius: 8px;
         overflow: hidden;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -496,6 +514,8 @@ img{
         padding-top: 1rem;
         border-top: 1px solid #555;
     }
+
+
 /* Customer DashBoard */
 .customer-content{
     align-items: center;
@@ -582,6 +602,9 @@ img{
     /* overflow-y: auto; */
 }
 
+#dashboard, #profile, #feedback, #contactSupport {
+    animation: fadeIn 0.5s ease-in-out;
+}
 
 /* Scrollbar Track (background) */
 ::-webkit-scrollbar-track {
@@ -837,6 +860,9 @@ li p{
     grid-auto-rows: 30%; 
     gap: .8em .6em ;
     overflow-y: auto; 
+    animation: fadeIn 0.3s ease-in-out;
+
+    
 
 }
 iframe {
@@ -847,6 +873,8 @@ iframe {
 .loanhistory {
     height: 70%;
     overflow-y: auto;
+    animation: fadeIn 0.3s ease-in-out;
+
 
 }
 .lender{
@@ -1288,6 +1316,8 @@ iframe {
     height: 100%;
     width: 60%;
     margin-top: 1em;
+    animation: fadeIn 0.3s ease-in-out;
+
 }
 .loan-slot table{
     border-spacing: .5em;
@@ -1465,6 +1495,8 @@ iframe {
     width: 100%;
     border: none;
     border-collapse: collapse;
+    animation: fadeIn 0.3s ease-in-out;
+
 }
 .loan-requests-table thead th {
     position: sticky;
@@ -1679,6 +1711,8 @@ iframe {
     border: none;
     border-collapse: collapse;
     outline: none;
+    animation: fadeIn 0.3s ease-in-out;
+
 }
 
 .users-table thead th {
@@ -1741,7 +1775,10 @@ iframe {
     outline: 1px solid teal;
 }
 
+#addUsers{
+    animation: fadeIn 0.5s ease-in-out;
 
+}
 #activityLogs{
     width: 98%;
     overflow-y: auto;
@@ -1755,6 +1792,8 @@ iframe {
     border: none;
     border-collapse: collapse;
     outline: none;
+    animation: fadeIn 0.3s ease-in-out;
+
 }
 
 .activity-table thead th {
