@@ -42,9 +42,10 @@ body{
 
 .header-label{
     color: #74C0FC;
-    font-size: 2em;
+    font-size: 1.5em;
     margin: .2em;
 }
+
 .content{
     display: flex;
     justify-content: center;
