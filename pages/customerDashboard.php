@@ -1079,25 +1079,24 @@ if (isset($_SESSION['profile_message_shown'])) {
 <script>
 
 // Initializations
-
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Initialize metrics font size adjustment
     adjustMetricsFontSize();
-    
+
     // Initialize charts
     initializeBarChart();
     initializePieChart();
-    
+
     // Set up event listeners
     setupEventListeners();
-    
+
     // Handle any existing messages
     handleMessages();
-    
+
     // Initialize popup functionality
     initPopups();
-    
-    // Loan Application Messages Handling -shows message before pop up disappears
+
+    // Loan Application Messages Handling - shows message before popup disappears
     const popup = document.getElementById('loanPopup');
     const alert = popup?.querySelector('.alert');
 
@@ -1120,15 +1119,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Profile Messages
     const profileOverlay = document.getElementById('profileOverlay');
     const profileAlert = profileOverlay?.querySelector('.alert');
-    
+
     if (profileOverlay && profileAlert && profileAlert.textContent.trim() !== '') {
         profileOverlay.style.display = 'flex';
         document.body.classList.add('popup-open');
-    
+
         // Fade out alert after 3 seconds
         setTimeout(() => {
             profileAlert.style.opacity = '0';
-    
+
             setTimeout(() => {
                 profileAlert.style.display = 'none';
                 profileAlert.style.opacity = '';
@@ -1137,13 +1136,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 500);
         }, 3000);
     }
-
 });
-    
-
 
 // POPUP MANAGEMENT
-
 function initPopups() {
     // Close buttons
     document.querySelectorAll('.popup-close, .cancel-btn').forEach(btn => {
@@ -1152,27 +1147,26 @@ function initPopups() {
 
     // Close when clicking outside content
     document.querySelectorAll('.popup-overlay').forEach(popup => {
-        popup.addEventListener('click', function(e) {
+        popup.addEventListener('click', function (e) {
             if (e.target === this) closeAllPopups();
         });
     });
 
-
     // Apply Now buttons
     document.querySelectorAll('.applynow').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             // Get lender data from button attributes
             document.getElementById('productId').value = this.dataset.product;
             document.getElementById('lenderId').value = this.dataset.lender;
             document.getElementById('interestRate').value = this.dataset.rate;
-            
+
             // Update display fields
             document.getElementById('displayLenderName').textContent = this.dataset.name;
             document.getElementById('displayType').textContent = this.dataset.type;
             document.getElementById('displayInterestRate').textContent = this.dataset.rate + '%';
             document.getElementById('displayMaxAmount').textContent = numberWithCommas(this.dataset.maxamount);
             document.getElementById('displayMaxDuration').textContent = this.dataset.maxduration + ' months';
-            
+
             // Show popup
             document.getElementById('loanPopup').style.display = 'flex';
             document.body.classList.add('popup-open');
@@ -1181,28 +1175,21 @@ function initPopups() {
 
     // View buttons
     document.querySelectorAll('.view-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const loanId = this.closest('tr').getAttribute('data-loan-id') || 
-                          this.getAttribute('data-loan-id') ||
-                          this.getAttribute('onclick').match(/showLoanDetails\((\d+)\)/)[1];
-            
+        btn.addEventListener('click', function () {
+            const loanId = this.closest('tr').getAttribute('data-loan-id') ||
+                this.getAttribute('data-loan-id') ||
+                this.getAttribute('onclick').match(/showLoanDetails\((\d+)\)/)[1];
+
             // Redirect to same page with loan_id parameter
-            window.location.href = 'customerDashboard.php?loan_id=' + loanId + '#loanHistory';  // theres a bug here, It refreshes the filtered
+            window.location.href = 'customerDashboard.php?loan_id=' + loanId + '#loanHistory';
         });
     });
 
     // Profile edit button
-    document.getElementById('editProfileBtn')?.addEventListener('click', function() {
+    document.getElementById('editProfileBtn')?.addEventListener('click', function () {
         document.getElementById('profileOverlay').style.display = 'flex';
         document.body.classList.add('popup-open');
     });
-
-    // PHP-triggered popups
-    <?php if (isset($_SESSION['loan_message'])): ?>
-        document.getElementById('loanPopup').style.display = 'flex';
-        document.body.classList.add('popup-open');
-        <?php unset($_SESSION['loan_message']); ?>
-    <?php endif; ?>
 }
 
 function closeAllPopups() {
@@ -1215,6 +1202,7 @@ function closeAllPopups() {
 function numberWithCommas(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+
 
 function confirmDelete() {
     return confirm('Are you sure you want to delete this application?');

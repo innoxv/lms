@@ -173,7 +173,7 @@ if (!empty($lenders)) {
             'lender_id' => (int)$lender['lender_id'],
             'name' => htmlspecialchars($lender['lender_name']),
             'type' => htmlspecialchars($lender['loan_type']),
-            'rate' => (float)$lender['interest_rate'],
+            'rate' => $lender['interest_rate'],
             'duration' => (int)$lender['max_duration'],
             'amount' => (int)$lender['max_amount']
         ];
