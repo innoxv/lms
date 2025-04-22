@@ -10,15 +10,15 @@
     <main>
         <div class="header">
             <div class="header2">
-                <div class="logo">LMS</div>
+                <div class="logo"><a href="#home" class="nav-link">LMS</a></div>
                 <div>
-                    <ul>
-                        <li>Features</li>
-                        <li>About Us</li>
-                        <li>Blog</li>
-                        <li>Contact Us</li>
-                        <li>FAQs</li>
-    
+                    <ul id="mainNav">
+                        <li></li>
+                        <li><a href="#features" class="nav-link">Features</a></li>
+                        <li><a href="#about" class="nav-link">About Us</a></li>
+                        <li><a href="#blog" class="nav-link">Blog</a></li>
+                        <li><a href="#contact" class="nav-link">Contact Us</a></li>
+                        <li><a href="#faqs" class="nav-link">FAQs</a></li>
                     </ul>
                 </div>
             </div>
@@ -26,25 +26,265 @@
                 <ul>
                     <li><a href="./signin.html" class="no-col">Log In</a></li>
                     <li>|</li>
-                    <li><a href="./signup.html" >Register</a></li>
+                    <li><a href="./signup.html">Register</a></li>
                 </ul>
             </div>
         </div>
-        <div class="hero-section">
-            <div class="left">
-                <h1>Lending made <span style="color: #74C0FC;">simple</span>, <span style="color: #74C0FC;">fast</span>, and <span style="color: #74C0FC;">secure</span>.</h1>
-                <p>Experience a seamless lending process designed with you in mind. Whether you're looking to borrow or invest, our platform offers quick approvals, competitive rates, and top-notch security all in one place. Start your financial journey today and achieve your goals with confidence.</p>
-                <div>
-                    <button>Read More</button>
+        
+        <div class="display2">
+            <!-- Home Section -->
+            <div id="home" class="content-section">
+                <div class="hero-section">
+                    <div class="left">
+                        <h1>Lending made <span class="highlight">simple</span>, <span class="highlight">fast</span>, and <span class="highlight">secure</span>.</h1>
+                        <p>Experience a seamless lending process designed with you in mind. Whether you're looking to borrow or invest, our platform offers quick approvals, competitive rates, and top-notch security all in one place. Start your financial journey today and achieve your goals with confidence.</p>
+                        <div>
+                            <button>Get Started</button>
+                        </div>
+                    </div>
+                    <div class="right">
+                        <img src="../img/comments-dollar-solid.svg" alt="Financial services illustration">
+                    </div>
                 </div>
             </div>
-            <div class="right">
-                <img src="../img/comments-dollar-solid.svg" alt="" srcset="">
-                  
+            
+            <!-- Features Section -->
+            <div id="features" class="content-section">
+                <h1>Our Powerful Features</h1>
+                <p>Discover what makes our platform stand out from the competition.</p>
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <h3>Quick Approvals</h3>
+                        <p>Get loan decisions in minutes, not days. Our automated system processes applications rapidly.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Competitive Rates</h3>
+                        <p>Benefit from some of the most competitive interest rates in the market.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Secure Transactions</h3>
+                        <p>Bank-level encryption keeps your financial data safe at all times.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Flexible Terms</h3>
+                        <p>Choose repayment schedules that work with your financial situation.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Investment Options</h3>
+                        <p>Earn attractive returns by funding loans to qualified borrowers.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>24/7 Support</h3>
+                        <p>Our customer service team is available around the clock to assist you.</p>
+                    </div>
+                </div>
             </div>
             
+            <!-- About Us Section -->
+            <div id="about" class="content-section">
+                <h1>About Our Company</h1>
+                <div class="about-container">
+                    <div class="about-column">
+                        <h2>Our Mission</h2>
+                        <p>To democratize access to financial services by creating a transparent, efficient, and secure lending platform that benefits both borrowers and investors.</p>
+                        
+                        <h2>Our Vision</h2>
+                        <p>To become the leading peer-to-peer lending platform in the region, recognized for innovation, customer satisfaction, and financial inclusion.</p>
+                    </div>
+                    <div class="about-column">
+                        <h2>Our Story</h2>
+                        <p>LMS began with a simple idea: to connect people who need money with those who have money to invest, cutting out the traditional banking middlemen. What started as a small team of financial and technology experts has grown into a thriving platform serving thousands of customers.</p>
+                        
+                        <h2>Our Team</h2>
+                        <p>We're a diverse group of financial experts, technologists, and customer service professionals united by our commitment to making lending better for everyone.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Blog Section -->
+            <div id="blog" class="content-section">
+                <h1>Latest From Our Blog</h1>
+                <p>Stay informed with our financial tips and industry insights.</p>
+                
+                <div class="blog-grid">
+                    <div class="blog-card">
+                        <div class="blog-image"></div>
+                        <div class="blog-content">
+                            <h3>How to Improve Your Credit Score</h3>
+                            <p>Practical tips to boost your creditworthiness and get better loan terms.</p>
+                            <a href="#" class="blog-link">Read More →</a>
+                        </div>
+                    </div>
+                    
+                    <div class="blog-card">
+                        <div class="blog-image"></div>
+                        <div class="blog-content">
+                            <h3>The Future of Peer-to-Peer Lending</h3>
+                            <p>Exploring emerging trends in the alternative lending space.</p>
+                            <a href="#" class="blog-link">Read More →</a>
+                        </div>
+                    </div>
+                    
+                    <div class="blog-card">
+                        <div class="blog-image"></div>
+                        <div class="blog-content">
+                            <h3>Smart Borrowing Strategies</h3>
+                            <p>How to borrow responsibly to achieve your financial goals.</p>
+                            <a href="#" class="blog-link">Read More →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Us Section -->
+            <div id="contact" class="content-section">
+                <h1>Contact Us</h1>
+                <div class="contact-container">
+                    <div class="contact-info">
+                        <h2>Get in Touch</h2>
+                        <p>Have questions or need assistance? Our team is here to help.</p>
+                        
+                        <div class="contact-details">
+                            <p><strong>Email:</strong> support@lms.com</p>
+                            <p><strong>Phone:</strong> +254 700 000 000</p>
+                            <p><strong>Address:</strong> 123 Financial Street, Nairobi, Kenya</p>
+                        </div>
+                        
+                        <div class="business-hours">
+                            <h3>Business Hours</h3>
+                            <p>Monday - Friday: 8:00 AM - 5:00 PM</p>
+                            <p>Saturday: 9:00 AM - 1:00 PM</p>
+                            <p>Sunday: Closed</p>
+                        </div>
+                    </div>
+                    <!-- <div class="contact-form">
+                        <h2>Send Us a Message</h2>
+                        <form class="form-grid">
+                            <div>
+                                <label for="name">Name</label>
+                                <input type="text" id="name" class="form-input">
+                            </div>
+                            <div>
+                                <label for="email">Email</label>
+                                <input type="email" id="email" class="form-input">
+                            </div>
+                            <div>
+                                <label for="subject">Subject</label>
+                                <input type="text" id="subject" class="form-input">
+                            </div>
+                            <div>
+                                <label for="message">Message</label>
+                                <textarea id="message" rows="5" class="form-textarea"></textarea>
+                            </div>
+                            <button type="submit" class="form-button">Send Message</button>
+                        </form>
+                    </div> -->
+                </div>
+            </div>
+            
+            <!-- FAQs Section -->
+            <div id="faqs" class="content-section">
+                <h1>Frequently Asked Questions</h1>
+                <p>Find answers to common questions about our platform.</p>
+                
+                <div class="faq-container">
+                    <div class="faq-item">
+                        <h3 class="faq-question" onclick="toggleFAQ(this)">How do I apply for a loan? <span class="faq-toggle">+</span></h3>
+                        <div class="faq-answer">
+                            <p>To apply for a loan, simply register an account, complete your profile, and submit a loan application through our platform. You'll need to provide some basic financial information and the purpose of the loan. Our system will process your application and provide a decision quickly.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <h3 class="faq-question" onclick="toggleFAQ(this)">What are the requirements to become a lender? <span class="faq-toggle">+</span></h3>
+                        <div class="faq-answer">
+                            <p>To become a lender on our platform, you need to be at least 18 years old, have a valid bank account, and complete our identity verification process. There's no minimum amount required to start lending, but we recommend diversifying your investments across multiple loans.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <h3 class="faq-question" onclick="toggleFAQ(this)">How are interest rates determined? <span class="faq-toggle">+</span></h3>
+                        <div class="faq-answer">
+                            <p>Interest rates are determined based on several factors including the borrower's creditworthiness, loan amount, loan term, and current market conditions. Our algorithm assesses risk and suggests rates that are fair to both borrowers and lenders.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <h3 class="faq-question" onclick="toggleFAQ(this)">Is my personal information secure? <span class="faq-toggle">+</span></h3>
+                        <div class="faq-answer">
+                            <p>Yes, we take security very seriously. All personal and financial information is encrypted using industry-standard protocols. We comply with all relevant data protection regulations and never share your information with third parties without your consent.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <h3 class="faq-question" onclick="toggleFAQ(this)">What happens if a borrower defaults? <span class="faq-toggle">+</span></h3>
+                        <div class="faq-answer">
+                            <p>We have a collections process in place for late payments. While we can't guarantee against defaults, we carefully screen all borrowers and our platform has historically maintained a low default rate. As a lender, you can further reduce risk by diversifying your investments across multiple loans.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- <footer class="footer">
+                <div class="footer-container">
+                    <div>
+                        <h3>LMS</h3>
+                        <p>Making lending simple, fast, and secure since 2020.</p>
+                    </div>
+                    <div>
+                        <h3>Quick Links</h3>
+                        <ul class="footer-list">
+                            <li><a href="#home" class="footer-link">Home</a></li>
+                            <li><a href="#features" class="footer-link">Features</a></li>
+                            <li><a href="#about" class="footer-link">About Us</a></li>
+                            <li><a href="#blog" class="footer-link">Blog</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Legal</h3>
+                        <ul class="footer-list">
+                            <li><a href="#" class="footer-link">Terms of Service</a></li>
+                            <li><a href="#" class="footer-link">Privacy Policy</a></li>
+                            <li><a href="#" class="footer-link">Cookie Policy</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Connect With Us</h3>
+                        <div class="social-links">
+                            <a href="#" class="footer-link">Facebook</a>
+                            <a href="#" class="footer-link">Twitter</a>
+                            <a href="#" class="footer-link">LinkedIn</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p>© LMS. All rights reserved.</p>
+                </div>
+            </footer> -->
         </div>
     </main>
     
+
+
+    <script>
+        // FAQ toggle function
+        function toggleFAQ(element) {
+            const answer = element.nextElementSibling;
+            const isHidden = answer.style.display === 'none';
+            
+            // Close all other FAQs
+            document.querySelectorAll('#faqs .faq-answer').forEach(faq => {
+                if (faq !== answer) {
+                    faq.style.display = 'none';
+                    faq.previousElementSibling.querySelector('.faq-toggle').textContent = '+';
+                }
+            });
+            
+            // Toggle current FAQ
+            answer.style.display = isHidden ? 'block' : 'none';
+            element.querySelector('.faq-toggle').textContent = isHidden ? '−' : '+';
+        }
+    </script>
 </body>
 </html>
