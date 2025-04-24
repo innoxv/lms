@@ -279,7 +279,16 @@ mysqli_close($myconn);
                         <li><a href="#profile">Profile</a></li>
                     </div>
                     <div class="bottom">
-                        <li><a href="#contactSupport">Contact Support</a></li>
+                    <li><a href="#contactSupport">Help</a></li>
+                                <!-- Copyright -->
+                                <div class="copyright">
+                                    <p><?php
+                                        $currentYear = date("Y");
+                                        echo "&copy; $currentYear";
+                                        ?>
+                                        <a href="mailto:innocentmukabwa@gmail.com">dev</a>
+                                    </p>
+                                </div>
                     </div>
                 </ul>
             </div>
@@ -712,15 +721,6 @@ mysqli_close($myconn);
             </div>
         </div>
 
-        <!-- Copyright -->
-        <div class="copyright">
-                    <p><?php
-                        $currentYear = date("Y");
-                        echo "&copy; $currentYear";
-                        ?>
-                        <a href="mailto:innocentmukabwa@gmail.com">dev</a>
-                    </p>
-                </div>
 
 
                  
