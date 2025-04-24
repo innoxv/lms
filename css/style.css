@@ -12,6 +12,7 @@ body, html{
         #2C2C2C 80%,
         #1D1E20 90%
       );
+
 }
 body{
     font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
@@ -23,21 +24,34 @@ body{
     outline: none;
 }
 
-.centered-page{
-    height: 100%;
-    width: 100%;
-    margin: 0;
+/* Center the page content */
+.centered-page {
     display: flex;
     justify-content: center;
     align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 1em;
+    box-sizing: border-box;
 }
-.container{
-    /* outline: 1px solid red; */
-    width: 100vh;
-    height: 65vh;
-    border-radius: 1em;
+
+/* Container styling */
+.container {
+    width: auto; 
+    min-width: 320px; /* Minimum mobile width */
+    max-width: 900px; /* Maximum width for larger screens */
+    height: auto;
+    padding: 2rem;
+    border-radius: .5em;
     background-color: rgba(0, 0, 0, 0.3);
-    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Table responsiveness */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 auto; 
 }
 
 .header-label{
@@ -50,14 +64,19 @@ body{
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 1em 0;
+    /* margin: 1em 0; */
+    height: 100%;
+    /* width: fit-content; */
+    padding: 1em;
+
 }
 .content-2{
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 10em;
+    height: 100%;
 }
+
 label{
     color: lightgray;
     font-size: 1em;
@@ -143,10 +162,38 @@ a{
 }
 
 /* Landingpage */
-main{
-    margin: 1.5em 3em;
-    height: 85vh;
+
+
+/* Default margins (for larger screens) */
+main {
+    margin: 0 3em;
+    /* height: 90vh; */
+    /* display: flex;
+    flex-direction: column; */
+    /* align-content: center; */
 }
+
+/* For tablets (768px to 991px) */
+@media (max-width: 991px) {
+    main {
+        margin: 0 2em; /* Slightly smaller side margins */
+    }
+}
+
+/* For mobile devices (less than 768px) */
+@media (max-width: 767px) {
+    main {
+        margin: 0 1em; /* Even smaller margins on all sides */
+    }
+}
+
+/* For very small mobile devices (less than 480px) */
+@media (max-width: 479px) {
+    main {
+        margin: 0 0.5em; /* Minimal margins */
+    }
+}
+
 .header{
     display: flex;
     flex-direction: row;
@@ -528,7 +575,7 @@ img{
     justify-content: space-between;
 }
 .nav{
-    height: 100%;
+    height: 90vh;
     width:15%;
     outline: 1px solid #74C0FC;
     align-self: flex-start;
@@ -536,7 +583,7 @@ img{
 }
 .display{
     align-self: flex-start;
-    height: 100%;
+    height: 90vh;
     width: 84%;
     outline: 1px solid gray;
     background-color: rgba(0, 0, 0, 0.4);
@@ -603,9 +650,6 @@ img{
     /* overflow-y: auto; */
 }
 
-#dashboard, #profile, #feedback, #contactSupport {
-    animation: fadeIn 0.5s ease-in-out;
-}
 
 /* Scrollbar Track (background) */
 ::-webkit-scrollbar-track {
@@ -650,7 +694,6 @@ img{
     display: flex;
     width: 100%;
     justify-content: space-between;
-    
 }
 .greeting p{
     color: #74C0FC;
@@ -739,6 +782,14 @@ img{
     /* overflow-y: auto; */
 
 }
+.metrics, .visuals, .admin-visuals, .profile-details{
+    animation: fadeIn 0.3s ease-in-out;
+
+}
+.additional-settings{
+    animation: fadeIn 0.8s ease-in-out;
+
+}
 .loan-right{
     height: 80%;
     /* outline: 1px solid red; */
@@ -750,12 +801,16 @@ img{
 }
 
 .loan-filter{
-    height: 90%;
+    height: 100%;
     /* outline: 1px solid blue; */
     /* background: transparent; */
     width: 15%;
     margin-block: -1.5em;
     margin-left: .1em;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: start;
 
 }
 .loan-filter > form > div{
@@ -862,10 +917,8 @@ li p{
     gap: .8em .6em ;
     overflow-y: auto; 
     animation: fadeIn 0.3s ease-in-out;
-
-    
-
 }
+
 iframe {
     border: none;
     outline: none;
@@ -1457,13 +1510,17 @@ iframe {
 .copyright{
     width: 100%;
     text-align: center;
-    color: lightgray;
+    color: lightslategray;
     margin-top: 1%;
     font-weight: 800;
+    margin: 0 0.2em;
+    /* padding: 0 0.2em; */
+
 }
 .copyright a{
     text-decoration: underline;
-    color: #74C0FC;
+    color: gray;
+
 }
 .copyright a:hover{
     text-decoration: none;
@@ -1776,10 +1833,7 @@ iframe {
     outline: 1px solid teal;
 }
 
-#addUsers{
-    animation: fadeIn 0.5s ease-in-out;
 
-}
 #activityLogs{
     width: 98%;
     overflow-y: auto;

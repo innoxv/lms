@@ -341,7 +341,16 @@ if (isset($_SESSION['profile_message_shown'])) {
                     </div>
                     <div class="bottom">
                         <li><a href="#feedback">Feedback</a></li>
-                        <li><a href="#contactSupport">Contact Support</a></li>
+                        <li><a href="#contactSupport">Help</a></li>
+                                <!-- Copyright -->
+                                <div class="copyright">
+                                    <p><?php
+                                        $currentYear = date("Y");
+                                        echo "&copy; $currentYear";
+                                        ?>
+                                        <a href="mailto:innocentmukabwa@gmail.com">dev</a>
+                                    </p>
+                                </div>
                     </div>
                 </ul>
             </div>
@@ -985,6 +994,8 @@ if (isset($_SESSION['profile_message_shown'])) {
                     <p>Reach out to our support team for assistance.</p>
                 </div>
 
+                
+
                 <!-- Dashboard -->
                 <div id="dashboard" >
                     <div class="dash-header">
@@ -1060,15 +1071,7 @@ if (isset($_SESSION['profile_message_shown'])) {
     </div>
         
 
-        <!-- Copyright -->
-        <div class="copyright">
-            <p><?php
-                $currentYear = date("Y");
-                echo "&copy; $currentYear";
-                ?>
-                <a href="mailto:innocentmukabwa@gmail.com">dev</a>
-            </p>
-        </div>
+
 
 
                 
