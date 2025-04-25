@@ -206,30 +206,46 @@ if (isset($_GET['loan_id'])) {
 
 // METRICS AND CHARTS DATA
 
-// Loan metrics
+// Loan metrics - Count active loans (with partial payments or unpaid balance)
 $metricsQuery = "SELECT 
-    SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved_loans,
-    SUM(CASE WHEN status = 'approved' THEN loans.amount ELSE 0 END) as total_borrowed,
-    COALESCE(SUM(payments.remaining_balance), 0) as outstanding_balance,
-    MIN(CASE WHEN status = 'approved' THEN DATE_ADD(created_at, INTERVAL 1 MONTH) ELSE NULL END) as next_payment_date
+    COUNT(DISTINCT CASE WHEN EXISTS (
+        SELECT 1 FROM payments 
+        WHERE payments.loan_id = loans.loan_id 
+        AND (payments.payment_type = 'partial')
+    ) THEN loans.loan_id END) as active_loans,
+    
+    SUM(CASE WHEN loans.status = 'approved' THEN loans.amount ELSE 0 END) as total_borrowed,
+    
+    COALESCE((
+        SELECT SUM(payments.remaining_balance)
+        FROM payments
+        WHERE payments.loan_id IN (
+            SELECT loan_id FROM loans 
+            WHERE customer_id = ? 
+            AND status IN ('approved', 'disbursed', 'active')
+        )
+    ), 0) as outstanding_balance,
+    
+    MIN(CASE WHEN loans.status = 'approved' THEN DATE_ADD(loans.created_at, INTERVAL 1 MONTH) ELSE NULL END) as next_payment_date
 FROM loans
-LEFT JOIN payments ON loans.loan_id = payments.loan_id
-WHERE loans.customer_id = ? AND loans.status IN ('approved', 'disbursed', 'active')
+WHERE loans.customer_id = ?
 GROUP BY loans.customer_id";
 
 $stmt = $myconn->prepare($metricsQuery);
-$stmt->bind_param("i", $customer_id);
+$stmt->bind_param("ii", $customer_id, $customer_id);
 $stmt->execute();
 $metrics = $stmt->get_result()->fetch_assoc();
 
 // Format metrics
-$approvedLoans = $metrics['approved_loans'] ?? 0;
+$activeLoans = (int)($metrics['active_loans'] ?? 0);
 $totalBorrowed = $metrics['total_borrowed'] ?? 0;
 $outstandingBalance = $metrics['outstanding_balance'] ?? 0;
 $nextPaymentDate = $metrics['next_payment_date'] 
     ? date('j M', strtotime($metrics['next_payment_date'])) 
     : 'N/A';
 
+
+    
 // Loan types data for chart
 $allLoanTypes = [
     "Personal Loan", "Business Loan", "Mortgage Loan", 
@@ -1241,7 +1257,7 @@ if (isset($_SESSION['profile_message_shown'])) {
                     <div>
                         <p>Active Loans</p>
                         <div class="metric-value-container">
-                        <span class="span-2"><?php echo $approvedLoans; ?></span>
+                        <span class="span-2"><?php echo is_array($activeLoans) ? count($activeLoans) : $activeLoans; ?></span>
                         </div>
                     </div>
                     <div>
