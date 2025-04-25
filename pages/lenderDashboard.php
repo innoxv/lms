@@ -58,21 +58,21 @@ $allLoanTypes = [
     "Green Loan", "Medical Loan", "Startup Loan", "Agricultural Loan"
 ];
 
-// Get loan products count
-$totalProductsQuery = "SELECT COUNT(*) FROM loan_products WHERE lender_id = '$lender_id'";
-$totalProductsResult = mysqli_query($myconn, $totalProductsQuery);
-$totalProducts = (int)mysqli_fetch_row($totalProductsResult)[0];
+// Get loan offers count
+$totalOffersQuery = "SELECT COUNT(*) FROM loan_offers WHERE lender_id = '$lender_id'";
+$totalOffersResult = mysqli_query($myconn, $totalOffersQuery);
+$totalOffers = (int)mysqli_fetch_row($totalOffersResult)[0];
 
 // Get average interest rate
-$avgInterestQuery = "SELECT AVG(interest_rate) FROM loan_products WHERE lender_id = '$lender_id'";
+$avgInterestQuery = "SELECT AVG(interest_rate) FROM loan_offers WHERE lender_id = '$lender_id'";
 $avgInterestResult = mysqli_query($myconn, $avgInterestQuery);
 $avgInterestRate = number_format((float)mysqli_fetch_row($avgInterestResult)[0], 2);
 
-// Get total loan capacity
-$capacityQuery = "SELECT SUM(max_amount) FROM loan_products WHERE lender_id = '$lender_id'";
-$capacityResult = mysqli_query($myconn, $capacityQuery);
-$capacityData = mysqli_fetch_row($capacityResult);
-$totalCapacity = $capacityData[0] ? number_format((float)$capacityData[0]) : 0;
+// Get total loan amount owed
+$owedQuery = "SELECT SUM(remaining_balance) FROM payments WHERE lender_id = '$lender_id'";
+$owedResult = mysqli_query($myconn, $owedQuery);
+$owedData = mysqli_fetch_row($owedResult);
+$owedCapacity = $owedData[0] ? number_format((float)$owedData[0]) : 0;
 
 // Get total APPROVED loans count
 $approvedLoansQuery = "SELECT COUNT(*) FROM loans WHERE lender_id = '$lender_id' AND status = 'approved'";
@@ -85,44 +85,44 @@ $disbursedAmountResult = mysqli_query($myconn, $disbursedAmountQuery);
 $disbursedAmountData = mysqli_fetch_row($disbursedAmountResult);
 $totalDisbursedAmount = $disbursedAmountData[0] ? number_format((float)$disbursedAmountData[0]) : 0;
 
-// Get loan products with their approved loans count
-$loanProductsQuery = "SELECT 
-                      loan_products.product_id,
-                      loan_products.loan_type,
-                      loan_products.interest_rate,
-                      loan_products.max_amount,
-                      loan_products.max_duration,
+// Get loan offers with their approved loans count
+$loanOffersQuery = "SELECT 
+                      loan_offers.offer_id,
+                      loan_offers.loan_type,
+                      loan_offers.interest_rate,
+                      loan_offers.max_amount,
+                      loan_offers.max_duration,
                       COUNT(loans.loan_id) as approved_count
-                    FROM loan_products
-                    LEFT JOIN loans ON loan_products.product_id = loans.product_id
+                    FROM loan_offers
+                    LEFT JOIN loans ON loan_offers.offer_id = loans.offer_id
                       AND loans.lender_id = '$lender_id'
                       AND loans.status = 'approved'
-                    WHERE loan_products.lender_id = '$lender_id'
-                    GROUP BY loan_products.product_id, loan_products.loan_type, loan_products.interest_rate, 
-                             loan_products.max_amount, loan_products.max_duration";
+                    WHERE loan_offers.lender_id = '$lender_id'
+                    GROUP BY loan_offers.offer_id, loan_offers.loan_type, loan_offers.interest_rate, 
+                             loan_offers.max_amount, loan_offers.max_duration";
 
-$loanProductsResult = mysqli_query($myconn, $loanProductsQuery);
+$loanOffersResult = mysqli_query($myconn, $loanOffersQuery);
 
 // Initialize loan counts
 $loanCounts = array_fill_keys($allLoanTypes, 0);
-$productsData = [];
+$offersData = [];
 
-if ($loanProductsResult) {
-    while ($row = mysqli_fetch_assoc($loanProductsResult)) {
+if ($loanOffersResult) {
+    while ($row = mysqli_fetch_assoc($loanOffersResult)) {
         $loanType = $row['loan_type'];
         $loanCounts[$loanType] = (int)$row['approved_count'];
         
-        $productsData[] = [
-            'product_id' => $row['product_id'],
+        $offersData[] = [
+            'offer_id' => $row['offer_id'],
             'loan_type' => $loanType,
             'interest_rate' => $row['interest_rate'],
             'max_amount' => $row['max_amount'],
             'max_duration' => $row['max_duration']
         ];
     }
-    // Sort the $productsData array by product_id in descending order using funtion usort
-    usort($productsData, function($a, $b) {
-        return $b['product_id'] - $a['product_id'];
+    // Sort the $offersData array by offer_id in descending order using funtion usort
+    usort($offersData, function($a, $b) {
+        return $b['offer_id'] - $a['offer_id'];
     });
 }
 
@@ -148,9 +148,9 @@ $loanRequestsQuery = "SELECT
     loans.status,
     loans.created_at,
     customers.name,
-    loan_products.loan_type
+    loan_offers.loan_type
 FROM loans
-JOIN loan_products ON loans.product_id = loan_products.product_id
+JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
 JOIN customers ON loans.customer_id = customers.customer_id
 WHERE loans.lender_id = '$lender_id'";
 
@@ -161,7 +161,7 @@ if (!empty($statusFilter) && in_array($statusFilter, ['pending', 'approved', 're
 
 // Loan type filter
 if (!empty($loanTypeFilter)) {
-    $loanRequestsQuery .= " AND loan_products.loan_type = '$loanTypeFilter'";
+    $loanRequestsQuery .= " AND loan_offers.loan_type = '$loanTypeFilter'";
 }
 
 // Date range filter
@@ -303,6 +303,9 @@ mysqli_close($myconn);
                             </a>
                         </li>
                         <li><a href="#loanRequests">Loan Requests</a></li>
+                        <li class="disabled-link"><a href="#paymentReview">Payment Review</a></li>  <!-- under production -->
+
+
                         <li class="disabled-link"><a href="#notifications">Notifications</a></li>  <!-- this is still in production -->
                         <li><a href="#profile">Profile</a></li>
                     </div>
@@ -373,7 +376,7 @@ mysqli_close($myconn);
                             </div>
                         </div>
                         <div class="loan-slot">
-                            <h3>Loan Products Information</h3>
+                            <h3>Loan Offers Information</h3>
                             <table>
                                 <thead>
                                     <tr>
@@ -385,26 +388,26 @@ mysqli_close($myconn);
                                     </tr>
                                 </thead>
                                 <tbody>
-                                <?php foreach ($productsData as $product): ?>
+                                <?php foreach ($offersData as $offer): ?>
                                     <tr>        
-                                        <td><?php echo htmlspecialchars($product['loan_type']); ?></td>
-                                        <td class="mid"><?php echo htmlspecialchars($product['interest_rate']); ?>%</td>
-                                        <td class="mid"><?php echo number_format(htmlspecialchars($product['max_amount'])); ?></td>
-                                        <td class="mid"><?php echo htmlspecialchars($product['max_duration']); ?> months</td>
+                                        <td><?php echo htmlspecialchars($offer['loan_type']); ?></td>
+                                        <td class="mid"><?php echo htmlspecialchars($offer['interest_rate']); ?>%</td>
+                                        <td class="mid"><?php echo number_format(htmlspecialchars($offer['max_amount'])); ?></td>
+                                        <td class="mid"><?php echo htmlspecialchars($offer['max_duration']); ?> months</td>
                                         <td class="action-buttons">
                                             <!-- Edit Button-->
                                             <button class="act edit-btn" 
-                                                    data-product-id="<?= $product['product_id'] ?>" 
-                                                    data-loan-type="<?= htmlspecialchars($product['loan_type']) ?>" 
-                                                    data-interest-rate="<?= $product['interest_rate'] ?>" 
-                                                    data-max-amount="<?= $product['max_amount'] ?>" 
-                                                    data-max-duration="<?= $product['max_duration'] ?>">
+                                                    data-offer-id="<?= $offer['offer_id'] ?>" 
+                                                    data-loan-type="<?= htmlspecialchars($offer['loan_type']) ?>" 
+                                                    data-interest-rate="<?= $offer['interest_rate'] ?>" 
+                                                    data-max-amount="<?= $offer['max_amount'] ?>" 
+                                                    data-max-duration="<?= $offer['max_duration'] ?>">
                                                 Edit
                                             </button>
                                             
                                             <!-- Delete Form-->
                                             <form action="deleteLoan.php" method="post" class="del-form">
-                                                <input type="hidden" name="product_id" value="<?= $product['product_id'] ?>">
+                                                <input type="hidden" name="offer_id" value="<?= $offer['offer_id'] ?>">
                                                 <button type="submit" class="del-btn">Delete</button>
                                             </form>
                                         </td>
@@ -420,9 +423,9 @@ mysqli_close($myconn);
                 <div class="popup-overlay" id="popupOverlay"></div>
 
                 <div class="edit-popup" id="editPopup">
-                    <h3>Edit Loan Product</h3>
+                    <h3>Edit Loan offer</h3>
                     <form class="edit-form" id="editForm" method="post" action="editLoan.php">
-                        <input type="hidden" name="product_id" id="editProductId">
+                        <input type="hidden" name="offer_id" id="editOfferId">
                         
                         <div class="ltype">
                            <div><label for="editLoanType">Loan Type:</label></div> 
@@ -454,7 +457,7 @@ mysqli_close($myconn);
                 <!-- Loan Request -->
                 <div id="loanRequests" class="margin">
                     <h1>Loan Requests</h1>
-                    <p>Loan applications from customers for your loan products.</p>
+                    <p>Loan applications from customers for your loan offers.</p>
                     <div class="loan-filter-container">
                         <form method="get" action="#loanRequests">
                             <div class="filter-row">
@@ -608,7 +611,7 @@ mysqli_close($myconn);
                                 <?php else: ?>
                                     <tr>
                                         <td style="color: tomato; font-size: 1.2em;" colspan="9" class="no-data">
-                                            No loan requests found for your products
+                                            No loan requests found for your offers
                                         </td>
                                     </tr>
                                 <?php endif; ?>
@@ -780,7 +783,7 @@ mysqli_close($myconn);
                 </div>
 
                 <!-- Dashboard -->
-                <div id="dashboard" >
+                <div id="dashboard" class="margin">
                     <div class="dash-header">
                         <div>
                             <h1>Lender's Dashboard</h1>
@@ -816,15 +819,10 @@ mysqli_close($myconn);
                         <div>
                             <p>Types of Loans Offered</p>
                             <div class="metric-value-container">
-                                <span class="span-2"><?php echo $totalProducts; ?></span>
+                                <span class="span-2"><?php echo $totalOffers; ?></span>
                             </div>
                         </div>
-                        <div>
-                            <p>Total Loan Capacity</p>
-                            <div class="metric-value-container">
-                                <span class="span-2"><?php echo $totalCapacity; ?></span>
-                            </div>
-                        </div>
+                        
                         <div>
                             <p>Active Loans</p>
                             <div class="metric-value-container">
@@ -835,6 +833,12 @@ mysqli_close($myconn);
                             <p>Amount Disbursed</p>
                             <div class="metric-value-container">
                                 <span class="span-2"><?php echo $totalDisbursedAmount; ?></span>
+                            </div>
+                        </div>
+                        <div>
+                            <p>Amount Owed</p>
+                            <div class="metric-value-container">
+                                <span class="span-2"><?php echo $owedCapacity; ?></span>
                             </div>
                         </div>
                         <div>
@@ -977,8 +981,8 @@ document.querySelector('#loanRequests form').addEventListener('submit', function
     // Store original values
     let originalValues = {};
 
-    // Show popup with product data
-    function showEditPopup(productId, loanType, interestRate, maxAmount, maxDuration) {
+    // Show popup with offer data
+    function showEditPopup(offerId, loanType, interestRate, maxAmount, maxDuration) {
         // Store original values
         originalValues = {
             interest_rate: interestRate,
@@ -987,7 +991,7 @@ document.querySelector('#loanRequests form').addEventListener('submit', function
         };
 
         // Set form values
-        document.getElementById('editProductId').value = productId;
+        document.getElementById('editOfferId').value = offerId;
         document.getElementById('editLoanType').textContent = loanType; // Display only
         document.getElementById('editInterestRate').value = interestRate;
         document.getElementById('editMaxAmount').value = maxAmount;
@@ -1013,12 +1017,12 @@ document.querySelector('#loanRequests form').addEventListener('submit', function
         form.method = 'POST';
         form.action = 'editLoan.php';
         
-        // Add product ID
-        const productIdInput = document.createElement('input');
-        productIdInput.type = 'hidden';
-        productIdInput.name = 'product_id';
-        productIdInput.value = document.getElementById('editProductId').value;
-        form.appendChild(productIdInput);
+        // Add offer ID
+        const offerIdInput = document.createElement('input');
+        offerIdInput.type = 'hidden';
+        offerIdInput.name = 'offer_id';
+        offerIdInput.value = document.getElementById('editOfferId').value;
+        form.appendChild(offerIdInput);
         
         // Only add changed fields
         const currentInterest = document.getElementById('editInterestRate').value;
@@ -1060,7 +1064,7 @@ document.querySelector('#loanRequests form').addEventListener('submit', function
         btn.addEventListener('click', function(e) {
             e.preventDefault(); // Prevent any default behavior
             showEditPopup(
-                this.dataset.productId,
+                this.dataset.offerId,
                 this.dataset.loanType,
                 this.dataset.interestRate,
                 this.dataset.maxAmount,

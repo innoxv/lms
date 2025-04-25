@@ -176,14 +176,14 @@ main {
 /* For tablets (768px to 991px) */
 @media (max-width: 991px) {
     main {
-        margin: 0 2em; /* Slightly smaller side margins */
+        margin: 0 1.8em; /* Slightly smaller side margins */
     }
 }
 
 /* For mobile devices (less than 768px) */
 @media (max-width: 767px) {
     main {
-        margin: 0 1em; /* Even smaller margins on all sides */
+        margin: 0 .8em; /* Even smaller margins on all sides */
     }
 }
 
@@ -634,8 +634,7 @@ img{
 /* Show the Dashboard section by default */
 #dashboard {
     display: block;
-    margin: 0 1em;
-    height: 100%;
+    height: 95%;
     /* outline: 1px solid red; */
 }
 #applyLoan{
@@ -772,7 +771,7 @@ img{
 .visuals{
     margin: .6em 0 0 0;
     height: 50%;
-    width: 100%;
+    width: 95%;
     /* outline: 1px solid blue; */
     display: flex;
     flex-direction: row;
@@ -844,34 +843,49 @@ img{
     font-weight: unset;
 
 }
-.range input{
-    padding: 0;
-    margin: .5em 0;
-    width: 5em;
+.range{
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
+}
+.range input{
+    padding: .2em 0;
+    margin: .2em 0;
+    width: 4.5em;
     text-align: center;
     font-size: 1em;
 }
 .range input::placeholder{
     color: gray;
     font-size: 1em;
+    text-align: center;
 }
-.range > div{
-    padding: 0;
-    /* width: 100%; */
+.range .input{
     display: flex;
-    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+    margin: .2em 0;
+
+
 }
 .range span{
     font-size: 1.5em;
     font-weight: 900;
     color: #74C0FC;
 }
-
+.quick-amounts{
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+}
 .quick-amounts button{
-    margin: .5em 0;
+    /* margin:  0 .1em 0 0; */
+    margin: .2em 0;
     padding: .5em .4em;
+    opacity: .8;
+    outline: 1px solid #2C2C2C;
+    
+
 }
 .quick-amounts .one{
     border-radius: .5em 0 0 .5em;
@@ -890,6 +904,8 @@ img{
 }
 .sub{
     border-radius: .5em 0 0 .5em;
+    /* outline: 1px solid #74C0FC; */
+    border: none;
 
 }
 .res{
@@ -898,6 +914,8 @@ img{
     padding: .6em .9em;
     border-radius: 0 .5em .5em 0;
     outline: 1px solid #3A3A3A;
+    border: none;
+    /* outline: none; */
 
     
 }
@@ -1337,6 +1355,29 @@ iframe {
     cursor: not-allowed;
 }
 
+
+.active-loans-table table{
+    width: 98%;
+    border-collapse: collapse;
+    margin: .5em 0;
+    animation: fadeIn 0.3s ease-in-out;
+
+}
+
+.active-loans-table thead th {
+    position: sticky;
+    top: 0;
+    background: #3A3A3A;
+    z-index: 10;
+    padding: .5em 0;
+    text-align: left;
+    color: whitesmoke;
+}
+.active-loans-table td{
+    color: lightgray;
+    text-align: left;
+
+}
 /* Lender Dashboard */
 #createLoan{
     height: 100%;
@@ -1369,7 +1410,7 @@ iframe {
     /* outline: 1px solid green; */
     height: 100%;
     width: 60%;
-    margin-top: 1em;
+    margin: 1em;
     animation: fadeIn 0.3s ease-in-out;
 
 }
@@ -1696,12 +1737,14 @@ iframe {
     outline: none;
 
 }
-.filter-group #status{ 
+.filter-group #status, .filter-group #payment_status{ 
     border-radius: .5em 0 0 .5em;
+
 
 }
 .filter-group #loan_type, .filter-group #amount_range, .filter-group #interest_rate
-,.filter-group #date_range, .filter-group #duration_range, .filter-group #collateral_range{ 
+,.filter-group #date_range, .filter-group #duration_range, .filter-group #collateral_range
+{ 
     border-radius: 0;
 
 }
@@ -1720,6 +1763,7 @@ iframe {
 .reset-btn {
     background-color: tomato;
     color: #28282B;
+    border-radius: 0 .5em .5em 0;
 }
 
 .reset-btn:hover {

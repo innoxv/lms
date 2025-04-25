@@ -21,24 +21,24 @@ if (!$conn) {
     exit();
 }
 
-//Get and validate product ID
-$product_id = intval($_POST['product_id'] ?? 0);
+//Get and validate offer ID
+$offer_id = intval($_POST['offer_id'] ?? 0);
 $lender_id = intval($_SESSION['lender_id']);
 
-//Verify the product exists and belongs to this lender
-$check_query = "SELECT product_id, loan_type FROM loan_products 
-                WHERE product_id = $product_id 
+//Verify the offer exists and belongs to this lender
+$check_query = "SELECT offer_id, loan_type FROM loan_offers 
+                WHERE offer_id = $offer_id 
                 AND lender_id = $lender_id 
                 LIMIT 1";
 $check_result = mysqli_query($conn, $check_query);
 
 if (!$check_result || mysqli_num_rows($check_result) === 0) {
-    $_SESSION['loan_message'] = "Loan product not found or you don't have permission";
+    $_SESSION['loan_message'] = "Loan offer not found or you don't have permission";
     header("Location: lenderDashboard.php#createLoan");
     exit();
 }
 
-$product = mysqli_fetch_assoc($check_result);
+$offer = mysqli_fetch_assoc($check_result);
 $changes = [];
 
 //Prepare the update
@@ -61,13 +61,13 @@ if (!empty($_POST['max_duration'])) {
 
 // Execute update if there are changes
 if (!empty($updates)) {
-    $update_query = "UPDATE loan_products SET " . implode(", ", $updates) . 
-                   " WHERE product_id = $product_id";
+    $update_query = "UPDATE loan_offers SET " . implode(", ", $updates) . 
+                   " WHERE offer_id = $offer_id";
     
     if (mysqli_query($conn, $update_query)) {
         // Log the edit activity
         if (!empty($changes)) {
-            $activity = "Edited loan offer, Product ID $product_id";
+            $activity = "Edited loan offer, offer ID $offer_id";
             $conn->query(
                 "INSERT INTO activity (user_id, activity, activity_time, activity_type)
                 VALUES ($user_id, '$activity', NOW(), 'loan offer edit')"
@@ -79,7 +79,7 @@ if (!empty($updates)) {
             $updateLender = "UPDATE lenders 
                             SET average_interest_rate = (
                                 SELECT AVG(interest_rate) 
-                                FROM loan_products 
+                                FROM loan_offers 
                                 WHERE lender_id = $lender_id
                             )
                             WHERE lender_id = $lender_id";

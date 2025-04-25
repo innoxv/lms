@@ -51,12 +51,12 @@ if (isset($_GET['loan_type']) && is_array($_GET['loan_type'])) {
 $amountConditions = [];
 if (isset($_GET['min_amount']) && is_numeric($_GET['min_amount'])) {
     $filters['min_amount'] = max(0, (int)$_GET['min_amount']);
-    $amountConditions[] = "loan_products.max_amount >= ?";
+    $amountConditions[] = "loan_offers.max_amount >= ?";
 }
 
 if (isset($_GET['max_amount']) && is_numeric($_GET['max_amount'])) {
     $filters['max_amount'] = (int)$_GET['max_amount'];
-    $amountConditions[] = "loan_products.max_amount <= ?";
+    $amountConditions[] = "loan_offers.max_amount <= ?";
 }
 
 // Process interest rate filter
@@ -68,10 +68,10 @@ if (isset($_GET['interest_range']) && is_array($_GET['interest_range'])) {
 
 // Build base query
 $query = "SELECT 
-            loan_products.*, 
+            loan_offers.*, 
             lenders.name AS lender_name
-          FROM loan_products
-          JOIN lenders ON loan_products.lender_id = lenders.lender_id";
+          FROM loan_offers
+          JOIN lenders ON loan_offers.lender_id = lenders.lender_id";
 
 // Add WHERE conditions only if we have any filters
 $whereConditions = [];
@@ -86,7 +86,7 @@ if (!empty($amountConditions)) {
 // Add loan type condition if specified
 if (!empty($filters['loan_types'])) {
     $placeholders = implode(',', array_fill(0, count($filters['loan_types']), '?'));
-    $whereConditions[] = "loan_products.loan_type IN ($placeholders)";
+    $whereConditions[] = "loan_offers.loan_type IN ($placeholders)";
 }
 
 // Add interest rate conditions if specified
@@ -95,13 +95,13 @@ if (!empty($filters['interest_ranges'])) {
     foreach ($filters['interest_ranges'] as $range) {
         switch ($range) {
             case '0-5': 
-                $conditions[] = "loan_products.interest_rate BETWEEN 0 AND 5"; 
+                $conditions[] = "loan_offers.interest_rate BETWEEN 0 AND 5"; 
                 break;
             case '5-10': 
-                $conditions[] = "loan_products.interest_rate BETWEEN 5 AND 10"; 
+                $conditions[] = "loan_offers.interest_rate BETWEEN 5 AND 10"; 
                 break;
             case '10+': 
-                $conditions[] = "loan_products.interest_rate > 10"; 
+                $conditions[] = "loan_offers.interest_rate > 10"; 
                 break;
         }
     }
@@ -114,7 +114,7 @@ if (!empty($whereConditions)) {
 }
 
 // Add sorting
-$query .= " ORDER BY loan_products.product_id DESC";
+$query .= " ORDER BY loan_offers.offer_id DESC";
 
 // Prepare statement
 $stmt = $mysqli->prepare($query);
@@ -169,7 +169,7 @@ unset($_SESSION['filtered_lenders']);
 if (!empty($lenders)) {
     $_SESSION['filtered_lenders'] = array_map(function($lender) {
         return [
-            'product_id' => (int)$lender['product_id'],
+            'offer_id' => (int)$lender['offer_id'],
             'lender_id' => (int)$lender['lender_id'],
             'name' => htmlspecialchars($lender['lender_name']),
             'type' => htmlspecialchars($lender['loan_type']),

@@ -30,7 +30,7 @@ $customer_id = (int)$_SESSION['customer_id'];
 // Fetch loan details without table aliases
 $query = "SELECT 
             loans.loan_id,
-            loans.product_id,
+            loans.offer_id,
             loans.lender_id,
             loans.customer_id,
             loans.amount,
@@ -41,10 +41,10 @@ $query = "SELECT
             loans.collateral_description,
             loans.status,
             loans.created_at,
-            loan_products.loan_type,
+            loan_offers.loan_type,
             lenders.name AS lender_name
           FROM loans
-          JOIN loan_products ON loans.product_id = loan_products.product_id
+          JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
           JOIN lenders ON loans.lender_id = lenders.lender_id
           WHERE loans.loan_id = ? AND loans.customer_id = ?";
 
