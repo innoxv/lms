@@ -20,9 +20,9 @@ $statusFilter = $_GET['status'] ?? '';
 
 if ($loanId) {
     // Single loan details
-    $stmt = $conn->prepare("SELECT loans.*, loan_products.loan_type, lenders.name AS lender_name 
+    $stmt = $conn->prepare("SELECT loans.*, loan_offers.loan_type, lenders.name AS lender_name 
                          FROM loans 
-                         JOIN loan_products ON loans.product_id = loan_products.product_id
+                         JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
                          JOIN lenders ON loans.lender_id = lenders.lender_id
                          WHERE loans.loan_id = ? AND loans.customer_id IN 
                          (SELECT customer_id FROM customers WHERE user_id = ?)");
@@ -42,10 +42,10 @@ if ($loanId) {
 }
 
 // All loans with optional status filter
-$query = "SELECT loans.loan_id, loan_products.loan_type, lenders.name AS lender_name,
+$query = "SELECT loans.loan_id, loan_offers.loan_type, lenders.name AS lender_name,
           loans.amount, loans.interest_rate, loans.status, loans.created_at
           FROM loans
-          JOIN loan_products ON loans.product_id = loan_products.product_id
+          JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
           JOIN lenders ON loans.lender_id = lenders.lender_id
           JOIN customers ON loans.customer_id = customers.customer_id
           WHERE customers.user_id = ?";

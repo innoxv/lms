@@ -1,8 +1,12 @@
 <?php
 session_start();
+// Enable error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 
 if (!isset($_SESSION['user_id'])) {
-    $_SESSION['loan_message'] = "You must be logged in to create a loan product.";
+    $_SESSION['loan_message'] = "You must be logged in to create a loan offer.";
     header("Location: lenderDashboard.php#createLoan");
     exit();
 }
@@ -37,18 +41,18 @@ $max_amount = floatval($_POST['maxAmount']);
 $max_duration = intval($_POST['maxDuration']);
 
 // Check if the loan type already exists
-$checkQuery = "SELECT product_id FROM loan_products 
+$checkQuery = "SELECT offer_id FROM loan_offers 
               WHERE loan_type = '$loan_type' AND lender_id = '$lender_id'";
 $checkResult = mysqli_query($myconn, $checkQuery);
 
 if (mysqli_num_rows($checkResult) > 0) {
-    $_SESSION['loan_message'] = "$loan_type already exists in your loan products!";
+    $_SESSION['loan_message'] = "$loan_type already exists in your loan offers!";
     header("Location: lenderDashboard.php#createLoan");
     exit();
 }
 
-// Insert into loan_products table
-$sql = "INSERT INTO loan_products 
+// Insert into loan_offers table
+$sql = "INSERT INTO loan_offers 
         (lender_id, loan_type, interest_rate, max_amount, max_duration)
         VALUES 
         ('$lender_id', '$loan_type', '$interest_rate', '$max_amount', '$max_duration')";
@@ -61,7 +65,7 @@ if (mysqli_query($myconn, $sql)) {
     mysqli_query($myconn, $logSql);
     
     // Calculate new average interest rate
-    $avgQuery = "SELECT AVG(interest_rate) AS new_avg FROM loan_products WHERE lender_id = '$lender_id'";
+    $avgQuery = "SELECT AVG(interest_rate) AS new_avg FROM loan_offers WHERE lender_id = '$lender_id'";
     $avgResult = mysqli_query($myconn, $avgQuery);
     $avgData = mysqli_fetch_assoc($avgResult);
     $newAverage = $avgData['new_avg'];
@@ -72,7 +76,7 @@ if (mysqli_query($myconn, $sql)) {
 
     $_SESSION['loan_message'] = "$loan_type created successfully!";
 } else {
-    $_SESSION['loan_message'] = "Error creating loan product: " . mysqli_error($myconn);
+    $_SESSION['loan_message'] = "Error creating loan offer: " . mysqli_error($myconn);
 }
 
 mysqli_close($myconn);

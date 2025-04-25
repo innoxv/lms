@@ -1,9 +1,10 @@
 <?php
+// Start the session
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
-// Start the session
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -68,14 +69,14 @@ $statusFilter = isset($_GET['status']) && in_array($_GET['status'], ['approved',
 // Base query
 $loansQuery = "SELECT 
     loans.loan_id,
-    loan_products.loan_type,
+    loan_offers.loan_type,
     loans.amount,
     loans.interest_rate,
     loans.status AS loan_status,  
     lenders.name AS lender_name,
     DATE_FORMAT(loans.created_at, '%Y-%m-%d') as created_at
 FROM loans
-JOIN loan_products ON loans.product_id = loan_products.product_id
+JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
 JOIN lenders ON loans.lender_id = lenders.lender_id
 WHERE loans.customer_id = ?";
 
@@ -92,7 +93,7 @@ if ($statusFilter) {
 
 // Loan type filter
 if (isset($_GET['loan_type']) && $_GET['loan_type']) {
-    $loansQuery .= " AND loan_products.loan_type = ?";
+    $loansQuery .= " AND loan_offers.loan_type = ?";
     $params[] = $_GET['loan_type'];
     $types .= "s";
 }
@@ -179,11 +180,11 @@ if (isset($_GET['loan_id'])) {
     // Now fetch the full details with joins
     $loanDetailsQuery = "SELECT 
         loans.*,
-        loan_products.loan_type,
+        loan_offers.loan_type,
         lenders.name AS lender_name,
         DATE_FORMAT(loans.created_at, '%Y-%m-%d') as created_date
     FROM loans
-    JOIN loan_products ON loans.product_id = loan_products.product_id
+    JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
     JOIN lenders ON loans.lender_id = lenders.lender_id
     WHERE loans.loan_id = ?";
     
@@ -208,11 +209,13 @@ if (isset($_GET['loan_id'])) {
 // Loan metrics
 $metricsQuery = "SELECT 
     SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved_loans,
-    SUM(CASE WHEN status = 'approved' THEN amount ELSE 0 END) as total_borrowed,
-    SUM(CASE WHEN status IN ('approved', 'disbursed', 'active') THEN amount ELSE 0 END) as outstanding_balance,
+    SUM(CASE WHEN status = 'approved' THEN loans.amount ELSE 0 END) as total_borrowed,
+    COALESCE(SUM(payments.remaining_balance), 0) as outstanding_balance,
     MIN(CASE WHEN status = 'approved' THEN DATE_ADD(created_at, INTERVAL 1 MONTH) ELSE NULL END) as next_payment_date
 FROM loans
-WHERE customer_id = ?";
+LEFT JOIN payments ON loans.loan_id = payments.loan_id
+WHERE loans.customer_id = ? AND loans.status IN ('approved', 'disbursed', 'active')
+GROUP BY loans.customer_id";
 
 $stmt = $myconn->prepare($metricsQuery);
 $stmt->bind_param("i", $customer_id);
@@ -235,13 +238,13 @@ $allLoanTypes = [
 ];
 
 $loanTypesQuery = "SELECT 
-    loan_products.loan_type, 
+    loan_offers.loan_type, 
     COUNT(*) as loan_count
 FROM loans 
-JOIN loan_products ON loans.product_id = loan_products.product_id
+JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
 WHERE loans.customer_id = ?
 AND loans.status IN ('approved', 'disbursed', 'active')
-GROUP BY loan_products.loan_type";
+GROUP BY loan_offers.loan_type";
 
 $stmt = $myconn->prepare($loanTypesQuery);
 $stmt->bind_param("i", $customer_id);
@@ -278,6 +281,40 @@ $pieData = [
     'approved' => isset($statusData['approved']) ? ($statusData['approved'] / $totalLoans * 100) : 0,
     'rejected' => isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0
 ];
+
+// Payment Tracking
+// Initialize active loans if not set
+if (!isset($_SESSION['active_loans'])) {
+    $baseQuery = "SELECT 
+        loans.loan_id,
+        loan_offers.loan_type,
+        loans.amount,
+        loans.interest_rate,
+        loans.status AS loan_status,
+        lenders.name AS lender_name,
+        loans.created_at,
+        COALESCE(SUM(payments.amount), 0) AS amount_paid,
+        (loans.amount - COALESCE(SUM(payments.amount), 0)) AS remaining_balance,
+        CASE 
+            WHEN (loans.amount - COALESCE(SUM(payments.amount), 0)) <= 0 THEN 'fully_paid'
+            WHEN COALESCE(SUM(payments.amount), 0) > 0 THEN 'partially_paid'
+            ELSE 'unpaid'
+        END AS payment_status
+    FROM loans
+    JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
+    JOIN lenders ON loans.lender_id = lenders.lender_id
+    LEFT JOIN payments ON loans.loan_id = payments.loan_id
+    WHERE loans.customer_id = ?
+    AND loans.status IN ('approved', 'disbursed', 'active')
+    GROUP BY loans.loan_id
+    ORDER BY loans.created_at DESC";
+
+    $stmt = $myconn->prepare($baseQuery);
+    $stmt->bind_param("i", $customer_id);
+    $stmt->execute();
+    $activeLoans = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $_SESSION['active_loans'] = $activeLoans;
+}
 
 // MESSAGES HANDLING
 // Clear any existing messages if they were shown
@@ -335,7 +372,7 @@ if (isset($_SESSION['profile_message_shown'])) {
                             </a>
                         </li>
                         <li><a href="#loanHistory" id="loanHistoryLink">Loan History</a></li>
-                        <li class="disabled-link"><a href="" id="">Payment Tracking</a></li> <!-- this is still in production -->
+                        <li><a href="#paymentTracking" id="">Payment Tracking</a></li> 
                         <li class="disabled-link"><a href="#notifications">Notifications</a></li>  <!-- this is still in production -->
                         <li><a href="#profile">Profile</a></li>
                     </div>
@@ -430,7 +467,7 @@ if (isset($_SESSION['profile_message_shown'])) {
                                 <li>
                                     <p>Amount Range (sh)</p>
                                     <span class="range">
-                                        <div>
+                                        <div class="input">
                                             <input type="text" name="min_amount" placeholder="500" min="500" 
                                                 value="<?= htmlspecialchars($current_filters['min_amount'] ?? ($_GET['min_amount'] ?? '')) ?>">
                                             <span>-</span>
@@ -508,7 +545,7 @@ if (isset($_SESSION['profile_message_shown'])) {
                                             <span>Max Amt: <?= number_format($lender['amount']) ?></span>
                                             <span>Max Dur: <?= $lender['duration'] ?> months</span>
                                             <button class="applynow" 
-                                                data-product="<?= $lender['product_id'] ?>"
+                                                data-offer="<?= $lender['offer_id'] ?>"
                                                 data-lender="<?= $lender['lender_id'] ?>"
                                                 data-rate="<?= $lender['rate'] ?>"
                                                 data-name="<?= $lender['name'] ?>"
@@ -527,10 +564,10 @@ if (isset($_SESSION['profile_message_shown'])) {
                             <?php else: 
 
                                 // Default view - show all lenders
-                                $query = "SELECT loan_products.*, lenders.name AS lender_name
-                                        FROM loan_products
-                                        JOIN lenders ON loan_products.lender_id = lenders.lender_id
-                                        ORDER BY loan_products.product_id DESC";
+                                $query = "SELECT loan_offers.*, lenders.name AS lender_name
+                                        FROM loan_offers
+                                        JOIN lenders ON loan_offers.lender_id = lenders.lender_id
+                                        ORDER BY loan_offers.offer_id DESC";
                                 $result = $myconn->query($query);
                         
                                 if ($result && $result->num_rows > 0): ?>
@@ -556,7 +593,7 @@ if (isset($_SESSION['profile_message_shown'])) {
                                             <span>Max Amt: <?= number_format($lender['max_amount']) ?></span>
                                             <span>Max Dur: <?= $lender['max_duration'] ?> months</span>
                                             <button class="applynow" 
-                                                data-product="<?= $lender['product_id'] ?>"
+                                                data-offer="<?= $lender['offer_id'] ?>"
                                                 data-lender="<?= $lender['lender_id'] ?>"
                                                 data-rate="<?= $lender['interest_rate'] ?>"
                                                 data-name="<?= htmlspecialchars($lender['lender_name']) ?>"
@@ -594,7 +631,7 @@ if (isset($_SESSION['profile_message_shown'])) {
                             <form id="loanApplicationForm" action="applyLoan.php" method="post">
                                 <!-- Hidden fields for submission -->
                                 <div class="form-group">
-                                        <input type="hidden" id="productId" name="product_id">
+                                        <input type="hidden" id="offerId" name="offer_id">
                                         <input type="hidden" id="lenderId" name="lender_id">
                                         <input type="hidden" id="interestRate" name="interest_rate">
                                 </div>
@@ -866,6 +903,178 @@ if (isset($_SESSION['profile_message_shown'])) {
                     }
                     ?>
                 </div>
+                <!-- Payment Tracking -->
+<div id="paymentTracking" class="margin">
+    <h1>Payment Tracking</h1>
+    <p>View and manage your active loan payments.</p>
+    
+    <?php if (isset($_SESSION['payment_message'])): ?>
+        <div class="alert <?= $_SESSION['payment_message_type'] ?? 'info' ?>">
+            <?= htmlspecialchars($_SESSION['payment_message']) ?>
+        </div>
+        <?php 
+        unset($_SESSION['payment_message']);
+        unset($_SESSION['payment_message_type']);
+        ?>
+    <?php endif; ?>
+    
+    <div class="payment-tracking-container">
+        <form method="get" action="paymentTracking.php">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="payment_status">Payment Status:</label>
+                    <select name="payment_status" id="payment_status" onchange="this.form.submit()">
+                        <option value="">All</option>
+                        <option value="unpaid" <?= (($_SESSION['payment_filters']['payment_status'] ?? '') === 'unpaid') ? 'selected' : '' ?>>Unpaid</option>
+                        <option value="partially_paid" <?= (($_SESSION['payment_filters']['payment_status'] ?? '') === 'partially_paid') ? 'selected' : '' ?>>Partially Paid</option>
+                        <option value="fully_paid" <?= (($_SESSION['payment_filters']['payment_status'] ?? '') === 'fully_paid') ? 'selected' : '' ?>>Fully Paid</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="loan_type">Loan Type:</label>
+                    <select name="loan_type" id="loan_type" onchange="this.form.submit()">
+                        <option value="">All Types</option>
+                        <?php foreach ($allLoanTypes as $type): ?>
+                            <option value="<?= $type ?>" <?= (($_SESSION['payment_filters']['loan_type'] ?? '') === $type) ? 'selected' : '' ?>>
+                                <?= $type ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="amount_range">Loan Amount:</label>
+                    <select name="amount_range" id="amount_range" onchange="this.form.submit()">
+                        <option value="">Any Amount</option>
+                        <option value="0-5000" <?= (($_SESSION['payment_filters']['amount_range'] ?? '') === '0-5000') ? 'selected' : '' ?>>0 - 5,000</option>
+                        <option value="5000-20000" <?= (($_SESSION['payment_filters']['amount_range'] ?? '') === '5000-20000') ? 'selected' : '' ?>>5,000 - 20,000</option>
+                        <option value="20000-50000" <?= (($_SESSION['payment_filters']['amount_range'] ?? '') === '20000-50000') ? 'selected' : '' ?>>20,000 - 50,000</option>
+                        <option value="50000-100000" <?= (($_SESSION['payment_filters']['amount_range'] ?? '') === '50000-100000') ? 'selected' : '' ?>>50,000 - 100,000</option>
+                        <option value="100000+" <?= (($_SESSION['payment_filters']['amount_range'] ?? '') === '100000+') ? 'selected' : '' ?>>100,000+</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="date_range">Application Date:</label>
+                    <select name="date_range" id="date_range" onchange="this.form.submit()">
+                        <option value="">All Time</option>
+                        <option value="today" <?= (($_SESSION['payment_filters']['date_range'] ?? '') === 'today') ? 'selected' : '' ?>>Today</option>
+                        <option value="week" <?= (($_SESSION['payment_filters']['date_range'] ?? '') === 'week') ? 'selected' : '' ?>>This Week</option>
+                        <option value="month" <?= (($_SESSION['payment_filters']['date_range'] ?? '') === 'month') ? 'selected' : '' ?>>This Month</option>
+                        <option value="year" <?= (($_SESSION['payment_filters']['date_range'] ?? '') === 'year') ? 'selected' : '' ?>>This Year</option>
+                    </select>
+                </div>
+                
+                <div class="filter-actions">
+                    <a href="paymentTracking.php?reset=true"><button type="button" class="reset-btn">Reset</button></a>
+                </div>
+            </div>
+        </form>
+        
+        <div class="active-loans-table">
+            <?php 
+            $activeLoans = $_SESSION['active_loans'] ?? [];
+            if (empty($activeLoans)): ?>
+                <div class="no-lenders">No active loans found</div> <!-- reusing styling -->
+            <?php else: ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Loan ID</th>
+                            <th>Type</th>
+                            <th>Lender</th>
+                            <th>Loan Amount</th>
+                            <th>Paid</th>
+                            <th>Balance</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($activeLoans as $loan): 
+                            $payment_status = ($loan['remaining_balance'] <= 0) ? 'fully_paid' : 
+                                            ($loan['amount_paid'] > 0 ? 'partially_paid' : 'unpaid');
+                        ?>
+                            <tr>
+                                <td><?= htmlspecialchars($loan['loan_id']) ?></td>
+                                <td><?= htmlspecialchars($loan['loan_type']) ?></td>
+                                <td><?= htmlspecialchars($loan['lender_name']) ?></td>
+                                <td><?= number_format($loan['amount']) ?></td>
+                                <td><?= number_format($loan['amount_paid']) ?></td>
+                                <td><?= number_format($loan['remaining_balance']) ?></td>
+                                <td>
+                                    <span class="payment-status <?= $payment_status ?>">
+                                        <?= ucfirst(str_replace('_', ' ', $payment_status)) ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="pay-btn" 
+                                        data-loan-id="<?= $loan['loan_id'] ?>"
+                                        data-loan-amount="<?= $loan['amount'] ?>"
+                                        data-amount-paid="<?= $loan['amount_paid'] ?>"
+                                        data-remaining-balance="<?= $loan['remaining_balance'] ?>"
+                                        onclick="showPaymentPopup(this)">
+                                        Pay
+                                    </button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Popup -->
+<div class="popup-overlay" id="paymentPopup" style="display: none;">
+    <div class="popup-content3">
+        <h2>Make Payment</h2>
+        <button class="close-btn" onclick="closePaymentPopup()">&times;</button>
+        
+        <form id="paymentForm" method="post" action="paymentTracking.php#paymentTracking">
+            <input type="hidden" name="loan_id" id="payment_loan_id">
+            <input type="hidden" name="remaining_balance" id="payment_remaining_balance">
+            
+            <div class="form-group">
+                <label for="payment_loan_amount">Loan Amount:</label>
+                <input style="border: none;" type="text" id="payment_loan_amount" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label for="payment_amount_paid">Amount Paid:</label>
+                <input style="border: none; type="text" id="payment_amount_paid" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label for="payment_balance">Remaining Balance:</label>
+                <input style="border: none; type="text" id="payment_balance" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label for="payment_amount">Payment Amount:*</label>
+                <input type="text" id="payment_amount" name="amount" min="1" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="payment_method">Payment Method:*</label>
+                <select class="select" id="payment_method" name="payment_method" required>
+                    <option value="">Select Method</option>
+                    <option value="mpesa">M-Pesa</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="credit_card">Credit Card</option>
+                    <option value="debit_card">Debit Card</option>
+                </select>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="cancel-btn" onclick="closePaymentPopup()">Cancel</button>
+                <button type="submit" name="payment_submit" class="submit-btn">Process Payment</button>
+            </div>
+        </form>
+    </div>
+</div>
 
                 <!-- Notifications -->
                 <div id="notifications" class="margin">
@@ -997,7 +1206,7 @@ if (isset($_SESSION['profile_message_shown'])) {
                 
 
                 <!-- Dashboard -->
-                <div id="dashboard" >
+                <div id="dashboard" class="margin">
                     <div class="dash-header">
                         <div>
                             <h1>Customer's Dashboard</h1>
@@ -1077,6 +1286,37 @@ if (isset($_SESSION['profile_message_shown'])) {
                 
 </main>
 
+
+<script>
+function showPaymentPopup(button) {
+    const loanId = button.getAttribute('data-loan-id');
+    const loanAmount = button.getAttribute('data-loan-amount');
+    const amountPaid = button.getAttribute('data-amount-paid');
+    const remainingBalance = button.getAttribute('data-remaining-balance');
+    
+    document.getElementById('payment_loan_id').value = loanId;
+    document.getElementById('payment_loan_amount').value = numberWithCommas(loanAmount);
+    document.getElementById('payment_amount_paid').value = numberWithCommas(amountPaid);
+    document.getElementById('payment_balance').value = numberWithCommas(remainingBalance);
+    document.getElementById('payment_remaining_balance').value = remainingBalance;
+    
+    // Reset form
+    document.getElementById('payment_amount').value = '';
+    document.getElementById('payment_method').selectedIndex = 0;
+    
+    document.getElementById('paymentPopup').style.display = 'flex';
+    document.body.classList.add('popup-open');
+}
+
+function closePaymentPopup() {
+    document.getElementById('paymentPopup').style.display = 'none';
+    document.body.classList.remove('popup-open');
+}
+
+function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+</script>
 
 
 <script>
@@ -1159,7 +1399,7 @@ function initPopups() {
     document.querySelectorAll('.applynow').forEach(btn => {
         btn.addEventListener('click', function () {
             // Get lender data from button attributes
-            document.getElementById('productId').value = this.dataset.product;
+            document.getElementById('offerId').value = this.dataset.offer;
             document.getElementById('lenderId').value = this.dataset.lender;
             document.getElementById('interestRate').value = this.dataset.rate;
 

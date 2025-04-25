@@ -614,7 +614,7 @@ mysqli_close($myconn);
                 </div>
 
                 <!-- Dashboard -->
-                <div id="dashboard" >
+                <div id="dashboard" class="margin">
                     <div class="dash-header">
                         <div>
                             <h1>Administrator's Dashboard</h1>
