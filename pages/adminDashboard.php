@@ -516,6 +516,7 @@ mysqli_close($myconn);
                                     <option value="loan offer creation" <?= $activityFilter==='loan offer creation'?'selected':'' ?>>Loan Offer Creation</option>
                                     <option value="loan offer edit" <?= $activityFilter==='loan offer edit'?'selected':'' ?>>Loan Offer Edit</option>
                                     <option value="loan offer deletion" <?= $activityFilter==='loan offer deletion'?'selected':'' ?>>Loan Offer Deletion</option>
+                                    <option value="payment" <?= $activityFilter==='payment'?'selected':'' ?>>Loan Payment</option>
 
                                 </optgroup>
                                 

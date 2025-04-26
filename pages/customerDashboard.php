@@ -206,46 +206,58 @@ if (isset($_GET['loan_id'])) {
 
 // METRICS AND CHARTS DATA
 
-// Loan metrics - Count active loans (with partial payments or unpaid balance)
+// Loan metrics - Count active loans and calculate outstanding balance
 $metricsQuery = "SELECT 
-    COUNT(DISTINCT CASE WHEN EXISTS (
-        SELECT 1 FROM payments 
-        WHERE payments.loan_id = loans.loan_id 
-        AND (payments.payment_type = 'partial')
-    ) THEN loans.loan_id END) as active_loans,
-    
-    SUM(CASE WHEN loans.status = 'approved' THEN loans.amount ELSE 0 END) as total_borrowed,
-    
-    COALESCE((
-        SELECT SUM(payments.remaining_balance)
-        FROM payments
-        WHERE payments.loan_id IN (
-            SELECT loan_id FROM loans 
-            WHERE customer_id = ? 
-            AND status IN ('approved', 'disbursed', 'active')
-        )
-    ), 0) as outstanding_balance,
-    
-    MIN(CASE WHEN loans.status = 'approved' THEN DATE_ADD(loans.created_at, INTERVAL 1 MONTH) ELSE NULL END) as next_payment_date
+    COUNT(DISTINCT loans.loan_id) as active_loans,
+    COUNT(DISTINCT loans.loan_id) as total_approved_loans,
+    SUM(loans.amount) as total_borrowed,
+    COALESCE(SUM(payments.remaining_balance), 0) as outstanding_balance,
+    MIN(DATE_ADD(loans.created_at, INTERVAL 1 MONTH)) as next_payment_date
 FROM loans
+LEFT JOIN payments ON loans.loan_id = payments.loan_id
 WHERE loans.customer_id = ?
-GROUP BY loans.customer_id";
+AND loans.status = 'approved'
+AND (payments.remaining_balance > 0 OR payments.remaining_balance IS NULL)";
 
 $stmt = $myconn->prepare($metricsQuery);
-$stmt->bind_param("ii", $customer_id, $customer_id);
-$stmt->execute();
+if (!$stmt) {
+    error_log("Prepare failed: " . $myconn->error);
+    die("Database error occurred. Please try again later.");
+}
+$stmt->bind_param("i", $customer_id);
+if (!$stmt->execute()) {
+    error_log("Execute failed: " . $stmt->error);
+    die("Database error occurred. Please try again later.");
+}
 $metrics = $stmt->get_result()->fetch_assoc();
 
 // Format metrics
-$activeLoans = (int)($metrics['active_loans'] ?? 0);
-$totalBorrowed = $metrics['total_borrowed'] ?? 0;
-$outstandingBalance = $metrics['outstanding_balance'] ?? 0;
-$nextPaymentDate = $metrics['next_payment_date'] 
-    ? date('j M', strtotime($metrics['next_payment_date'])) 
-    : 'N/A';
+$activeLoansCount = 0;
+$totalApprovedLoans = 0;
+$totalBorrowed = 0;
+$outstandingBalance = 0;
+$nextPaymentDate = 'N/A';
 
+if ($metrics) {
+    $activeLoansCount = (int)($metrics['active_loans'] ?? 0);
+    $totalApprovedLoans = (int)($metrics['total_approved_loans'] ?? 0);
+    $totalBorrowed = (int)($metrics['total_borrowed'] ?? 0);
+    $outstandingBalance = (float)($metrics['outstanding_balance'] ?? 0);
+    $nextPaymentDate = $metrics['next_payment_date'] 
+        ? date('j M', strtotime($metrics['next_payment_date'])) 
+        : 'N/A';
+}
 
-    
+if ($metrics) {
+    $activeLoansCount = (int)($metrics['active_loans'] ?? 0);
+    $totalApprovedLoans = (int)($metrics['total_approved_loans'] ?? 0);
+    $totalBorrowed = (int)($metrics['total_borrowed'] ?? 0);
+    $outstandingBalance = $metrics['outstanding_balance'] ?? 0;
+    $nextPaymentDate = $metrics['next_payment_date'] 
+        ? date('j M', strtotime($metrics['next_payment_date'])) 
+        : 'N/A';
+}
+
 // Loan types data for chart
 $allLoanTypes = [
     "Personal Loan", "Business Loan", "Mortgage Loan", 
@@ -298,39 +310,7 @@ $pieData = [
     'rejected' => isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0
 ];
 
-// Payment Tracking
-// Initialize active loans if not set
-if (!isset($_SESSION['active_loans'])) {
-    $baseQuery = "SELECT 
-        loans.loan_id,
-        loan_offers.loan_type,
-        loans.amount,
-        loans.interest_rate,
-        loans.status AS loan_status,
-        lenders.name AS lender_name,
-        loans.created_at,
-        COALESCE(SUM(payments.amount), 0) AS amount_paid,
-        (loans.amount - COALESCE(SUM(payments.amount), 0)) AS remaining_balance,
-        CASE 
-            WHEN (loans.amount - COALESCE(SUM(payments.amount), 0)) <= 0 THEN 'fully_paid'
-            WHEN COALESCE(SUM(payments.amount), 0) > 0 THEN 'partially_paid'
-            ELSE 'unpaid'
-        END AS payment_status
-    FROM loans
-    JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
-    JOIN lenders ON loans.lender_id = lenders.lender_id
-    LEFT JOIN payments ON loans.loan_id = payments.loan_id
-    WHERE loans.customer_id = ?
-    AND loans.status IN ('approved', 'disbursed', 'active')
-    GROUP BY loans.loan_id
-    ORDER BY loans.created_at DESC";
 
-    $stmt = $myconn->prepare($baseQuery);
-    $stmt->bind_param("i", $customer_id);
-    $stmt->execute();
-    $activeLoans = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $_SESSION['active_loans'] = $activeLoans;
-}
 
 // MESSAGES HANDLING
 // Clear any existing messages if they were shown
@@ -919,8 +899,9 @@ if (isset($_SESSION['profile_message_shown'])) {
                     }
                     ?>
                 </div>
+
                 <!-- Payment Tracking -->
-<div id="paymentTracking" class="margin">
+                <div id="paymentTracking" class="margin">
     <h1>Payment Tracking</h1>
     <p>View and manage your active loan payments.</p>
     
@@ -949,11 +930,11 @@ if (isset($_SESSION['profile_message_shown'])) {
                 
                 <div class="filter-group">
                     <label for="loan_type">Loan Type:</label>
-                    <select name="loan_type" id="loan_type" onchange="this.form.submit()">
+                    <select name="loan_type" id="loan_type" onchange="this.form.submit()"> 
                         <option value="">All Types</option>
                         <?php foreach ($allLoanTypes as $type): ?>
-                            <option value="<?= $type ?>" <?= (($_SESSION['payment_filters']['loan_type'] ?? '') === $type) ? 'selected' : '' ?>>
-                                <?= $type ?>
+                            <option value="<?= htmlspecialchars($type) ?>" <?= (($_SESSION['payment_filters']['loan_type'] ?? '') === $type) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($type) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -992,7 +973,7 @@ if (isset($_SESSION['profile_message_shown'])) {
             <?php 
             $activeLoans = $_SESSION['active_loans'] ?? [];
             if (empty($activeLoans)): ?>
-                <div class="no-lenders">No active loans found</div> <!-- reusing styling -->
+                <div class="no-lenders">No active loans found</div>
             <?php else: ?>
                 <table>
                     <thead>
@@ -1001,6 +982,8 @@ if (isset($_SESSION['profile_message_shown'])) {
                             <th>Type</th>
                             <th>Lender</th>
                             <th>Loan Amount</th>
+                            <th>Amount Due</th>
+                            <th>Interest</th>
                             <th>Paid</th>
                             <th>Balance</th>
                             <th>Status</th>
@@ -1008,28 +991,35 @@ if (isset($_SESSION['profile_message_shown'])) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($activeLoans as $loan): 
-                            $payment_status = ($loan['remaining_balance'] <= 0) ? 'fully_paid' : 
-                                            ($loan['amount_paid'] > 0 ? 'partially_paid' : 'unpaid');
-                        ?>
+                        <?php foreach ($activeLoans as $loan): ?>
+                            <?php
+                            // Skip loans with missing or invalid data
+                            if (!isset($loan['amount']) || !isset($loan['total_amount_due']) || !isset($loan['interest_rate'])) {
+                                error_log("Skipping Loan ID {$loan['loan_id']}: Missing required fields");
+                                continue;
+                            }
+                            ?>
                             <tr>
                                 <td><?= htmlspecialchars($loan['loan_id']) ?></td>
                                 <td><?= htmlspecialchars($loan['loan_type']) ?></td>
                                 <td><?= htmlspecialchars($loan['lender_name']) ?></td>
                                 <td><?= number_format($loan['amount']) ?></td>
-                                <td><?= number_format($loan['amount_paid']) ?></td>
-                                <td><?= number_format($loan['remaining_balance']) ?></td>
+                                <td><?= number_format($loan['total_amount_due'], 2) ?></td>
+                                <td><?= htmlspecialchars($loan['interest_rate']) ?>%</td>
+                                <td><?= number_format($loan['amount_paid'] ?? 0, 2) ?></td>
+                                <td><?= number_format($loan['remaining_balance'] ?? 0, 2) ?></td>
                                 <td>
-                                    <span class="payment-status <?= $payment_status ?>">
-                                        <?= ucfirst(str_replace('_', ' ', $payment_status)) ?>
+                                    <span class="payment-status <?= htmlspecialchars($loan['payment_status'] ?? 'unpaid') ?>">
+                                        <?= ucfirst(str_replace('_', ' ', htmlspecialchars($loan['payment_status'] ?? 'unpaid'))) ?>
                                     </span>
                                 </td>
                                 <td>
                                     <button class="pay-btn" 
                                         data-loan-id="<?= $loan['loan_id'] ?>"
                                         data-loan-amount="<?= $loan['amount'] ?>"
-                                        data-amount-paid="<?= $loan['amount_paid'] ?>"
-                                        data-remaining-balance="<?= $loan['remaining_balance'] ?>"
+                                        data-amount-due="<?= $loan['total_amount_due'] ?>"
+                                        data-amount-paid="<?= $loan['amount_paid'] ?? 0 ?>"
+                                        data-remaining-balance="<?= $loan['remaining_balance'] ?? 0 ?>"
                                         onclick="showPaymentPopup(this)">
                                         Pay
                                     </button>
@@ -1057,7 +1047,10 @@ if (isset($_SESSION['profile_message_shown'])) {
                 <label for="payment_loan_amount">Loan Amount:</label>
                 <input style="border: none;" type="text" id="payment_loan_amount" readonly>
             </div>
-            
+            <div class="form-group">
+                <label for="payment_loan_amount">Amount Due:</label>
+                <input style="border: none;" type="text" id="payment_amount_due" readonly>
+            </div>
             <div class="form-group">
                 <label for="payment_amount_paid">Amount Paid:</label>
                 <input style="border: none; type="text" id="payment_amount_paid" readonly>
@@ -1255,13 +1248,19 @@ if (isset($_SESSION['profile_message_shown'])) {
                     </div>
                     <div class="metrics">
                     <div>
-                        <p>Active Loans</p>
-                        <div class="metric-value-container">
-                        <span class="span-2"><?php echo is_array($activeLoans) ? count($activeLoans) : $activeLoans; ?></span>
-                        </div>
-                    </div>
+        <p>Active Loans Count</p>
+        <div class="metric-value-container">
+        <span class="span-2"><?php echo $activeLoansCount; ?></span>
+        </div>
+    </div>
+    <div>
+        <p>Total Approved Loans</p>
+        <div class="metric-value-container">
+            <span class="span-2"><?php echo $totalApprovedLoans; ?></span>
+        </div>
+    </div>
                     <div>
-                        <p>Total Amounts Borrowed</p>
+                        <p>Total Amount Borrowed</p>
                         <div class="metric-value-container">
                         <span class="span-2"><?php echo number_format($totalBorrowed); ?></span>
                         </div>
@@ -1283,7 +1282,7 @@ if (isset($_SESSION['profile_message_shown'])) {
 
                 <div class="visuals">
                     <div>
-                        <p>Number of Active Loans per Loan Type</p>
+                        <p>Number of Approved Loans per Loan Type</p>
                         <canvas id="barChart" width="800" height="300"></canvas>
                     </div>
                     <div>
@@ -1307,11 +1306,13 @@ if (isset($_SESSION['profile_message_shown'])) {
 function showPaymentPopup(button) {
     const loanId = button.getAttribute('data-loan-id');
     const loanAmount = button.getAttribute('data-loan-amount');
+    const amountDue = button.getAttribute('data-amount-due');
     const amountPaid = button.getAttribute('data-amount-paid');
     const remainingBalance = button.getAttribute('data-remaining-balance');
     
     document.getElementById('payment_loan_id').value = loanId;
     document.getElementById('payment_loan_amount').value = numberWithCommas(loanAmount);
+    document.getElementById('payment_amount_due').value = numberWithCommas(amountDue);
     document.getElementById('payment_amount_paid').value = numberWithCommas(amountPaid);
     document.getElementById('payment_balance').value = numberWithCommas(remainingBalance);
     document.getElementById('payment_remaining_balance').value = remainingBalance;
