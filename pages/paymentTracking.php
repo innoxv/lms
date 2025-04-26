@@ -1,8 +1,9 @@
 <?php
-// Enable error reporting
+// Enable error reporting (optional, remove in production)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
+
 session_start();
 
 // Check if user is logged in
@@ -14,10 +15,10 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $userId = $_SESSION['user_id'];
-$customer_id = $_SESSION['customer_id'] ?? null;
+$customerId = $_SESSION['customer_id'] ?? null;
 
 // Validate customer_id
-if (!$customer_id) {
+if (!$customerId) {
     $_SESSION['payment_message'] = "Customer profile not found. Please log in again.";
     $_SESSION['payment_message_type'] = 'error';
     header("Location: customerDashboard.php#paymentTracking");
@@ -25,109 +26,15 @@ if (!$customer_id) {
 }
 
 // Database connection
-$myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-if (!$myconn) {
+$conn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
+if (!$conn) {
     $_SESSION['payment_message'] = "Connection failed: " . mysqli_connect_error();
     $_SESSION['payment_message_type'] = 'error';
     header("Location: customerDashboard.php#paymentTracking");
     exit();
 }
 
-// Function to fetch active loans with filters
-function fetchActiveLoans($myconn, $customer_id, $filters = []) {
-    $baseQuery = "SELECT 
-        loans.loan_id,
-        loan_offers.loan_type,
-        loans.amount,
-        loans.interest_rate,
-        loans.status AS loan_status,
-        lenders.name AS lender_name,
-        loans.created_at,
-        COALESCE(SUM(payments.amount), 0) AS amount_paid,
-        (loans.amount - COALESCE(SUM(payments.amount), 0)) AS remaining_balance,
-        CASE 
-            WHEN (loans.amount - COALESCE(SUM(payments.amount), 0)) <= 0 THEN 'fully_paid'
-            WHEN COALESCE(SUM(payments.amount), 0) > 0 THEN 'partially_paid'
-            ELSE 'unpaid'
-        END AS payment_status
-    FROM loans
-    JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
-    JOIN lenders ON loans.lender_id = lenders.lender_id
-    LEFT JOIN payments ON loans.loan_id = payments.loan_id
-    WHERE loans.customer_id = ?
-    AND loans.status IN ('approved', 'disbursed', 'active')";
-
-    $params = [$customer_id];
-    $types = "i";
-    $havingClause = "";
-
-    // Status filter
-    if (!empty($filters['payment_status']) && in_array($filters['payment_status'], ['fully_paid', 'partially_paid', 'unpaid'])) {
-        $havingClause = " HAVING payment_status COLLATE utf8mb4_unicode_ci = ?";
-        $params[] = $filters['payment_status'];
-        $types .= "s";
-    }
-
-    // Loan type filter
-    if (!empty($filters['loan_type'])) {
-        $baseQuery .= " AND loan_offers.loan_type COLLATE utf8mb4_unicode_ci = ?";
-        $params[] = $filters['loan_type'];
-        $types .= "s";
-    }
-
-    // Amount range filter
-    if (!empty($filters['amount_range'])) {
-        list($minAmount, $maxAmount) = explode('-', str_replace('+', '-', $filters['amount_range']));
-        $baseQuery .= " AND loans.amount >= ?";
-        $params[] = $minAmount;
-        $types .= "d";
-        
-        if (is_numeric($maxAmount)) {
-            $baseQuery .= " AND loans.amount <= ?";
-            $params[] = $maxAmount;
-            $types .= "d";
-        }
-    }
-
-    // Date range filter
-    if (!empty($filters['date_range'])) {
-        switch ($filters['date_range']) {
-            case 'today':
-                $baseQuery .= " AND DATE(loans.created_at) = CURDATE()";
-                break;
-            case 'week':
-                $baseQuery .= " AND YEARWEEK(loans.created_at, 1) = YEARWEEK(CURDATE(), 1)";
-                break;
-            case 'month':
-                $baseQuery .= " AND MONTH(loans.created_at) = MONTH(CURDATE()) AND YEAR(loans.created_at) = YEAR(CURDATE())";
-                break;
-            case 'year':
-                $baseQuery .= " AND YEAR(loans.created_at) = YEAR(CURDATE())";
-                break;
-        }
-    }
-
-    // Complete the query
-    $baseQuery .= " GROUP BY loans.loan_id";
-    if ($havingClause) {
-        $baseQuery .= $havingClause;
-    }
-    $baseQuery .= " ORDER BY loans.created_at DESC";
-
-    // Prepare and execute
-    $stmt = $myconn->prepare($baseQuery);
-    if (!$stmt) {
-        $_SESSION['payment_message'] = "Query preparation failed: " . $myconn->error;
-        $_SESSION['payment_message_type'] = 'error';
-        return false;
-    }
-
-    $stmt->bind_param($types, ...$params);
-    $stmt->execute();
-    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-}
-
-// Initial fetch of active loans
+// Initialize filters
 $filters = [
     'payment_status' => $_GET['payment_status'] ?? '',
     'loan_type' => $_GET['loan_type'] ?? '',
@@ -147,92 +54,276 @@ if (isset($_GET['reset']) && $_GET['reset'] === 'true') {
     ];
 }
 
-$activeLoans = fetchActiveLoans($myconn, $customer_id, $filters);
-if ($activeLoans === false) {
+// Build query for active loans
+$query = "SELECT 
+    loans.loan_id,
+    loan_offers.loan_type,
+    loans.amount,
+    loans.interest_rate,
+    loans.duration,
+    loans.status AS loan_status,
+    lenders.name AS lender_name,
+    loans.created_at,
+    COALESCE(p.amount, 0) AS amount_paid,
+    p.remaining_balance
+FROM loans
+JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
+JOIN lenders ON loans.lender_id = lenders.lender_id
+LEFT JOIN payments p ON loans.loan_id = p.loan_id
+WHERE loans.customer_id = ?
+AND loans.status IN ('approved', 'disbursed', 'active')";
+
+$params = [$customerId];
+$types = "i";
+
+// Loan type filter
+if (!empty($filters['loan_type'])) {
+    $query .= " AND loan_offers.loan_type = ?";
+    $params[] = $filters['loan_type'];
+    $types .= "s";
+}
+
+// Amount range filter
+if (!empty($filters['amount_range'])) {
+    list($minAmount, $maxAmount) = explode('-', str_replace('+', '-', $filters['amount_range']));
+    $query .= " AND loans.amount >= ?";
+    $params[] = $minAmount;
+    $types .= "d";
+    
+    if (is_numeric($maxAmount)) {
+        $query .= " AND loans.amount <= ?";
+        $params[] = $maxAmount;
+        $types .= "d";
+    }
+}
+
+// Date range filter
+if (!empty($filters['date_range'])) {
+    switch ($filters['date_range']) {
+        case 'today':
+            $query .= " AND DATE(loans.created_at) = CURDATE()";
+            break;
+        case 'week':
+            $query .= " AND YEARWEEK(loans.created_at, 1) = YEARWEEK(CURDATE(), 1)";
+            break;
+        case 'month':
+            $query .= " AND MONTH(loans.created_at) = MONTH(CURDATE()) AND YEAR(loans.created_at) = YEAR(CURDATE())";
+            break;
+        case 'year':
+            $query .= " AND YEAR(loans.created_at) = YEAR(CURDATE())";
+            break;
+    }
+}
+
+// Complete the query
+$query .= " ORDER BY loans.created_at DESC";
+
+// Prepare and execute query
+$stmt = $conn->prepare($query);
+if (!$stmt) {
+    $_SESSION['payment_message'] = "Query preparation failed: " . $conn->error;
+    $_SESSION['payment_message_type'] = 'error';
     header("Location: customerDashboard.php#paymentTracking");
     exit();
 }
 
-// Store initial results in session
+if ($params) {
+    $stmt->bind_param($types, ...$params);
+}
+
+$stmt->execute();
+$result = $stmt->get_result();
+$activeLoans = [];
+
+// Process results and apply payment_status filter in PHP
+while ($row = $result->fetch_assoc()) {
+    // Calculate total amount due with simple interest
+    $principal = $row['amount'];
+    $interestRate = $row['interest_rate'] / 100; // Convert percentage to decimal
+    $durationYears = $row['duration'] / 12; // Convert months to years
+    $totalAmountDue = $principal + ($principal * $interestRate * $durationYears);
+    
+    // Calculate remaining balance
+    $amountPaid = $row['amount_paid'];
+    $remainingBalance = $row['remaining_balance'] ?? $totalAmountDue;
+
+    // Determine payment status
+    $paymentStatus = 'unpaid';
+    if ($remainingBalance <= 0) {
+        $paymentStatus = 'fully_paid';
+    } elseif ($amountPaid > 0) {
+        $paymentStatus = 'partially_paid';
+    }
+
+    // Apply payment_status filter
+    if (empty($filters['payment_status']) || $filters['payment_status'] === $paymentStatus) {
+        $activeLoans[] = [
+            'loan_id' => $row['loan_id'],
+            'loan_type' => $row['loan_type'],
+            'amount' => $row['amount'],
+            'interest_rate' => $row['interest_rate'],
+            'loan_status' => $row['loan_status'],
+            'lender_name' => $row['lender_name'],
+            'created_at' => $row['created_at'],
+            'amount_paid' => $amountPaid,
+            'remaining_balance' => $remainingBalance,
+            'total_amount_due' => $totalAmountDue,
+            'payment_status' => $paymentStatus
+        ];
+    }
+}
+
+// Store results in session
 $_SESSION['active_loans'] = $activeLoans;
+$_SESSION['payment_filters'] = $filters;
 
 // Process payment if form submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
-    $loan_id = $_POST['loan_id'];
-    $amount = $_POST['amount'];
-    $payment_method = $_POST['payment_method'];
-    $remaining_balance = $_POST['remaining_balance'];
+    $loanId = intval($_POST['loan_id']);
+    $amount = floatval($_POST['amount']);
+    $paymentMethod = $conn->real_escape_string($_POST['payment_method']);
+    $submittedRemainingBalance = floatval($_POST['remaining_balance']);
 
-    // Verify loan belongs to customer
-    $verifyQuery = "SELECT customer_id FROM loans WHERE loan_id = ?";
-    $stmt = $myconn->prepare($verifyQuery);
-    $stmt->bind_param("i", $loan_id);
+    // Verify loan belongs to customer and fetch payment record
+    $verifyQuery = "SELECT 
+        l.customer_id, 
+        l.amount, 
+        l.interest_rate, 
+        l.duration, 
+        p.payment_id, 
+        p.amount AS amount_paid, 
+        p.remaining_balance 
+    FROM loans l 
+    LEFT JOIN payments p ON l.loan_id = p.loan_id 
+    WHERE l.loan_id = ?";
+    $stmt = $conn->prepare($verifyQuery);
+    $stmt->bind_param("i", $loanId);
     $stmt->execute();
     $result = $stmt->get_result();
 
-    if ($result->num_rows === 0 || $result->fetch_assoc()['customer_id'] != $customer_id) {
+    if ($result->num_rows === 0 || $result->fetch_assoc()['customer_id'] != $customerId) {
         $_SESSION['payment_message'] = "Invalid loan selected for payment";
         $_SESSION['payment_message_type'] = 'error';
     } else {
-        // Calculate new remaining balance
-        $new_balance = $remaining_balance - $amount;
-        $payment_type = ($new_balance <= 0) ? 'full' : 'partial';
+        // Reset result pointer and fetch loan and payment details
+        $result->data_seek(0);
+        $loanDetails = $result->fetch_assoc();
+        $paymentId = $loanDetails['payment_id'];
 
-        // Insert payment
-        $insertQuery = "INSERT INTO payments (
-            loan_id, customer_id, lender_id, amount, 
-            payment_method, payment_type, remaining_balance
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-        // Get lender_id for this loan
-        $lenderQuery = "SELECT lender_id FROM loans WHERE loan_id = ?";
-        $stmt = $myconn->prepare($lenderQuery);
-        $stmt->bind_param("i", $loan_id);
-        $stmt->execute();
-        $lender_id = $stmt->get_result()->fetch_row()[0];
-
-        $stmt = $myconn->prepare($insertQuery);
-        $stmt->bind_param(
-            "iiidssd", 
-            $loan_id, 
-            $customer_id, 
-            $lender_id, 
-            $amount,
-            $payment_method, 
-            $payment_type, 
-            $new_balance
-        );
-
-        if ($stmt->execute()) {
-            $_SESSION['payment_message'] = "Payment of KES " . number_format($amount) . " processed successfully!";
-            $_SESSION['payment_message_type'] = 'success';
-
-            // Log activity
-            $activity = "Processed payment of $amount for loan ID $loan_id";
-            $activityQuery = "INSERT INTO activity (user_id, activity, activity_time, activity_type) VALUES (?, ?, NOW(), 'payment')";
-            $stmt = $myconn->prepare($activityQuery);
-            $stmt->bind_param("is", $userId, $activity);
-            $stmt->execute();
-
-            // Refresh active loans with current filters
-            $activeLoans = fetchActiveLoans($myconn, $customer_id, $filters);
-            if ($activeLoans !== false) {
-                $_SESSION['active_loans'] = $activeLoans;
-            }
-        } else {
-            $_SESSION['payment_message'] = "Error processing payment: " . $myconn->error;
+        if (!$paymentId) {
+            $_SESSION['payment_message'] = "No payment record found for this loan. Contact support.";
             $_SESSION['payment_message_type'] = 'error';
+        } else {
+            // Recalculate total amount due
+            $principal = $loanDetails['amount'];
+            $interestRate = $loanDetails['interest_rate'] / 100;
+            $durationYears = $loanDetails['duration'] / 12;
+            $totalAmountDue = $principal + ($principal * $interestRate * $durationYears);
+
+            // Get current payment details
+            $currentAmountPaid = $loanDetails['amount_paid'];
+            $currentRemainingBalance = $loanDetails['remaining_balance'];
+
+            // Validate payment amount
+            if ($amount <= 0 || $amount > $currentRemainingBalance) {
+                $_SESSION['payment_message'] = "Invalid payment amount. Must be greater than 0 and not exceed remaining balance.";
+                $_SESSION['payment_message_type'] = 'error';
+            } else {
+                // Calculate new values
+                $newAmountPaid = $currentAmountPaid + $amount;
+                $newRemainingBalance = $currentRemainingBalance - $amount;
+                $paymentType = ($newRemainingBalance <= 0) ? 'full' : 'partial';
+
+                // Update existing payment record
+                $updateQuery = "UPDATE payments SET 
+                    amount = ?, 
+                    payment_method = ?, 
+                    payment_type = ?, 
+                    remaining_balance = ?
+                WHERE payment_id = ?";
+                $stmt = $conn->prepare($updateQuery);
+                $stmt->bind_param(
+                    "dssdi",
+                    $newAmountPaid,
+                    $paymentMethod,
+                    $paymentType,
+                    $newRemainingBalance,
+                    $paymentId
+                );
+
+                if ($stmt->execute()) {
+                    $_SESSION['payment_message'] = "Payment of KES " . number_format($amount, 2) . " processed successfully!";
+                    $_SESSION['payment_message_type'] = 'success';
+
+                    // Log activity
+                    $activity = "Processed payment of $amount for loan ID $loanId";
+                    $activityQuery = "INSERT INTO activity (user_id, activity, activity_time, activity_type) VALUES (?, ?, NOW(), 'payment')";
+                    $stmt = $conn->prepare($activityQuery);
+                    $stmt->bind_param("is", $userId, $activity);
+                    $stmt->execute();
+
+                    // Refresh active loans with current filters
+                    $stmt = $conn->prepare($query);
+                    if (!$stmt) {
+                        $_SESSION['payment_message'] = "Query preparation failed: " . $conn->error;
+                        $_SESSION['payment_message_type'] = 'error';
+                        header("Location: customerDashboard.php#paymentTracking");
+                        exit();
+                    }
+
+                    if ($params) {
+                        $stmt->bind_param($types, ...$params);
+                    }
+
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    $activeLoans = [];
+
+                    while ($row = $result->fetch_assoc()) {
+                        $principal = $row['amount'];
+                        $interestRate = $row['interest_rate'] / 100;
+                        $durationYears = $row['duration'] / 12;
+                        $totalAmountDue = $principal + ($principal * $interestRate * $durationYears);
+                        
+                        $amountPaid = $row['amount_paid'];
+                        $remainingBalance = $row['remaining_balance'] ?? $totalAmountDue;
+
+                        $paymentStatus = 'unpaid';
+                        if ($remainingBalance <= 0) {
+                            $paymentStatus = 'fully_paid';
+                        } elseif ($amountPaid > 0) {
+                            $paymentStatus = 'partially_paid';
+                        }
+
+                        if (empty($filters['payment_status']) || $filters['payment_status'] === $paymentStatus) {
+                            $activeLoans[] = [
+                                'loan_id' => $row['loan_id'],
+                                'loan_type' => $row['loan_type'],
+                                'amount' => $row['amount'],
+                                'interest_rate' => $row['interest_rate'],
+                                'loan_status' => $row['loan_status'],
+                                'lender_name' => $row['lender_name'],
+                                'created_at' => $row['created_at'],
+                                'amount_paid' => $amountPaid,
+                                'remaining_balance' => $remainingBalance,
+                                'total_amount_due' => $totalAmountDue,
+                                'payment_status' => $paymentStatus
+                            ];
+                        }
+                    }
+
+                    $_SESSION['active_loans'] = $activeLoans;
+                } else {
+                    $_SESSION['payment_message'] = "Error processing payment: " . $conn->error;
+                    $_SESSION['payment_message_type'] = 'error';
+                }
+            }
         }
     }
 }
 
-// Store filter values in session
-$_SESSION['payment_filters'] = [
-    'payment_status' => $filters['payment_status'],
-    'loan_type' => $filters['loan_type'],
-    'amount_range' => $filters['amount_range'],
-    'date_range' => $filters['date_range']
-];
+// Close connection
+mysqli_close($conn);
 
 // Redirect back to customerDashboard.php
 header("Location: customerDashboard.php#paymentTracking");
