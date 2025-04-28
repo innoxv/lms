@@ -74,10 +74,20 @@ $owedResult = mysqli_query($myconn, $owedQuery);
 $owedData = mysqli_fetch_row($owedResult);
 $owedCapacity = $owedData[0] ? number_format((float)$owedData[0]) : 0;
 
-// Get total APPROVED loans count
+// Get total approved loans count
 $approvedLoansQuery = "SELECT COUNT(*) FROM loans WHERE lender_id = '$lender_id' AND status = 'approved'";
 $approvedLoansResult = mysqli_query($myconn, $approvedLoansQuery);
 $approvedLoans = (int)mysqli_fetch_row($approvedLoansResult)[0];
+
+// Get active loans count (approved loans with remaining balance)
+$activeLoansQuery = "SELECT COUNT(DISTINCT loans.loan_id) 
+                     FROM loans
+                     JOIN payments ON loans.loan_id = payments.loan_id
+                     WHERE loans.lender_id = '$lender_id'
+                     AND loans.status = 'approved'
+                     AND payments.remaining_balance > 0";
+$activeLoansResult = mysqli_query($myconn, $activeLoansQuery);
+$activeLoans = (int)mysqli_fetch_row($activeLoansResult)[0];
 
 // Get total amount disbursed
 $disbursedAmountQuery = "SELECT SUM(amount) FROM loans WHERE lender_id = '$lender_id' AND status IN ('approved')";
@@ -817,14 +827,19 @@ mysqli_close($myconn);
                     </div>
                     <div class="metrics">
                         <div>
-                            <p>Types of Loans Offered</p>
+                            <p>Loan Types Offered</p>
                             <div class="metric-value-container">
                                 <span class="span-2"><?php echo $totalOffers; ?></span>
                             </div>
                         </div>
-                        
                         <div>
                             <p>Active Loans</p>
+                            <div class="metric-value-container">
+                            <span class="span-2"><?php echo $activeLoans; ?></span>
+                            </div>
+                        </div>
+                        <div>
+                            <p>Approved Loans</p>
                             <div class="metric-value-container">
                             <span class="span-2"><?php echo $approvedLoans; ?></span>
                             </div>
@@ -836,13 +851,13 @@ mysqli_close($myconn);
                             </div>
                         </div>
                         <div>
-                            <p>Amount Owed</p>
+                            <p>Total Amount Owed</p>
                             <div class="metric-value-container">
                                 <span class="span-2"><?php echo $owedCapacity; ?></span>
                             </div>
                         </div>
                         <div>
-                            <p>Average Interest Rate</p>
+                            <p>Avg. Interest Rate</p>
                             <div class="metric-value-container">
                                 <div class="span-2">
                                     <span class="avg"><?php echo $avgInterestRate; ?></span>
@@ -854,7 +869,7 @@ mysqli_close($myconn);
                     
                     <div class="visuals">
                         <div>
-                        <p>Number of Active Loans per Loan Type</p>
+                        <p>Number of Approved Loans per Loan Type</p>
                         <canvas id="barChart" width="800" height="300"></canvas>
                         
                         </div>

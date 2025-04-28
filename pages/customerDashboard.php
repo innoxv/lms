@@ -1,16 +1,13 @@
 <?php
-// Start the session
-
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
-
+// Error reporting
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
-// Access Restrictions from Admin Functionality
-require_once 'check_access.php';
+require_once 'check_access.php'; // Checking Restrictions from Admin
 
 // Database connection
 $myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
@@ -24,9 +21,9 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Store user data in session
 $userId = $_SESSION['user_id'];
 
-// USER DATA FETCHING
 
 // Fetch user basic info
 $userQuery = "SELECT user_name FROM users WHERE user_id = ?";
@@ -65,8 +62,6 @@ $statusFilter = isset($_GET['status']) && in_array($_GET['status'], ['approved',
     ? $_GET['status'] 
     : '';
 
-// Fetch loan history
-// Base query
 $loansQuery = "SELECT 
     loans.loan_id,
     loan_offers.loan_type,
@@ -83,6 +78,7 @@ WHERE loans.customer_id = ?";
 // Add filters dynamically
 $params = [$customer_id];
 $types = "i"; // Start with customer_id as integer
+
 
 // Status filter
 if ($statusFilter) {
@@ -144,6 +140,7 @@ if (isset($_GET['interest_rate']) && $_GET['interest_rate']) {
     }
 }
 
+
 // Add sorting
 $loansQuery .= " ORDER BY loans.created_at DESC";
 
@@ -204,61 +201,70 @@ if (isset($_GET['loan_id'])) {
     }
 }
 
+// Payment Tracking
+// Fetches active loans for payment Tracking
+require_once 'fetchActiveLoans.php';  
+if (!isset($_SESSION['active_loans'])) {
+    $_SESSION['active_loans'] = fetchActiveLoans($myconn, $customer_id);
+}
+
+
 // METRICS AND CHARTS DATA
-
-// Loan metrics - Count active loans and calculate outstanding balance
-$metricsQuery = "SELECT 
-    COUNT(DISTINCT loans.loan_id) as active_loans,
-    COUNT(DISTINCT loans.loan_id) as total_approved_loans,
-    SUM(loans.amount) as total_borrowed,
-    COALESCE(SUM(payments.remaining_balance), 0) as outstanding_balance,
-    MIN(DATE_ADD(loans.created_at, INTERVAL 1 MONTH)) as next_payment_date
-FROM loans
-LEFT JOIN payments ON loans.loan_id = payments.loan_id
-WHERE loans.customer_id = ?
-AND loans.status = 'approved'
-AND (payments.remaining_balance > 0 OR payments.remaining_balance IS NULL)";
-
-$stmt = $myconn->prepare($metricsQuery);
-if (!$stmt) {
-    error_log("Prepare failed: " . $myconn->error);
-    die("Database error occurred. Please try again later.");
-}
+// Approve Loans Count
+$approvedQuery = "SELECT COUNT(*) as total_approved, SUM(amount) as total_borrowed 
+                 FROM loans 
+                 WHERE customer_id = ? 
+                 AND status = 'approved'";
+$stmt = $myconn->prepare($approvedQuery);
 $stmt->bind_param("i", $customer_id);
-if (!$stmt->execute()) {
-    error_log("Execute failed: " . $stmt->error);
-    die("Database error occurred. Please try again later.");
-}
-$metrics = $stmt->get_result()->fetch_assoc();
+$stmt->execute();
+$approvedResult = $stmt->get_result();
+$approvedData = $approvedResult->fetch_assoc();
+$totalApprovedLoans = (int)($approvedData['total_approved'] ?? 0);
+$totalBorrowed = (int)($approvedData['total_borrowed'] ?? 0);
 
-// Format metrics
-$activeLoansCount = 0;
-$totalApprovedLoans = 0;
-$totalBorrowed = 0;
-$outstandingBalance = 0;
-$nextPaymentDate = 'N/A';
+// Active Loans Count
+$activeQuery = "SELECT COUNT(DISTINCT loans.loan_id) as active_loans
+                FROM loans
+                JOIN payments ON loans.loan_id = payments.loan_id
+                WHERE loans.customer_id = ?
+                AND loans.status = 'approved'
+                AND payments.remaining_balance > 0";
+$stmt = $myconn->prepare($activeQuery);
+$stmt->bind_param("i", $customer_id);
+$stmt->execute();
+$activeResult = $stmt->get_result();
+$activeLoansCount = (int)$activeResult->fetch_row()[0] ?? 0;
 
-if ($metrics) {
-    $activeLoansCount = (int)($metrics['active_loans'] ?? 0);
-    $totalApprovedLoans = (int)($metrics['total_approved_loans'] ?? 0);
-    $totalBorrowed = (int)($metrics['total_borrowed'] ?? 0);
-    $outstandingBalance = (float)($metrics['outstanding_balance'] ?? 0);
-    $nextPaymentDate = $metrics['next_payment_date'] 
-        ? date('j M', strtotime($metrics['next_payment_date'])) 
-        : 'N/A';
-}
+// Balance Sum
+$balanceQuery = "SELECT COALESCE(SUM(payments.remaining_balance), 0) 
+                FROM payments
+                JOIN loans ON payments.loan_id = loans.loan_id
+                WHERE loans.customer_id = ?
+                AND loans.status = 'approved'";
+$stmt = $myconn->prepare($balanceQuery);
+$stmt->bind_param("i", $customer_id);
+$stmt->execute();
+$balanceResult = $stmt->get_result();
+$outstandingBalance = (float)$balanceResult->fetch_row()[0] ?? 0;
 
-if ($metrics) {
-    $activeLoansCount = (int)($metrics['active_loans'] ?? 0);
-    $totalApprovedLoans = (int)($metrics['total_approved_loans'] ?? 0);
-    $totalBorrowed = (int)($metrics['total_borrowed'] ?? 0);
-    $outstandingBalance = $metrics['outstanding_balance'] ?? 0;
-    $nextPaymentDate = $metrics['next_payment_date'] 
-        ? date('j M', strtotime($metrics['next_payment_date'])) 
-        : 'N/A';
-}
+// Next Payment Date
+$dateQuery = "SELECT MIN(DATE_ADD(loans.created_at, INTERVAL 1 MONTH))
+              FROM loans
+              JOIN payments ON loans.loan_id = payments.loan_id
+              WHERE loans.customer_id = ?
+              AND loans.status = 'approved'
+              AND payments.remaining_balance > 0";
+$stmt = $myconn->prepare($dateQuery);
+$stmt->bind_param("i", $customer_id);
+$stmt->execute();
+$dateResult = $stmt->get_result();
+$nextPaymentDate = $dateResult->fetch_row()[0] ?? 'N/A';
+$nextPaymentDate = ($nextPaymentDate !== 'N/A') 
+                  ? date('j M', strtotime($nextPaymentDate)) 
+                  : 'N/A';
 
-// Loan types data for chart
+// Defining all loan types           
 $allLoanTypes = [
     "Personal Loan", "Business Loan", "Mortgage Loan", 
     "MicroFinance Loan", "Student Loan", "Construction Loan",
@@ -273,7 +279,6 @@ JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
 WHERE loans.customer_id = ?
 AND loans.status IN ('approved', 'disbursed', 'active')
 GROUP BY loan_offers.loan_type";
-
 $stmt = $myconn->prepare($loanTypesQuery);
 $stmt->bind_param("i", $customer_id);
 $stmt->execute();
@@ -303,14 +308,11 @@ while ($row = $statusResult->fetch_assoc()) {
     $totalLoans += (int)$row['count'];
 }
 
-// Calculate percentages for pie chart
 $pieData = [
     'pending' => isset($statusData['pending']) ? ($statusData['pending'] / $totalLoans * 100) : 0,
     'approved' => isset($statusData['approved']) ? ($statusData['approved'] / $totalLoans * 100) : 0,
     'rejected' => isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0
 ];
-
-
 
 // MESSAGES HANDLING
 // Clear any existing messages if they were shown
@@ -330,11 +332,22 @@ if (isset($_SESSION['profile_message_shown'])) {
     unset($_SESSION['profile_message_shown']);
 }
 
-// Close connection
-// mysqli_close($myconn);
+//Setting Default timezone for Greeting
+date_default_timezone_set('Africa/Nairobi');
+$currentTime = date("H");
+$message = $currentTime < 12 ? "good morning," : ($currentTime < 18 ? "good afternoon," : "good evening,");
+$currentYear = date("Y");
+
+// Storing active loans in session and filters 
+$activeLoans = $_SESSION['active_loans'] ?? [];
+$filters = $_SESSION['payment_filters'] ?? [
+    'payment_status' => '',
+    'loan_type' => '',
+    'amount_range' => '',
+    'date_range' => ''
+];
+$status = 'active'; // Placeholder for access status
 ?>
-
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -352,7 +365,7 @@ if (isset($_SESSION['profile_message_shown'])) {
             </div>
             <div class="header3">
                 <ul>
-                    <li><a href="logoutbtn.php" id="logout"class="no-col">Log Out</a></li>
+                    <li><a href="logoutbtn.php" id="logout" class="no-col">Log Out</a></li>
                 </ul>
             </div>
         </div>
@@ -361,34 +374,22 @@ if (isset($_SESSION['profile_message_shown'])) {
                 <ul class="nav-split">
                     <div class="top">
                         <li><a href="#dashboard" id="dashboardLink">Dashboard</a></li>
-                        <li>
-                            <a href="#applyLoan" id="applyLoanLink"
-                            class="<?php echo ($status === 'restricted_apply') ? 'disabled-link' : '' ?>">
-                            Apply for Loan
-                            </a>
-                        </li>
+                        <li><a href="#applyLoan" id="applyLoanLink" class="<?php echo ($status === 'restricted_apply') ? 'disabled-link' : ''; ?>">Apply for Loan</a></li>
                         <li><a href="#loanHistory" id="loanHistoryLink">Loan History</a></li>
                         <li><a href="#paymentTracking" id="">Payment Tracking</a></li> 
-                        <li class="disabled-link"><a href="#notifications">Notifications</a></li>  <!-- this is still in production -->
+                        <li class="disabled-link"><a href="#notifications">Notifications</a></li>
                         <li><a href="#profile">Profile</a></li>
                     </div>
                     <div class="bottom">
                         <li><a href="#feedback">Feedback</a></li>
                         <li><a href="#contactSupport">Help</a></li>
-                                <!-- Copyright -->
-                                <div class="copyright">
-                                    <p><?php
-                                        $currentYear = date("Y");
-                                        echo "&copy; $currentYear";
-                                        ?>
-                                        <a href="mailto:innocentmukabwa@gmail.com">dev</a>
-                                    </p>
-                                </div>
+                        <div class="copyright">
+                            <p>© <?php echo $currentYear; ?> <a href="mailto:innocentmukabwa@gmail.com">dev</a></p>
+                        </div>
                     </div>
                 </ul>
             </div>
 
-            <!-- Dynamic display enabled by CSS -->
             <div class="display">
                 <!-- Apply for Loan -->
                 <div id="applyLoan" class="margin">
@@ -397,130 +398,108 @@ if (isset($_SESSION['profile_message_shown'])) {
                         <p>Find a suitable Lender and fill out the form to apply for a new loan.</p>
                     </div>
                     <div class="loan-right">
-
-                    <div class="loan-filter">
-                    <p style="color: whitesmoke; font-weight: 900; line-height: 1;">Filters</p>
-                    <form method="GET" action="fetchLenders.php" id="loanFilterForm">
-                        <div>
-                            <ul>
-                                <li>
-                                    <p>Loan Type</p>
-                                    <?php
-                                    $current_filters = $_SESSION['current_filters'] ?? [];
-                                    $selected_loan_types = $current_filters['loan_types'] ?? (isset($_GET['loan_type']) ? (is_array($_GET['loan_type']) ? $_GET['loan_type'] : [$_GET['loan_type']]) : []);
-                                    ?>
-                                    <span>
-                                        <input type="checkbox" name="loan_type[]" value="Personal Loan" id="personal" 
-                                            <?= in_array('Personal Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                                        <label for="personal">Personal</label>
-                                    </span>
-                                    <span>
-                                        <input type="checkbox" name="loan_type[]" value="Business Loan" id="business" 
-                                            <?= in_array('Business Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                                        <label for="business">Business</label>
-                                    </span>
-                                    <span>
-                                        <input type="checkbox" name="loan_type[]" value="Mortgage Loan" id="mortgage" 
-                                            <?= in_array('Mortgage Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                                        <label for="mortgage">Mortgage</label>
-                                    </span>
-                                    <span>
-                                        <input type="checkbox" name="loan_type[]" value="MicroFinance Loan" id="microfinance" 
-                                            <?= in_array('MicroFinance Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                                        <label for="microfinance">MicroFinance</label>
-                                    </span>
-                                    <span>
-                                        <input type="checkbox" name="loan_type[]" value="Student Loan" id="student" 
-                                            <?= in_array('Student Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                                        <label for="student">Student</label>
-                                    </span>
-                                    <span>
-                                        <input type="checkbox" name="loan_type[]" value="Construction Loan" id="construction" 
-                                            <?= in_array('Construction Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                                        <label for="construction">Construction</label>
-                                    </span>
-                                    <span>
-                                        <input type="checkbox" name="loan_type[]" value="Green Loan" id="green" 
-                                            <?= in_array('Green Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                                        <label for="green">Green</label>
-                                    </span>
-                                    <span>
-                                        <input type="checkbox" name="loan_type[]" value="Medical Loan" id="medical" 
-                                            <?= in_array('Medical Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                                        <label for="medical">Medical</label>
-                                    </span>
-                                    <span>
-                                        <input type="checkbox" name="loan_type[]" value="Startup Loan" id="startup" 
-                                            <?= in_array('Startup Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                                        <label for="startup">Startup</label>
-                                    </span>
-                                    <span>
-                                        <input type="checkbox" name="loan_type[]" value="Agricultural Loan" id="agricultural" 
-                                            <?= in_array('Agricultural Loan', $selected_loan_types) ? 'checked' : '' ?>>
-                                        <label for="agricultural">Agricultural</label>
-                                    </span>
-                                </li>
-                                <li>
-                                    <p>Amount Range (sh)</p>
-                                    <span class="range">
-                                        <div class="input">
-                                            <input type="text" name="min_amount" placeholder="500" min="500" 
-                                                value="<?= htmlspecialchars($current_filters['min_amount'] ?? ($_GET['min_amount'] ?? '')) ?>">
-                                            <span>-</span>
-                                            <input type="text" name="max_amount" placeholder="100000" min="500" 
-                                                value="<?= htmlspecialchars($current_filters['max_amount'] ?? ($_GET['max_amount'] ?? '')) ?>">
-                                        </div>
-                                        <div>
-                                            <div class="quick-amounts">
-                                                <button class="one" type="button" data-min="1000" data-max="5000">1k-5k</button>
-                                                <button class="two" type="button" data-min="5000" data-max="20000">5k-20k</button>
-                                                <button class="three" type="button" data-min="20000" data-max="100000">20k-100k</button>
+                        <div class="loan-filter">
+                            <p style="color: whitesmoke; font-weight: 900; line-height: 1;">Filters</p>
+                            <form method="GET" action="fetchLenders.php" id="loanFilterForm">
+                                <div>
+                                    <ul>
+                                        <li>
+                                            <p>Loan Type</p>
+                                            <?php
+                                            $current_filters = $_SESSION['current_filters'] ?? [];
+                                            $selected_loan_types = $current_filters['loan_types'] ?? (isset($_GET['loan_type']) ? (is_array($_GET['loan_type']) ? $_GET['loan_type'] : [$_GET['loan_type']]) : []);
+                                            ?>
+                                            <span>
+                                                <input type="checkbox" name="loan_type[]" value="Personal Loan" id="personal" <?= in_array('Personal Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                                <label for="personal">Personal</label>
+                                            </span>
+                                            <span>
+                                                <input type="checkbox" name="loan_type[]" value="Business Loan" id="business" <?= in_array('Business Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                                <label for="business">Business</label>
+                                            </span>
+                                            <span>
+                                                <input type="checkbox" name="loan_type[]" value="Mortgage Loan" id="mortgage" <?= in_array('Mortgage Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                                <label for="mortgage">Mortgage</label>
+                                            </span>
+                                            <span>
+                                                <input type="checkbox" name="loan_type[]" value="MicroFinance Loan" id="microfinance" <?= in_array('MicroFinance Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                                <label for="microfinance">MicroFinance</label>
+                                            </span>
+                                            <span>
+                                                <input type="checkbox" name="loan_type[]" value="Student Loan" id="student" <?= in_array('Student Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                                <label for="student">Student</label>
+                                            </span>
+                                            <span>
+                                                <input type="checkbox" name="loan_type[]" value="Construction Loan" id="construction" <?= in_array('Construction Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                                <label for="construction">Construction</label>
+                                            </span>
+                                            <span>
+                                                <input type="checkbox" name="loan_type[]" value="Green Loan" id="green" <?= in_array('Green Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                                <label for="green">Green</label>
+                                            </span>
+                                            <span>
+                                                <input type="checkbox" name="loan_type[]" value="Medical Loan" id="medical" <?= in_array('Medical Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                                <label for="medical">Medical</label>
+                                            </span>
+                                            <span>
+                                                <input type="checkbox" name="loan_type[]" value="Startup Loan" id="startup" <?= in_array('Startup Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                                <label for="startup">Startup</label>
+                                            </span>
+                                            <span>
+                                                <input type="checkbox" name="loan_type[]" value="Agricultural Loan" id="agricultural" <?= in_array('Agricultural Loan', $selected_loan_types) ? 'checked' : '' ?>>
+                                                <label for="agricultural">Agricultural</label>
+                                            </span>
+                                        </li>
+                                        <li>
+                                            <p>Amount Range (sh)</p>
+                                            <span class="range">
+                                                <div class="input">
+                                                    <input type="text" name="min_amount" placeholder="500" min="500" value="<?= htmlspecialchars($current_filters['min_amount'] ?? ($_GET['min_amount'] ?? '')) ?>">
+                                                    <span>-</span>
+                                                    <input type="text" name="max_amount" placeholder="100000" min="500" value="<?= htmlspecialchars($current_filters['max_amount'] ?? ($_GET['max_amount'] ?? '')) ?>">
+                                                </div>
+                                                <div>
+                                                    <div class="quick-amounts">
+                                                        <button class="one" type="button" data-min="1000" data-max="5000">1k-5k</button>
+                                                        <button class="two" type="button" data-min="5000" data-max="20000">5k-20k</button>
+                                                        <button class="three" type="button" data-min="20000" data-max="100000">20k-100k</button>
+                                                    </div>
+                                                </div>
+                                            </span>
+                                        </li>
+                                        <li>
+                                            <p>Interest Rates</p>
+                                            <?php
+                                            $selected_interest = $current_filters['interest_ranges'][0] ?? ($_GET['interest_range'] ?? '');
+                                            ?>
+                                            <span>
+                                                <input type="radio" name="interest_range[]" value="0-5" id="0-5" <?= $selected_interest === '0-5' ? 'checked' : '' ?>>
+                                                <label for="0-5">0 - 5%</label>
+                                            </span>
+                                            <span>
+                                                <input type="radio" name="interest_range[]" value="5-10" id="5-10" <?= $selected_interest === '5-10' ? 'checked' : '' ?>>
+                                                <label for="5-10">5 - 10%</label>
+                                            </span>
+                                            <span>
+                                                <input type="radio" name="interest_range[]" value="10+" id="10+" <?= $selected_interest === '10+' ? 'checked' : '' ?>>
+                                                <label for="10+">10% +</label>
+                                            </span>
+                                        </li>
+                                        <li>
+                                            <div class="subres">
+                                                <button class="sub" type="submit">Apply Filters</button>
+                                                <button type="button" class="res"><a href="fetchLenders.php?reset_filters=true">Reset</a></button>
                                             </div>
-                                        </div>
-                                    </span>
-                                </li>
-                                <li>
-                                    <p>Interest Rates</p>
-                                    <?php
-                                    $selected_interest = $current_filters['interest_ranges'][0] ?? ($_GET['interest_range'] ?? '');
-                                    ?>
-                                    <span>
-                                        <input type="radio" name="interest_range[]" value="0-5" id="0-5" 
-                                            <?= $selected_interest === '0-5' ? 'checked' : '' ?>>
-                                        <label for="0-5">0 - 5%</label>
-                                    </span>
-                                    <span>
-                                        <input type="radio" name="interest_range[]" value="5-10" id="5-10" 
-                                            <?= $selected_interest === '5-10' ? 'checked' : '' ?>>
-                                        <label for="5-10">5 - 10%</label>
-                                    </span>
-                                    <span>
-                                        <input type="radio" name="interest_range[]" value="10+" id="10+" 
-                                            <?= $selected_interest === '10+' ? 'checked' : '' ?>>
-                                        <label for="10+">10% +</label>
-                                    </span>
-                                </li>
-                                <li>
-                                    <div class="subres">
-                                        <button class="sub" type="submit">Apply Filters</button>
-                                        <button type="button" class="res"><a href="fetchLenders.php?reset_filters=true">Reset</a></button>
-                    
-                                    </div>
-                                </li>
-                            </ul>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </form>
                         </div>
-                    </form>
-                    </div>
 
-                                            
-                        <!-- Loan Lenders display and filter functionality -->
                         <div class="loan-lenders" id="lendersContainer">
-                            <?php
-                            if (isset($_SESSION['filters_applied']) && $_SESSION['filters_applied']): 
-                                // Filtered view
-                                if (!empty($_SESSION['filtered_lenders'])): ?>
+                            <?php if (isset($_SESSION['filters_applied']) && $_SESSION['filters_applied']): ?>
+                                <?php if (!empty($_SESSION['filtered_lenders'])): ?>
                                     <?php foreach ($_SESSION['filtered_lenders'] as $lender): 
-                                        // Generate initials
                                         $nameParts = explode(' ', $lender['name']);
                                         $initials = '';
                                         foreach ($nameParts as $part) {
@@ -531,11 +510,9 @@ if (isset($_SESSION['profile_message_shown'])) {
                                     ?>
                                         <div class="lender">
                                             <span>
-                                            <!-- initials -->
-                                            <div class="lender-icon">
-                                                <?= $initials ?>
-                                            </div> 
-                                            <?= $lender['name'] ?></span>
+                                                <div class="lender-icon"><?= $initials ?></div> 
+                                                <?= $lender['name'] ?>
+                                            </span>
                                             <span><?= $lender['type'] ?></span>
                                             <span>Rate: <?= $lender['rate'] ?>%</span>
                                             <span>Max Amt: <?= number_format($lender['amount']) ?></span>
@@ -553,22 +530,16 @@ if (isset($_SESSION['profile_message_shown'])) {
                                         </div>
                                     <?php endforeach; ?>
                                 <?php else: ?>
-                                    <div class="no-results">
-                                        No lenders match your current filters.
-                                    </div>
+                                    <div class="no-results">No lenders match your current filters.</div>
                                 <?php endif; ?>
                             <?php else: 
-
-                                // Default view - show all lenders
-                                $query = "SELECT loan_offers.*, lenders.name AS lender_name
+                                $query = "SELECT loan_offers.offer_id, loan_offers.lender_id, loan_offers.loan_type, loan_offers.interest_rate, loan_offers.max_amount, loan_offers.max_duration, lenders.name AS lender_name
                                         FROM loan_offers
                                         JOIN lenders ON loan_offers.lender_id = lenders.lender_id
                                         ORDER BY loan_offers.offer_id DESC";
                                 $result = $myconn->query($query);
-                        
                                 if ($result && $result->num_rows > 0): ?>
                                     <?php while ($lender = $result->fetch_assoc()): 
-                                        // Generate initials
                                         $nameParts = explode(' ', $lender['lender_name']);
                                         $initials = '';
                                         foreach ($nameParts as $part) {
@@ -579,11 +550,9 @@ if (isset($_SESSION['profile_message_shown'])) {
                                     ?>
                                         <div class="lender">
                                             <span>
-                                            <!-- initials -->
-                                            <div class="lender-icon"> 
-                                                <?= $initials ?>
-                                            </div>    
-                                            <?= htmlspecialchars($lender['lender_name']) ?></span>
+                                                <div class="lender-icon"><?= $initials ?></div>    
+                                                <?= htmlspecialchars($lender['lender_name']) ?>
+                                            </span>
                                             <span><?= htmlspecialchars($lender['loan_type']) ?></span>
                                             <span>Rate: <?= $lender['interest_rate'] ?>%</span>
                                             <span>Max Amt: <?= number_format($lender['max_amount']) ?></span>
@@ -606,167 +575,137 @@ if (isset($_SESSION['profile_message_shown'])) {
                             <?php endif; ?>
                         </div>
 
-                        <!-- Loan Application Popup -->
                         <div class="popup-overlay2" id="loanPopup" style="display: none;">
                             <div class="popup-content">
                                 <h2>Loan Application</h2>
-                        
-                        <?php
-                            // Display messages
-                            if (isset($_SESSION['loan_message'])): ?>
-                                <div class="alert <?= $_SESSION['message_type'] ?? 'info' ?>">
-                                    <?= htmlspecialchars($_SESSION['loan_message']) ?>
-                                </div>
-                                <?php 
-                                unset($_SESSION['loan_message']);
-                                unset($_SESSION['message_type']);
-                            endif; ?>
-                        
-                                
-                            <!-- Loan Application Form -->
-                            <form id="loanApplicationForm" action="applyLoan.php" method="post">
-                                <!-- Hidden fields for submission -->
-                                <div class="form-group">
+                                <?php if (isset($_SESSION['loan_message'])): ?>
+                                    <div class="alert <?= $_SESSION['message_type'] ?? 'info' ?>">
+                                        <?= htmlspecialchars($_SESSION['loan_message']) ?>
+                                    </div>
+                                    <?php 
+                                    unset($_SESSION['loan_message']);
+                                    unset($_SESSION['message_type']);
+                                    ?>
+                                <?php endif; ?>
+                                <form id="loanApplicationForm" action="applyLoan.php" method="post">
+                                    <div class="form-group">
                                         <input type="hidden" id="offerId" name="offer_id">
                                         <input type="hidden" id="lenderId" name="lender_id">
                                         <input type="hidden" id="interestRate" name="interest_rate">
-                                </div>
-                                 
-
-                                <!-- Visible lender information -->
-                                <div class="form-group2">
-                                    <label>Lender:</label>
-                                    <div id="displayLenderName" class="display-info"></div>
-                                </div>
-                                
-                                <div class="form-group2">
-                                    <label>Loan Type:</label>
-                                    <div id="displayType" class="display-info"></div>
-                                </div>
-                                <div class="form-group2">
-                                    <label>Interest Rate:</label>
-                                    <div id="displayInterestRate" class="display-info"></div>
-                                </div>
-                                
-                                <div class="form-group2">
-                                    <label>Maximum Amount:</label>
-                                    <div id="displayMaxAmount" class="display-info"></div>
-                                </div>
-                                
-                                <div class="form-group2">
-                                    <label>Maximum Duration:</label>
-                                    <div id="displayMaxDuration" class="display-info"></div>
-                                </div>
-                                
-                                <!-- User input fields -->
-                                <div class="form-group">
-                                    <label for="amountNeeded">Amount Needed (KES):*</label>
-                                    <input type="text" id="amountNeeded" name="amount" required>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="duration">Duration (months):*</label>
-                                    <input type="text" id="duration" name="duration" required>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="installments">Monthly Installment (KES):</label>
-                                    <input style="border-bottom: none;" type="text" id="installments" name="installments" placeholder="auto-calculated" readonly>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="collateralValue">Collateral Value (KES):*</label>
-                                    <input type="text" id="collateralValue" name="collateral_value" required >
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="collateralDesc">Collateral Description:*</label>
-                                    <textarea id="collateralDesc" name="collateral_description" placeholder="enter a short description" required></textarea>
-                                </div>
-                                
-                                <div class="form-actions">
-                                    <button type="button" class="cancel-btn" id="cancelBtn">Cancel</button>
-                                    <button type="submit" class="submit-btn">Submit Application</button>
-                                </div>
-                            </form>
+                                    </div>
+                                    <div class="form-group2">
+                                        <label>Lender:</label>
+                                        <div id="displayLenderName" class="display-info"></div>
+                                    </div>
+                                    <div class="form-group2">
+                                        <label>Loan Type:</label>
+                                        <div id="displayType" class="display-info"></div>
+                                    </div>
+                                    <div class="form-group2">
+                                        <label>Interest Rate:</label>
+                                        <div id="displayInterestRate" class="display-info"></div>
+                                    </div>
+                                    <div class="form-group2">
+                                        <label>Maximum Amount:</label>
+                                        <div id="displayMaxAmount" class="display-info"></div>
+                                    </div>
+                                    <div class="form-group2">
+                                        <label>Maximum Duration:</label>
+                                        <div id="displayMaxDuration" class="display-info"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="amountNeeded">Amount Needed (KES):*</label>
+                                        <input type="text" id="amountNeeded" name="amount" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="duration">Duration (months):*</label>
+                                        <input type="text" id="duration" name="duration" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="installments">Monthly Installment (KES):</label>
+                                        <input style="border-bottom: none;" type="text" id="installments" name="installments" placeholder="auto-calculated" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="collateralValue">Collateral Value (KES):*</label>
+                                        <input type="text" id="collateralValue" name="collateral_value" required >
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="collateralDesc">Collateral Description:*</label>
+                                        <textarea id="collateralDesc" name="collateral_description" placeholder="enter a short description" required></textarea>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="button" class="cancel-btn" id="cancelBtn">Cancel</button>
+                                        <button type="submit" class="submit-btn">Submit Application</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>   
                     </div>   
                 </div>
 
-                
                 <!-- Loan History -->
                 <div id="loanHistory" class="margin">
                     <h1>Loan History</h1>
                     <p>View your loan history</p>
-                   <!-- Loan Status Filter -->
-                   <div class="loan-filter-container">
-    <form method="get" action="#loanHistory">
-        <div class="filter-row">
-            <div class="filter-group">
-                <label for="status">Status:</label>
-                <select name="status" id="status" onchange="this.form.submit()">
-                    <option value="">All Loans</option>
-                    <option value="pending" <?= ($statusFilter === 'pending') ? 'selected' : '' ?>>Pending</option>
-                    <option value="approved" <?= ($statusFilter === 'approved') ? 'selected' : '' ?>>Approved</option>
-                    <option value="rejected" <?= ($statusFilter === 'rejected') ? 'selected' : '' ?>>Rejected</option>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label for="loan_type">Type:</label>
-                <select name="loan_type" id="loan_type" onchange="this.form.submit()">
-                    <option value="">All Types</option>
-                    <?php foreach ($allLoanTypes as $type): ?>
-                        <option value="<?= $type ?>" <?= (isset($_GET['loan_type']) && $_GET['loan_type'] === $type) ? 'selected' : '' ?>>
-                            <?= $type ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-
-            <div class="filter-group">
-                <label for="date_range">Date Range:</label>
-                <select name="date_range" id="date_range" onchange="this.form.submit()">
-                    <option value="">All Time</option>
-                    <option value="today" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'today') ? 'selected' : '' ?>>Today</option>
-                    <option value="week" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'week') ? 'selected' : '' ?>>This Week</option>
-                    <option value="month" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'month') ? 'selected' : '' ?>>This Month</option>
-                    <option value="year" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'year') ? 'selected' : '' ?>>This Year</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="amount_range">Amount Range:</label>
-                <select name="amount_range" id="amount_range" onchange="this.form.submit()">
-                    <option value="">Any Amount</option>
-                    <option value="0-5000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '0-5000') ? 'selected' : '' ?>>0 - 5,000</option>
-                    <option value="5000-20000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '5000-20000') ? 'selected' : '' ?>>5,000 - 20,000</option>
-                    <option value="20000-50000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '20000-50000') ? 'selected' : '' ?>>20,000 - 50,000</option>
-                    <option value="50000-100000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '50000-100000') ? 'selected' : '' ?>>50,000 - 100,000</option>
-                    <option value="100000+" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '100000+') ? 'selected' : '' ?>>100,000+</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="interest_rate">Interest Rate:</label>
-                <select name="interest_rate" id="interest_rate" onchange="this.form.submit()">
-                    <option value="">Any</option>
-                    <option value="0-5" <?= (isset($_GET['interest_rate']) && $_GET['interest_rate'] === '0-5') ? 'selected' : '' ?>>0-5%</option>
-                    <option value="5-10" <?= (isset($_GET['interest_rate']) && $_GET['interest_rate'] === '5-10') ? 'selected' : '' ?>>5-10%</option>
-                    <option value="10+" <?= (isset($_GET['interest_rate']) && $_GET['interest_rate'] === '10+') ? 'selected' : '' ?>>10%+</option>
-                </select>
-            </div>
-            
-            <div class="filter-actions">
-                <a href="customerDashboard.php#loanHistory"><button type="button" class="reset">Reset</button></a>
-            </div>
-
-        </div>
-        
-    </form>
-</div>
-                    <!-- Loan History -->
+                    <div class="loan-filter-container">
+                        <form method="get" action="#loanHistory">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label for="status">Status:</label>
+                                    <select name="status" id="status" onchange="this.form.submit()">
+                                        <option value="">All Loans</option>
+                                        <option value="pending" <?= ($statusFilter === 'pending') ? 'selected' : '' ?>>Pending</option>
+                                        <option value="approved" <?= ($statusFilter === 'approved') ? 'selected' : '' ?>>Approved</option>
+                                        <option value="rejected" <?= ($statusFilter === 'rejected') ? 'selected' : '' ?>>Rejected</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="loan_type">Type:</label>
+                                    <select name="loan_type" id="loan_type" onchange="this.form.submit()">
+                                        <option value="">All Types</option>
+                                        <?php foreach ($allLoanTypes as $type): ?>
+                                            <option value="<?= $type ?>" <?= (isset($_GET['loan_type']) && $_GET['loan_type'] === $type) ? 'selected' : '' ?>>
+                                                <?= $type ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="date_range">Date Range:</label>
+                                    <select name="date_range" id="date_range" onchange="this.form.submit()">
+                                        <option value="">All Time</option>
+                                        <option value="today" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'today') ? 'selected' : '' ?>>Today</option>
+                                        <option value="week" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'week') ? 'selected' : '' ?>>This Week</option>
+                                        <option value="month" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'month') ? 'selected' : '' ?>>This Month</option>
+                                        <option value="year" <?= (isset($_GET['date_range']) && $_GET['date_range'] === 'year') ? 'selected' : '' ?>>This Year</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="amount_range">Amount Range:</label>
+                                    <select name="amount_range" id="amount_range" onchange="this.form.submit()">
+                                        <option value="">Any Amount</option>
+                                        <option value="0-5000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '0-5000') ? 'selected' : '' ?>>0 - 5,000</option>
+                                        <option value="5000-20000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '5000-20000') ? 'selected' : '' ?>>5,000 - 20,000</option>
+                                        <option value="20000-50000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '20000-50000') ? 'selected' : '' ?>>20,000 - 50,000</option>
+                                        <option value="50000-100000" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '50000-100000') ? 'selected' : '' ?>>50,000 - 100,000</option>
+                                        <option value="100000+" <?= (isset($_GET['amount_range']) && $_GET['amount_range'] === '100000+') ? 'selected' : '' ?>>100,000+</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="interest_rate">Interest Rate:</label>
+                                    <select name="interest_rate" id="interest_rate" onchange="this.form.submit()">
+                                        <option value="">Any</option>
+                                        <option value="0-5" <?= (isset($_GET['interest_rate']) && $_GET['interest_rate'] === '0-5') ? 'selected' : '' ?>>0-5%</option>
+                                        <option value="5-10" <?= (isset($_GET['interest_rate']) && $_GET['interest_rate'] === '5-10') ? 'selected' : '' ?>>5-10%</option>
+                                        <option value="10+" <?= (isset($_GET['interest_rate']) && $_GET['interest_rate'] === '10+') ? 'selected' : '' ?>>10%+</option>
+                                    </select>
+                                </div>
+                                <div class="filter-actions">
+                                    <a href="customerDashboard.php#loanHistory"><button type="button" class="reset">Reset</button></a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                     <div class="loanhistory" id="loanHistoryContainer">
                         <?php if (empty($loans)): ?>
                             <div class="no-loans">No loan history found</div>
@@ -809,13 +748,10 @@ if (isset($_SESSION['profile_message_shown'])) {
                             </table>
                         <?php endif; ?>
                     </div>
-                    
-                    <!-- Loan Details Popup -->
                     <div id="loanDetailsPopup" class="popup-overlay3" style="display: <?= isset($_SESSION['loan_details']) ? 'flex' : 'none' ?>;">
                         <div class="popup-content3">
                             <h2>Loan Details for ID <span id="popupLoanId"><?= $_SESSION['loan_details']['loan_id'] ?? '' ?></span></h2>
-                            <button id="closePopupBtn" class="close-btn">&times;</button>
-                    
+                            <button id="closePopupBtn" class="close-btn">×</button>
                             <?php if (isset($_SESSION['loan_details_message'])): ?>
                                 <div class="alert <?= $_SESSION['loan_details_message_type'] ?? 'info' ?>">
                                     <?= htmlspecialchars($_SESSION['loan_details_message']) ?>
@@ -827,7 +763,6 @@ if (isset($_SESSION['profile_message_shown'])) {
                                     }, 2000);
                                 </script>
                             <?php endif; ?>
-                            
                             <div id="loanDetailsContent" class="popup-body">
                                 <?php if (isset($_SESSION['loan_details'])): ?>
                                     <div class="loan-details-grid">
@@ -873,11 +808,9 @@ if (isset($_SESSION['profile_message_shown'])) {
                                             <span class="detail-label">Application Date:</span>
                                             <span class="detail-value"><?= $_SESSION['loan_details']['created_at'] ?></span>
                                         </div>
-                                        
                                     </div>
                                 <?php endif; ?>
                             </div>
-                            
                             <div id="loanActionButtons" class="popup-actions">
                                 <?php if (isset($_SESSION['loan_details']) && in_array(strtolower($_SESSION['loan_details']['status']), ['pending', 'rejected'])): ?>
                                     <form action="deleteApplication.php" method="post" class="delete-form">
@@ -887,203 +820,171 @@ if (isset($_SESSION['profile_message_shown'])) {
                                         </button>
                                     </form>
                                 <?php endif; ?>
-                                
                             </div>
                         </div>
                     </div>
-                    
-                    <?php 
-                    // Clear the loan details from session after display
-                    if (isset($_SESSION['loan_details'])) {
+                    <?php if (isset($_SESSION['loan_details'])) {
                         unset($_SESSION['loan_details']);
-                    }
-                    ?>
+                    } ?>
                 </div>
 
                 <!-- Payment Tracking -->
                 <div id="paymentTracking" class="margin">
-    <h1>Payment Tracking</h1>
-    <p>View and manage your active loan payments.</p>
-    
-    <?php if (isset($_SESSION['payment_message'])): ?>
-        <div class="alert <?= $_SESSION['payment_message_type'] ?? 'info' ?>">
-            <?= htmlspecialchars($_SESSION['payment_message']) ?>
-        </div>
-        <?php 
-        unset($_SESSION['payment_message']);
-        unset($_SESSION['payment_message_type']);
-        ?>
-    <?php endif; ?>
-    
-    <div class="payment-tracking-container">
-        <form method="get" action="paymentTracking.php">
-            <div class="filter-row">
-                <div class="filter-group">
-                    <label for="payment_status">Payment Status:</label>
-                    <select name="payment_status" id="payment_status" onchange="this.form.submit()">
-                        <option value="">All</option>
-                        <option value="unpaid" <?= (($_SESSION['payment_filters']['payment_status'] ?? '') === 'unpaid') ? 'selected' : '' ?>>Unpaid</option>
-                        <option value="partially_paid" <?= (($_SESSION['payment_filters']['payment_status'] ?? '') === 'partially_paid') ? 'selected' : '' ?>>Partially Paid</option>
-                        <option value="fully_paid" <?= (($_SESSION['payment_filters']['payment_status'] ?? '') === 'fully_paid') ? 'selected' : '' ?>>Fully Paid</option>
-                    </select>
+                    <h1>Payment Tracking</h1>
+                    <p>View and manage your active loan payments.</p>
+                    <div class="payment-tracking-container">
+                        <form method="get" action="paymentTracking.php">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label for="payment_status">Payment Status:</label>
+                                    <select name="payment_status" id="payment_status" onchange="this.form.submit()">
+                                        <option value="">All</option>
+                                        <option value="unpaid" <?= ($filters['payment_status'] === 'unpaid') ? 'selected' : '' ?>>Unpaid</option>
+                                        <option value="partially_paid" <?= ($filters['payment_status'] === 'partially_paid') ? 'selected' : '' ?>>Partially Paid</option>
+                                        <option value="fully_paid" <?= ($filters['payment_status'] === 'fully_paid') ? 'selected' : '' ?>>Fully Paid</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="loan_type">Loan Type:</label>
+                                    <select name="loan_type" id="loan_type" onchange="this.form.submit()"> 
+                                        <option value="">All Types</option>
+                                        <?php foreach ($allLoanTypes as $type): ?>
+                                            <option value="<?= htmlspecialchars($type) ?>" <?= ($filters['loan_type'] === $type) ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($type) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="amount_range">Loan Amount:</label>
+                                    <select name="amount_range" id="amount_range" onchange="this.form.submit()">
+                                        <option value="">Any Amount</option>
+                                        <option value="0-5000" <?= ($filters['amount_range'] === '0-5000') ? 'selected' : '' ?>>0 - 5,000</option>
+                                        <option value="5000-20000" <?= ($filters['amount_range'] === '5000-20000') ? 'selected' : '' ?>>5,000 - 20,000</option>
+                                        <option value="20000-50000" <?= ($filters['amount_range'] === '20000-50000') ? 'selected' : '' ?>>20,000 - 50,000</option>
+                                        <option value="50000-100000" <?= ($filters['amount_range'] === '50000-100000') ? 'selected' : '' ?>>50,000 - 100,000</option>
+                                        <option value="100000+" <?= ($filters['amount_range'] === '100000+') ? 'selected' : '' ?>>100,000+</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="date_range">Application Date:</label>
+                                    <select name="date_range" id="date_range" onchange="this.form.submit()">
+                                        <option value="">All Time</option>
+                                        <option value="today" <?= ($filters['date_range'] === 'today') ? 'selected' : '' ?>>Today</option>
+                                        <option value="week" <?= ($filters['date_range'] === 'week') ? 'selected' : '' ?>>This Week</option>
+                                        <option value="month" <?= ($filters['date_range'] === 'month') ? 'selected' : '' ?>>This Month</option>
+                                        <option value="year" <?= ($filters['date_range'] === 'year') ? 'selected' : '' ?>>This Year</option>
+                                    </select>
+                                </div>
+                                <div class="filter-actions">
+                                    <a href="paymentTracking.php?reset=true"><button type="button" class="reset-btn">Reset</button></a>
+                                </div>
+                            </div>
+                        </form>
+                        <div class="active-loans-table">
+                            <?php if (empty($activeLoans)): ?>
+                                <div class="no-lenders">No active loans found</div>
+                            <?php else: ?>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Loan ID</th>
+                                            <th>Type</th>
+                                            <th>Lender</th>
+                                            <th>Loan Amount</th>
+                                            <th>Amount Due</th>
+                                            <th>Interest</th>
+                                            <th>Paid</th>
+                                            <th>Balance</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($activeLoans as $loan): ?>
+                                            <?php if (!isset($loan['amount']) || !isset($loan['total_amount_due']) || !isset($loan['interest_rate'])) {
+                                                error_log("Skipping Loan ID {$loan['loan_id']}: Missing required fields");
+                                                continue;
+                                            } ?>
+                                            <tr>
+                                                <td><?= htmlspecialchars($loan['loan_id']) ?></td>
+                                                <td><?= htmlspecialchars($loan['loan_type']) ?></td>
+                                                <td><?= htmlspecialchars($loan['lender_name']) ?></td>
+                                                <td><?= number_format($loan['amount']) ?></td>
+                                                <td><?= number_format($loan['total_amount_due'], 2) ?></td>
+                                                <td><?= htmlspecialchars($loan['interest_rate']) ?>%</td>
+                                                <td><?= number_format($loan['amount_paid'] ?? 0, 2) ?></td>
+                                                <td><?= number_format($loan['remaining_balance'] ?? 0, 2) ?></td>
+                                                <td>
+                                                    <span class="payment-status <?= htmlspecialchars($loan['payment_status'] ?? 'unpaid') ?>">
+                                                        <?= ucfirst(str_replace('_', ' ', htmlspecialchars($loan['payment_status'] ?? 'unpaid'))) ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <button class="pay-btn" 
+                                                        data-loan-id="<?= $loan['loan_id'] ?>"
+                                                        data-loan-amount="<?= $loan['amount'] ?>"
+                                                        data-amount-due="<?= $loan['total_amount_due'] ?>"
+                                                        data-amount-paid="<?= $loan['amount_paid'] ?? 0 ?>"
+                                                        data-remaining-balance="<?= $loan['remaining_balance'] ?? 0 ?>"
+                                                        onclick="showPaymentPopup(this)">
+                                                        Pay
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="filter-group">
-                    <label for="loan_type">Loan Type:</label>
-                    <select name="loan_type" id="loan_type" onchange="this.form.submit()"> 
-                        <option value="">All Types</option>
-                        <?php foreach ($allLoanTypes as $type): ?>
-                            <option value="<?= htmlspecialchars($type) ?>" <?= (($_SESSION['payment_filters']['loan_type'] ?? '') === $type) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($type) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="amount_range">Loan Amount:</label>
-                    <select name="amount_range" id="amount_range" onchange="this.form.submit()">
-                        <option value="">Any Amount</option>
-                        <option value="0-5000" <?= (($_SESSION['payment_filters']['amount_range'] ?? '') === '0-5000') ? 'selected' : '' ?>>0 - 5,000</option>
-                        <option value="5000-20000" <?= (($_SESSION['payment_filters']['amount_range'] ?? '') === '5000-20000') ? 'selected' : '' ?>>5,000 - 20,000</option>
-                        <option value="20000-50000" <?= (($_SESSION['payment_filters']['amount_range'] ?? '') === '20000-50000') ? 'selected' : '' ?>>20,000 - 50,000</option>
-                        <option value="50000-100000" <?= (($_SESSION['payment_filters']['amount_range'] ?? '') === '50000-100000') ? 'selected' : '' ?>>50,000 - 100,000</option>
-                        <option value="100000+" <?= (($_SESSION['payment_filters']['amount_range'] ?? '') === '100000+') ? 'selected' : '' ?>>100,000+</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="date_range">Application Date:</label>
-                    <select name="date_range" id="date_range" onchange="this.form.submit()">
-                        <option value="">All Time</option>
-                        <option value="today" <?= (($_SESSION['payment_filters']['date_range'] ?? '') === 'today') ? 'selected' : '' ?>>Today</option>
-                        <option value="week" <?= (($_SESSION['payment_filters']['date_range'] ?? '') === 'week') ? 'selected' : '' ?>>This Week</option>
-                        <option value="month" <?= (($_SESSION['payment_filters']['date_range'] ?? '') === 'month') ? 'selected' : '' ?>>This Month</option>
-                        <option value="year" <?= (($_SESSION['payment_filters']['date_range'] ?? '') === 'year') ? 'selected' : '' ?>>This Year</option>
-                    </select>
-                </div>
-                
-                <div class="filter-actions">
-                    <a href="paymentTracking.php?reset=true"><button type="button" class="reset-btn">Reset</button></a>
-                </div>
-            </div>
-        </form>
-        
-        <div class="active-loans-table">
-            <?php 
-            $activeLoans = $_SESSION['active_loans'] ?? [];
-            if (empty($activeLoans)): ?>
-                <div class="no-lenders">No active loans found</div>
-            <?php else: ?>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Loan ID</th>
-                            <th>Type</th>
-                            <th>Lender</th>
-                            <th>Loan Amount</th>
-                            <th>Amount Due</th>
-                            <th>Interest</th>
-                            <th>Paid</th>
-                            <th>Balance</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($activeLoans as $loan): ?>
-                            <?php
-                            // Skip loans with missing or invalid data
-                            if (!isset($loan['amount']) || !isset($loan['total_amount_due']) || !isset($loan['interest_rate'])) {
-                                error_log("Skipping Loan ID {$loan['loan_id']}: Missing required fields");
-                                continue;
-                            }
-                            ?>
-                            <tr>
-                                <td><?= htmlspecialchars($loan['loan_id']) ?></td>
-                                <td><?= htmlspecialchars($loan['loan_type']) ?></td>
-                                <td><?= htmlspecialchars($loan['lender_name']) ?></td>
-                                <td><?= number_format($loan['amount']) ?></td>
-                                <td><?= number_format($loan['total_amount_due'], 2) ?></td>
-                                <td><?= htmlspecialchars($loan['interest_rate']) ?>%</td>
-                                <td><?= number_format($loan['amount_paid'] ?? 0, 2) ?></td>
-                                <td><?= number_format($loan['remaining_balance'] ?? 0, 2) ?></td>
-                                <td>
-                                    <span class="payment-status <?= htmlspecialchars($loan['payment_status'] ?? 'unpaid') ?>">
-                                        <?= ucfirst(str_replace('_', ' ', htmlspecialchars($loan['payment_status'] ?? 'unpaid'))) ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <button class="pay-btn" 
-                                        data-loan-id="<?= $loan['loan_id'] ?>"
-                                        data-loan-amount="<?= $loan['amount'] ?>"
-                                        data-amount-due="<?= $loan['total_amount_due'] ?>"
-                                        data-amount-paid="<?= $loan['amount_paid'] ?? 0 ?>"
-                                        data-remaining-balance="<?= $loan['remaining_balance'] ?? 0 ?>"
-                                        onclick="showPaymentPopup(this)">
-                                        Pay
-                                    </button>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php endif; ?>
-        </div>
-    </div>
-</div>
 
-<!-- Payment Popup -->
-<div class="popup-overlay" id="paymentPopup" style="display: none;">
-    <div class="popup-content3">
-        <h2>Make Payment</h2>
-        <button class="close-btn" onclick="closePaymentPopup()">&times;</button>
-        
-        <form id="paymentForm" method="post" action="paymentTracking.php#paymentTracking">
-            <input type="hidden" name="loan_id" id="payment_loan_id">
-            <input type="hidden" name="remaining_balance" id="payment_remaining_balance">
-            
-            <div class="form-group">
-                <label for="payment_loan_amount">Loan Amount:</label>
-                <input style="border: none;" type="text" id="payment_loan_amount" readonly>
-            </div>
-            <div class="form-group">
-                <label for="payment_loan_amount">Amount Due:</label>
-                <input style="border: none;" type="text" id="payment_amount_due" readonly>
-            </div>
-            <div class="form-group">
-                <label for="payment_amount_paid">Amount Paid:</label>
-                <input style="border: none; type="text" id="payment_amount_paid" readonly>
-            </div>
-            
-            <div class="form-group">
-                <label for="payment_balance">Remaining Balance:</label>
-                <input style="border: none; type="text" id="payment_balance" readonly>
-            </div>
-            
-            <div class="form-group">
-                <label for="payment_amount">Payment Amount:*</label>
-                <input type="text" id="payment_amount" name="amount" min="1" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="payment_method">Payment Method:*</label>
-                <select class="select" id="payment_method" name="payment_method" required>
-                    <option value="">Select Method</option>
-                    <option value="mpesa">M-Pesa</option>
-                    <option value="bank_transfer">Bank Transfer</option>
-                    <option value="credit_card">Credit Card</option>
-                    <option value="debit_card">Debit Card</option>
-                </select>
-            </div>
-            
-            <div class="form-actions">
-                <button type="button" class="cancel-btn" onclick="closePaymentPopup()">Cancel</button>
-                <button type="submit" name="payment_submit" class="submit-btn">Process Payment</button>
-            </div>
-        </form>
-    </div>
-</div>
+                <!-- Payment Popup -->
+                <div class="popup-overlay" id="paymentPopup" style="display: none;">
+                    <div class="popup-content3">
+                        <h2>Make Payment</h2>
+                        <button class="close-btn" onclick="closePaymentPopup()">×</button>
+                        <form id="paymentForm" method="post" action="paymentTracking.php#paymentTracking">
+                            <input type="hidden" name="loan_id" id="payment_loan_id">
+                            <input type="hidden" name="remaining_balance" id="payment_remaining_balance">
+                            <div class="form-group">
+                                <label for="payment_loan_amount">Loan Amount:</label>
+                                <input style="border: none;" type="text" id="payment_loan_amount" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="payment_amount_due">Amount Due:</label>
+                                <input style="border: none;" type="text" id="payment_amount_due" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="payment_amount_paid">Amount Paid:</label>
+                                <input style="border: none;" type="text" id="payment_amount_paid" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="payment_balance">Balance:</label>
+                                <input style="border: none;" type="text" id="payment_balance" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="payment_amount">Payment Amount:*</label>
+                                <input type="text" id="payment_amount" name="amount" min="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="payment_method">Payment Method:*</label>
+                                <select class="select" id="payment_method" name="payment_method" required>
+                                    <option value="">Select Method</option>
+                                    <option value="mpesa">M-Pesa</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="credit_card">Credit Card</option>
+                                    <option value="debit_card">Debit Card</option>
+                                </select>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="cancel-btn" onclick="closePaymentPopup()">Cancel</button>
+                                <button type="submit" name="payment_submit" class="submit-btn">Process Payment</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
                 <!-- Notifications -->
                 <div id="notifications" class="margin">
@@ -1095,10 +996,9 @@ if (isset($_SESSION['profile_message_shown'])) {
                 <div id="profile" class="margin">
                     <h1>Profile</h1>
                     <p>View and update your personal information.</p>
-                    
                     <div class="profile-container">
                         <div class="profile-details">
-                        <h2>Personal Information</h2>
+                            <h2>Personal Information</h2>
                             <div class="profile-row">
                                 <span class="profile-label">Full Name:</span>
                                 <span class="profile-value"><?php echo htmlspecialchars($customerProfile['name']); ?></span>
@@ -1131,75 +1031,61 @@ if (isset($_SESSION['profile_message_shown'])) {
                                 <span class="profile-label">Bank Account:</span>
                                 <span class="profile-value"><?php echo htmlspecialchars($customerProfile['bank_account']); ?></span>
                             </div>
-                            
                             <button id="editProfileBtn" class="edit-btn">Edit Profile</button>
-                
                         </div>
                         <div class="additional-settings">
                             <h2>Additional Settings</h2>
                             <p class="change">Change Password</p>
                             <p class="delete">Delete Account</p>
                         </div>
-                
                     </div>
-                    
                 </div>
-                
+
                 <!-- Profile Edit Overlay -->
                 <div class="popup-overlay3" id="profileOverlay">
-                    
                     <div class="popup-content3">
-                    <!-- Message container -->
-                    <div id="profileMessage" class="message-container">
-                        <?php if (isset($_SESSION['profile_message'])): ?>
-                            <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
-                                <?= htmlspecialchars($_SESSION['profile_message']) ?>
-                            </div>
-                            <?php 
+                        <div id="profileMessage" class="message-container">
+                            <?php if (isset($_SESSION['profile_message'])): ?>
+                                <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
+                                    <?= htmlspecialchars($_SESSION['profile_message']) ?>
+                                </div>
+                                <?php 
                                 unset($_SESSION['profile_message']);
                                 unset($_SESSION['profile_message_type']);
-                            ?>
-                        <?php endif; ?>
-                    </div>
-
+                                ?>
+                            <?php endif; ?>
+                        </div>
                         <h2>Edit Profile</h2>
                         <form id="profileEditForm" action="custUpdateProfile.php" method="post">
                             <input type="hidden" name="customer_id" value="<?php echo $customer_id; ?>">
-                            
                             <div class="form-group">
                                 <label for="editName">Full Name</label>
                                 <input type="text" id="editName" name="name" value="<?php echo htmlspecialchars($customerProfile['name']); ?>">
                             </div>
-                            
                             <div class="form-group">
                                 <label for="editEmail">Email</label>
                                 <input type="email" id="editEmail" name="email" value="<?php echo htmlspecialchars($customerProfile['email']); ?>">
                             </div>
-                            
                             <div class="form-group">
                                 <label for="editPhone">Phone</label>
                                 <input type="tel" id="editPhone" name="phone" value="<?php echo htmlspecialchars($customerProfile['phone']); ?>">
                             </div>
-                            
                             <div class="form-group">
                                 <label for="editAddress">Address</label>
                                 <input id="editAddress" name="address" value="<?php echo htmlspecialchars($customerProfile['address']); ?>">
                             </div>
-                            
                             <div class="form-group">
                                 <label for="editBankAccount">Bank Account</label>
                                 <input type="text" id="editBankAccount" name="bank_account" value="<?php echo htmlspecialchars($customerProfile['bank_account']); ?>">
                             </div>
-                            
                             <div class="form-actions">
                                 <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
                                 <button type="submit" class="save-btn">Save Changes</button>
                             </div>
                         </form>
                     </div>
-                    
                 </div>
-                
+
                 <!-- Feedback -->
                 <div id="feedback" class="margin">
                     <h1>Feedback</h1>
@@ -1212,8 +1098,6 @@ if (isset($_SESSION['profile_message_shown'])) {
                     <p>Reach out to our support team for assistance.</p>
                 </div>
 
-                
-
                 <!-- Dashboard -->
                 <div id="dashboard" class="margin">
                     <div class="dash-header">
@@ -1224,82 +1108,58 @@ if (isset($_SESSION['profile_message_shown'])) {
                         <div class="greeting">
                             <p>
                                 <code>
-                                <!-- Greeting based on time -->
-                                <?php
-                                    // Set the timezone to Nairobi, Kenya
-                                    date_default_timezone_set('Africa/Nairobi');
-                                    // 24-hour format
-                                    $currentTime = date("H");
-                                    $message = "";
-                                    if ($currentTime < 12) {
-                                        $message = "good morning,";
-                                    } elseif ($currentTime < 18) {
-                                        $message = "good afternoon,";
-                                    } else {
-                                        $message = "good evening,";
-                                    }
-                                    echo "<span>$message</span>";
-                                    ?>
-                                <!-- Display the user's name -->
-                                <span class="span"><?php echo $_SESSION['user_name']; ?>!</span>
+                                    <span><?php echo $message; ?></span>
+                                    <span class="span"><?php echo $_SESSION['user_name']; ?>!</span>
                                 </code>
                             </p>
                         </div>
                     </div>
                     <div class="metrics">
-                    <div>
-        <p>Active Loans Count</p>
-        <div class="metric-value-container">
-        <span class="span-2"><?php echo $activeLoansCount; ?></span>
-        </div>
-    </div>
-    <div>
-        <p>Total Approved Loans</p>
-        <div class="metric-value-container">
-            <span class="span-2"><?php echo $totalApprovedLoans; ?></span>
-        </div>
-    </div>
-                    <div>
-                        <p>Total Amount Borrowed</p>
-                        <div class="metric-value-container">
-                        <span class="span-2"><?php echo number_format($totalBorrowed); ?></span>
+                        <div>
+                            <p>Active Loans</p>
+                            <div class="metric-value-container">
+                                <span class="span-2"><?php echo $activeLoansCount; ?></span>
+                            </div>
+                        </div>
+                        <div>
+                            <p>Approved Loans</p>
+                            <div class="metric-value-container">
+                                <span class="span-2"><?php echo $totalApprovedLoans; ?></span>
+                            </div>
+                        </div>
+                        <div>
+                            <p>Total Amount Borrowed</p>
+                            <div class="metric-value-container">
+                                <span class="span-2"><?php echo number_format($totalBorrowed); ?></span>
+                            </div>
+                        </div>
+                        <div>
+                            <p>Outstanding Balance</p>
+                            <div class="metric-value-container">
+                                <span class="span-2"><?php echo number_format($outstandingBalance); ?></span>
+                            </div>
+                        </div>
+                        <div>
+                            <p>Next Payment Date</p>
+                            <div class="metric-value-container">
+                                <span class="span-2"><?php echo $nextPaymentDate; ?></span>
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <p>Outstanding Balance</p>
-                        <div class="metric-value-container">
-                        <span class="span-2"><?php echo number_format($outstandingBalance); ?></span>
+                    <div class="visuals">
+                        <div>
+                            <p>Number of Approved Loans per Loan Type</p>
+                            <canvas id="barChart" width="800" height="300"></canvas>
                         </div>
-                    </div>
-                    <div>
-                        <p>Next Payment Date</p>
-                        <div class="metric-value-container">
-                        <span class="span-2"><?php echo $nextPaymentDate; ?></span>
-                            
+                        <div>
+                            <p>Loan Status</p>
+                            <canvas id="pieChart" width="400" height="200"></canvas>
                         </div>
-                    </div>
-                </div>
-
-                <div class="visuals">
-                    <div>
-                        <p>Number of Approved Loans per Loan Type</p>
-                        <canvas id="barChart" width="800" height="300"></canvas>
-                    </div>
-                    <div>
-                        <p>Loan Status</p>
-                        <canvas id="pieChart" width="400" height="200"></canvas>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-        
-
-
-
-
-                
-</main>
+    </main>
 
 
 <script>
