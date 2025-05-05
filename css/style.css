@@ -1147,6 +1147,7 @@ iframe {
     color: #1D1E20;
     resize: none;
 }
+
 /* Message Styles */
 
 
@@ -1378,6 +1379,15 @@ iframe {
     text-align: left;
 
 }
+
+.active-loans-table .pay-btn:disabled {
+    background-color: lightgray;
+    color: #2C2C2C;
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+
 /* Lender Dashboard */
 #createLoan{
     height: 100%;
@@ -1388,7 +1398,7 @@ iframe {
 .loan-message {         /* re use this class for messages reporting */
     background-color: lightgray; 
     color: #1D1E20; 
-    padding: .5em;
+    padding: 0.5em;
     margin:  0;
     border: 1px solid #f5c6cb;
     border-radius: .2em;
@@ -1737,13 +1747,14 @@ iframe {
     outline: none;
 
 }
-.filter-group #status, .filter-group #payment_status{ 
+.filter-group #status, .filter-group #payment_status, .filter-group #payment_method{ 
     border-radius: .5em 0 0 .5em;
 
 
 }
 .filter-group #loan_type, .filter-group #amount_range, .filter-group #interest_rate
-,.filter-group #date_range, .filter-group #duration_range, .filter-group #collateral_range
+,.filter-group #date_range, .filter-group #duration_range, .filter-group #collateral_range,
+.filter-group #balance_range
 { 
     border-radius: 0;
 

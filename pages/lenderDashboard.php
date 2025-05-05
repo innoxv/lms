@@ -12,6 +12,8 @@ require_once 'check_access.php';
 
 
 
+
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: signin.html");
     exit();
@@ -48,7 +50,8 @@ if (mysqli_num_rows($lenderResult) > 0) {
     exit();
 }
 
-$lender_id = $_SESSION['lender_id'];
+// Include paymentReview.php *AFTER* lender_id is set
+require_once 'paymentReview.php';
 
 
 // Define all loan types
@@ -313,10 +316,10 @@ mysqli_close($myconn);
                             </a>
                         </li>
                         <li><a href="#loanRequests">Loan Requests</a></li>
-                        <li class="disabled-link"><a href="#paymentReview">Payment Review</a></li>  <!-- under production -->
+                        <li><a href="#paymentReview">Payment Review</a></li>  
 
 
-                        <li class="disabled-link"><a href="#notifications">Notifications</a></li>  <!-- this is still in production -->
+                        <!-- <li class="disabled-link"><a href="#notifications">Notifications</a></li>  this is still in production -->
                         <li><a href="#profile">Profile</a></li>
                     </div>
                     <div class="bottom">
@@ -681,14 +684,185 @@ mysqli_close($myconn);
                 </div>
                 </div>
                 
+<!-- payment Review -->
 
-                
+<div id="paymentReview" class="margin">
+    <h1>Payment Review</h1>
+    <p>View and filter payment records for your loans.</p>
 
+    <?php if (isset($_SESSION['loan_message'])): ?>
+        <div class="loan-message"><?php echo htmlspecialchars($_SESSION['loan_message']); ?></div>
+        <?php unset($_SESSION['loan_message']); ?>
+    <?php endif; ?>
+
+    <div class="loan-filter-container">
+        <form method="get" action="lenderDashboard.php#paymentReview">
+            <div class="filter-row">
+
+
+                <div class="filter-group">
+                    <label for="payment_method">Payment Method:</label>
+                    <select name="payment_method" id="payment_method" onchange="this.form.submit()">
+                        <option value="">All Methods</option>
+                        <?php foreach ($paymentMethods as $method): ?>
+                            <option value="<?php echo htmlspecialchars($method); ?>" 
+                                    <?php echo ($paymentMethodFilter === $method) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($method); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="date_range">Date Range:</label>
+                    <select name="date_range" id="date_range" onchange="this.form.submit()">
+                        <option value="">All Time</option>
+                        <option value="today" <?php echo (isset($_GET['date_range']) && $_GET['date_range'] === 'today') ? 'selected' : ''; ?>>Today</option>
+                        <option value="week" <?php echo (isset($_GET['date_range']) && $_GET['date_range'] === 'week') ? 'selected' : ''; ?>>This Week</option>
+                        <option value="month" <?php echo (isset($_GET['date_range']) && $_GET['date_range'] === 'month') ? 'selected' : ''; ?>>This Month</option>
+                        <option value="year" <?php echo (isset($_GET['date_range']) && $_GET['date_range'] === 'year') ? 'selected' : ''; ?>>This Year</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="amount_range">Amount Range:</label>
+                    <select name="amount_range" id="amount_range" onchange="this.form.submit()">
+                        <option value="">Any Amount</option>
+                        <option value="0-5000" <?php echo (isset($_GET['amount_range']) && $_GET['amount_range'] === '0-5000') ? 'selected' : ''; ?>>0 - 5,000</option>
+                        <option value="5000-20000" <?php echo (isset($_GET['amount_range']) && $_GET['amount_range'] === '5000-20000') ? 'selected' : ''; ?>>5,000 - 20,000</option>
+                        <option value="20000-50000" <?php echo (isset($_GET['amount_range']) && $_GET['amount_range'] === '20000-50000') ? 'selected' : ''; ?>>20,000 - 50,000</option>
+                        <option value="50000-100000" <?php echo (isset($_GET['amount_range']) && $_GET['amount_range'] === '50000-100000') ? 'selected' : ''; ?>>50,000 - 100,000</option>
+                        <option value="100000+" <?php echo (isset($_GET['amount_range']) && $_GET['amount_range'] === '100000+') ? 'selected' : ''; ?>>100,000+</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="balance_range">Remaining Balance:</label>
+                    <select name="balance_range" id="balance_range" onchange="this.form.submit()">
+                        <option value="">Any Balance</option>
+                        <option value="0-5000" <?php echo (isset($_GET['balance_range']) && $_GET['balance_range'] === '0-5000') ? 'selected' : ''; ?>>0 - 5,000</option>
+                        <option value="5000-20000" <?php echo (isset($_GET['balance_range']) && $_GET['balance_range'] === '5000-20000') ? 'selected' : ''; ?>>5,000 - 20,000</option>
+                        <option value="20000-50000" <?php echo (isset($_GET['balance_range']) && $_GET['balance_range'] === '20000-50000') ? 'selected' : ''; ?>>20,000 - 50,000</option>
+                        <option value="50000-100000" <?php echo (isset($_GET['balance_range']) && $_GET['balance_range'] === '50000-100000') ? 'selected' : ''; ?>>50,000 - 100,000</option>
+                        <option value="100000+" <?php echo (isset($_GET['balance_range']) && $_GET['balance_range'] === '100000+') ? 'selected' : ''; ?>>100,000+</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <a href="lenderDashboard.php#paymentReview"><button type="button" class="reset-btn">Reset</button></a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="loan-requests-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Payment ID</th>
+                    <th>Loan ID</th>
+                    <th>Customer</th>
+                    <th>Loan Type</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Type</th>
+                    <th>Balance</th>
+                    <th>Date</th>
+                    <th style="text-align: right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!empty($payments)): ?>
+                    <?php foreach ($payments as $payment): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($payment['payment_id']); ?></td>
+                        <td><?php echo htmlspecialchars($payment['loan_id']); ?></td>
+                        <td><?php echo htmlspecialchars($payment['customer_name']); ?></td>
+                        <td><?php echo htmlspecialchars($payment['loan_type']); ?></td>
+                        <td><?php echo number_format($payment['amount'], 2); ?></td>
+                        <td><?php echo htmlspecialchars($payment['payment_method']); ?></td>
+                        <td><?php echo htmlspecialchars($payment['payment_type']); ?></td>
+                        <td><?php echo number_format($payment['remaining_balance'], 2); ?></td>
+                        <td><?php echo date('j M Y', strtotime($payment['payment_date'])); ?></td>
+                        <td class="action-buttons">
+                            <button class="view" 
+                                    data-payment-id="<?php echo htmlspecialchars($payment['payment_id']); ?>"
+                                    data-loan-id="<?php echo htmlspecialchars($payment['loan_id']); ?>"
+                                    data-customer="<?php echo htmlspecialchars($payment['customer_name']); ?>"
+                                    data-loan-type="<?php echo htmlspecialchars($payment['loan_type']); ?>"
+                                    data-amount="<?php echo htmlspecialchars($payment['amount']); ?>"
+                                    data-method="<?php echo htmlspecialchars($payment['payment_method']); ?>"
+                                    data-type="<?php echo htmlspecialchars($payment['payment_type']); ?>"
+                                    data-balance="<?php echo htmlspecialchars($payment['remaining_balance']); ?>"
+                                    data-date="<?php echo htmlspecialchars($payment['payment_date']); ?>">
+                                View
+                            </button>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td style="color: tomato; font-size: 1.2em;" colspan="10" class="no-data">
+                            No payment records found
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- View Payment Details Popup -->
+    <div class="popup-overlay3" id="viewPaymentOverlay"></div>
+    <div class="view-popup" id="viewPaymentPopup">
+        <h2>Payment Details</h2>
+        <div class="view-form">
+            <div class="detail-row">
+                <div class="detail-label">Payment ID:</div>
+                <div class="detail-value" id="viewPaymentId"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Loan ID:</div>
+                <div class="detail-value" id="viewPaymentLoanId"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Customer:</div>
+                <div class="detail-value" id="viewPaymentCustomer"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Loan Type:</div>
+                <div class="detail-value" id="viewPaymentLoanType"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Amount:</div>
+                <div class="detail-value" id="viewPaymentAmount"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Payment Method:</div>
+                <div class="detail-value" id="viewPaymentMethod"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Payment Type:</div>
+                <div class="detail-value" id="viewPaymentType"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Remaining Balance:</div>
+                <div class="detail-value" id="viewPaymentBalance"></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Payment Date:</div>
+                <div class="detail-value" id="viewPaymentDate"></div>
+            </div>
+            <div class="view-actions">
+                <button type="button" class="close-btn" onclick="hideViewPaymentPopup()">×</button>
+            </div>
+        </div>
+    </div>
+</div>
                 <!-- Notifications -->
-                <div id="notifications" class="margin">
+                <!-- <div id="notifications" class="margin">
                     <h1>Notifications</h1>
                     <p>View your alerts and reminders.</p>
-                </div>
+                </div> -->
                 
                 <!-- Profile -->
                 <div id="profile" class="margin">
@@ -1163,6 +1337,61 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('viewLoanOverlay').addEventListener('click', hideViewLoanPopup);
 });
 </script>
+
+
+<script>
+// Show View Payment popup
+
+function showViewPaymentPopup(paymentId, loanId, customer, loanType, amount, method, type, balance, date) {
+    document.getElementById('viewPaymentId').textContent = paymentId;
+    document.getElementById('viewPaymentLoanId').textContent = loanId;
+    document.getElementById('viewPaymentCustomer').textContent = customer;
+    document.getElementById('viewPaymentLoanType').textContent = loanType;
+    document.getElementById('viewPaymentAmount').textContent = parseFloat(amount).toLocaleString(undefined, {minimumFractionDigits: 2});
+    document.getElementById('viewPaymentMethod').textContent = method;
+    document.getElementById('viewPaymentType').textContent = type;
+    document.getElementById('viewPaymentBalance').textContent = parseFloat(balance).toLocaleString(undefined, {minimumFractionDigits: 2});
+    
+    const paymentDate = new Date(date);
+    document.getElementById('viewPaymentDate').textContent = paymentDate.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+    });
+    
+    document.getElementById('viewPaymentOverlay').style.display = 'block';
+    document.getElementById('viewPaymentPopup').style.display = 'block';
+}
+
+// Hide View Payment popup
+function hideViewPaymentPopup() {
+    document.getElementById('viewPaymentOverlay').style.display = 'none';
+    document.getElementById('viewPaymentPopup').style.display = 'none';
+}
+
+// Initialize view buttons for payments
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('#paymentReview .view').forEach(btn => {
+        btn.addEventListener('click', function() {
+            showViewPaymentPopup(
+                this.dataset.paymentId,
+                this.dataset.loanId,
+                this.dataset.customer,
+                this.dataset.loanType,
+                this.dataset.amount,
+                this.dataset.method,
+                this.dataset.type,
+                this.dataset.balance,
+                this.dataset.date
+            );
+        });
+    });
+
+    document.getElementById('viewPaymentOverlay').addEventListener('click', hideViewPaymentPopup);
+
+});
+</script>
+
     <!-- barchart -->
      
 

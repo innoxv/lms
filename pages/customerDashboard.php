@@ -377,7 +377,7 @@ $status = 'active'; // Placeholder for access status
                         <li><a href="#applyLoan" id="applyLoanLink" class="<?php echo ($status === 'restricted_apply') ? 'disabled-link' : ''; ?>">Apply for Loan</a></li>
                         <li><a href="#loanHistory" id="loanHistoryLink">Loan History</a></li>
                         <li><a href="#paymentTracking" id="">Payment Tracking</a></li> 
-                        <li class="disabled-link"><a href="#notifications">Notifications</a></li>
+                        <!-- <li class="disabled-link"><a href="#notifications">Notifications</a></li> -->
                         <li><a href="#profile">Profile</a></li>
                     </div>
                     <div class="bottom">
@@ -716,7 +716,7 @@ $status = 'active'; // Placeholder for access status
                                         <th>Loan ID</th>
                                         <th>Type</th>
                                         <th>Lender</th>
-                                        <th>Amount (KES)</th>
+                                        <th>Amount</th>
                                         <th>Interest</th>
                                         <th>Status</th>
                                         <th>Date</th>
@@ -832,6 +832,18 @@ $status = 'active'; // Placeholder for access status
                 <div id="paymentTracking" class="margin">
                     <h1>Payment Tracking</h1>
                     <p>View and manage your active loan payments.</p>
+                    
+                    <!-- Messages -->
+                    <?php if (isset($_SESSION['payment_message'])): ?>
+                        <div class="alert <?= $_SESSION['payment_message_type'] ?? 'info' ?>">
+                            <?= htmlspecialchars($_SESSION['payment_message']) ?>
+                        </div>
+                        <?php 
+                        unset($_SESSION['payment_message']);
+                        unset($_SESSION['payment_message_type']);
+                        ?>
+                    <?php endif; ?>
+
                     <div class="payment-tracking-container">
                         <form method="get" action="paymentTracking.php">
                             <div class="filter-row">
@@ -927,7 +939,8 @@ $status = 'active'; // Placeholder for access status
                                                         data-amount-due="<?= $loan['total_amount_due'] ?>"
                                                         data-amount-paid="<?= $loan['amount_paid'] ?? 0 ?>"
                                                         data-remaining-balance="<?= $loan['remaining_balance'] ?? 0 ?>"
-                                                        onclick="showPaymentPopup(this)">
+                                                        onclick="showPaymentPopup(this)"
+                                                        <?= ($loan['payment_status'] === 'fully_paid') ? 'disabled' : '' ?>> <!-- disables button if status is fully paid -->
                                                         Pay
                                                     </button>
                                                 </td>
@@ -987,10 +1000,10 @@ $status = 'active'; // Placeholder for access status
                 </div>
 
                 <!-- Notifications -->
-                <div id="notifications" class="margin">
+                <!-- <div id="notifications" class="margin">
                     <h1>Notifications</h1>
                     <p>View your alerts and reminders.</p>
-                </div>
+                </div> -->
 
                 <!-- Profile -->
                 <div id="profile" class="margin">

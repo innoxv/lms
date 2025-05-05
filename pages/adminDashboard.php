@@ -275,7 +275,7 @@ mysqli_close($myconn);
                         <li><a href="#viewUsers">View Users</a></li>
                         <li><a href="#addUsers">Add New User</a></li>
                         <li><a href="#activityLogs">Activity Logs</a></li>
-                        <li class="disabled-link"><a href="#notifications">Notifications</a></li>  <!-- this is still in production -->
+                        <!-- <li class="disabled-link"><a href="#notifications">Notifications</a></li>  this is still in production -->
                         <li><a href="#profile">Profile</a></li>
                     </div>
                     <div class="bottom">
@@ -569,10 +569,11 @@ mysqli_close($myconn);
                 </div>
 
                 <!-- Notifications -->
-                <div id="notifications" class="margin">
+                <!-- <div id="notifications" class="margin">
                     <h1>Notifications</h1>
                     <p>View your alerts and reminders.</p>
-                                </div>
+                    </div> -->
+                                
                 <!-- Profile -->
                 <div id="profile" class="margin">
                     <h1>Profile</h1>
