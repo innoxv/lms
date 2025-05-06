@@ -1013,161 +1013,174 @@ $status = 'active'; // Placeholder for access status
                 </div>
 
 
-                <!-- Transaction History -->
                 <div id="transactionHistory" class="margin">
-                    <h1>Transaction History</h1>
-                    <p>View all your payment transactions.</p>
-                    <div class="transaction-history-container">
-                        <form method="get" action="paymentHistory.php">
-                            <div class="filter-row">
-                                <div class="filter-group">
-                                    <label for="payment_type">Payment Type:</label>
-                                    <select name="payment_type" id="payment_type" onchange="this.form.submit()">
-                                        <option value="">All</option>
-                                        <option value="partial" <?= ($historyFilters['payment_type'] === 'partial') ? 'selected' : '' ?>>Partial</option>
-                                        <option value="full" <?= ($historyFilters['payment_type'] === 'full') ? 'selected' : '' ?>>Full</option>
-                                    </select>
-                                </div>
-                                <div class="filter-group">
-                                    <label for="payment_method">Payment Method:</label>
-                                    <select name="payment_method" id="payment_method" onchange="this.form.submit()">
-                                        <option value="">All Methods</option>
-                                        <option value="mpesa" <?= ($historyFilters['payment_method'] === 'mpesa') ? 'selected' : '' ?>>M-Pesa</option>
-                                        <option value="bank_transfer" <?= ($historyFilters['payment_method'] === 'bank_transfer') ? 'selected' : '' ?>>Bank Transfer</option>
-                                        <option value="credit_card" <?= ($historyFilters['payment_method'] === 'credit_card') ? 'selected' : '' ?>>Credit Card</option>
-                                        <option value="debit_card" <?= ($historyFilters['payment_method'] === 'debit_card') ? 'selected' : '' ?>>Debit Card</option>
-                                    </select>
-                                </div>
-                                <div class="filter-group">
-                                    <label for="amount_range">Amount Range:</label>
-                                    <select name="amount_range" id="amount_range" onchange="this.form.submit()">
-                                        <option value="">Any Amount</option>
-                                        <option value="0-5000" <?= ($historyFilters['amount_range'] === '0-5000') ? 'selected' : '' ?>>0 - 5,000</option>
-                                        <option value="5000-20000" <?= ($historyFilters['amount_range'] === '5000-20000') ? 'selected' : '' ?>>5,000 - 20,000</option>
-                                        <option value="20000-50000" <?= ($historyFilters['amount_range'] === '20000-50000') ? 'selected' : '' ?>>20,000 - 50,000</option>
-                                        <option value="50000-100000" <?= ($historyFilters['amount_range'] === '50000-100000') ? 'selected' : '' ?>>50,000 - 100,000</option>
-                                        <option value="100000+" <?= ($historyFilters['amount_range'] === '100000+') ? 'selected' : '' ?>>100,000+</option>
-                                    </select>
-                                </div>
-                                <div class="filter-group">
-                                    <label for="date_range">Payment Date:</label>
-                                    <select name="date_range" id="date_range" onchange="this.form.submit()">
-                                        <option value="">All Time</option>
-                                        <option value="today" <?= ($historyFilters['date_range'] === 'today') ? 'selected' : '' ?>>Today</option>
-                                        <option value="week" <?= ($historyFilters['date_range'] === 'week') ? 'selected' : '' ?>>This Week</option>
-                                        <option value="month" <?= ($historyFilters['date_range'] === 'month') ? 'selected' : '' ?>>This Month</option>
-                                        <option value="year" <?= ($historyFilters['date_range'] === 'year') ? 'selected' : '' ?>>This Year</option>
-                                    </select>
-                                </div>
-                                <div class="filter-actions">
-                                    <a href="paymentHistory.php?reset=true"><button type="button" class="reset-btn">Reset</button></a>
-                                </div>
-                            </div>
-                        </form>
-                        <div class="active-loans-table">
-                            <?php if (empty($paymentHistory)): ?>
-                                <div class="no-lenders">No transactions found</div>
-                            <?php else: ?>
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Payment ID</th>
-                                            <th>Loan ID</th>
-                                            <th>Amount</th>
-                                            <th>Method</th>
-                                            <th>Type</th>
-                                            <th>Remaining Balance</th>
-                                            <th>Date</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($paymentHistory as $payment): ?>
-                                            <tr>
-                                                <td><?= htmlspecialchars($payment['payment_id']) ?></td>
-                                                <td><?= htmlspecialchars($payment['loan_id']) ?></td>
-                                                <td><?= number_format($payment['amount'], 2) ?></td>
-                                                <td><?= htmlspecialchars(ucwords(str_replace('_', ' ', $payment['payment_method']))) ?></td>
-                                                <td>
-                                                    <span class="payment-status <?= strtolower($payment['payment_type']) ?>">
-                                                        <?= htmlspecialchars(ucfirst($payment['payment_type'])) ?>
-                                                    </span>
-                                                </td>
-                                                <td><?= number_format($payment['remaining_balance'], 2) ?></td>
-                                                <td><?= date('j M Y', strtotime($payment['payment_date'])) ?></td>
-                                                <td>
-                                                    <button class="view-btn" onclick="showPaymentDetails(<?= $payment['payment_id'] ?>)">
-                                                        View
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <div id="paymentDetailsPopup" class="popup-overlay3" style="display: <?= isset($_SESSION['payment_details']) ? 'flex' : 'none' ?>;">
-                        <div class="popup-content3">
-                            <h2>Payment Details for ID <span id="popupPaymentId"><?= $_SESSION['payment_details']['payment_id'] ?? '' ?></span></h2>
-                            <button id="closePaymentPopupBtn" class="close-btn">×</button>
-                            <?php if (isset($_SESSION['payment_details_message'])): ?>
-                                <div class="alert <?= $_SESSION['payment_details_message_type'] ?? 'info' ?>">
-                                    <?= htmlspecialchars($_SESSION['payment_details_message']) ?>
-                                </div>
-                                <?php $_SESSION['payment_details_message_shown'] = true; ?>
-                                <script>
-                                    setTimeout(() => {
-                                        document.querySelector('#paymentDetailsPopup .alert').style.display = 'none';
-                                    }, 2000);
-                                </script>
-                            <?php endif; ?>
-                            <div id="paymentDetailsContent" class="popup-body">
-                                <?php if (isset($_SESSION['payment_details'])): ?>
-                                    <div class="payment-details-grid">
-                                        <div class="detail-row">
-                                            <span class="detail-label">Payment ID:</span>
-                                            <span class="detail-value"><?= htmlspecialchars($_SESSION['payment_details']['payment_id']) ?></span>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">Loan ID:</span>
-                                            <span class="detail-value"><?= htmlspecialchars($_SESSION['payment_details']['loan_id']) ?></span>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">Lender:</span>
-                                            <span class="detail-value"><?= htmlspecialchars($_SESSION['payment_details']['lender_name']) ?></span>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">Amount:</span>
-                                            <span class="detail-value">KES <?= number_format($_SESSION['payment_details']['amount'], 2) ?></span>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">Payment Method:</span>
-                                            <span class="detail-value"><?= htmlspecialchars(ucwords(str_replace('_', ' ', $_SESSION['payment_details']['payment_method']))) ?></span>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">Payment Type:</span>
-                                            <span class="detail-value payment-status <?= strtolower($_SESSION['payment_details']['payment_type']) ?>">
-                                                <?= htmlspecialchars(ucfirst($_SESSION['payment_details']['payment_type'])) ?>
-                                            </span>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">Remaining Balance:</span>
-                                            <span class="detail-value">KES <?= number_format($_SESSION['payment_details']['remaining_balance'], 2) ?></span>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">Payment Date:</span>
-                                            <span class="detail-value"><?= date('j M Y, H:i', strtotime($_SESSION['payment_details']['payment_date'])) ?></span>
-                                        </div>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                    <?php if (isset($_SESSION['payment_details'])) {
-                        unset($_SESSION['payment_details']);
-                    } ?>
+    <h1>Transaction History</h1>
+    <p>View all your payment transactions.</p>
+    <div class="transaction-history-container">
+        <?php if (isset($_SESSION['error_message'])): ?>
+            <div class="alert error"><?= htmlspecialchars($_SESSION['error_message']) ?></div>
+            <?php unset($_SESSION['error_message']); ?>
+        <?php endif; ?>
+        <form method="get" action="paymentHistory.php">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="payment_type">Payment Type:</label>
+                    <select name="payment_type" id="payment_type" onchange="this.form.submit()">
+                        <option value="">All</option>
+                        <option value="partial" <?= isset($_SESSION['history_filters']['payment_type']) && $_SESSION['history_filters']['payment_type'] === 'partial' ? 'selected' : '' ?>>Partial</option>
+                        <option value="full" <?= isset($_SESSION['history_filters']['payment_type']) && $_SESSION['history_filters']['payment_type'] === 'full' ? 'selected' : '' ?>>Full</option>
+                    </select>
                 </div>
+                <div class="filter-group">
+                    <label for="payment_method">Payment Method:</label>
+                    <select name="payment_method" id="payment_method" onchange="this.form.submit()">
+                        <option value="">All Methods</option>
+                        <option value="mpesa" <?= isset($_SESSION['history_filters']['payment_method']) && $_SESSION['history_filters']['payment_method'] === 'mpesa' ? 'selected' : '' ?>>M-Pesa</option>
+                        <option value="bank_transfer" <?= isset($_SESSION['history_filters']['payment_method']) && $_SESSION['history_filters']['payment_method'] === 'bank_transfer' ? 'selected' : '' ?>>Bank Transfer</option>
+                        <option value="credit_card" <?= isset($_SESSION['history_filters']['payment_method']) && $_SESSION['history_filters']['payment_method'] === 'credit_card' ? 'selected' : '' ?>>Credit Card</option>
+                        <option value="debit_card" <?= isset($_SESSION['history_filters']['payment_method']) && $_SESSION['history_filters']['payment_method'] === 'debit_card' ? 'selected' : '' ?>>Debit Card</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="amount_range">Amount Range:</label>
+                    <select name="amount_range" id="amount_range" onchange="this.form.submit()">
+                        <option value="">Any Amount</option>
+                        <option value="0-5000" <?= isset($_SESSION['history_filters']['amount_range']) && $_SESSION['history_filters']['amount_range'] === '0-5000' ? 'selected' : '' ?>>0 - 5,000</option>
+                        <option value="5000-20000" <?= isset($_SESSION['history_filters']['amount_range']) && $_SESSION['history_filters']['amount_range'] === '5000-20000' ? 'selected' : '' ?>>5,000 - 20,000</option>
+                        <option value="20000-50000" <?= isset($_SESSION['history_filters']['amount_range']) && $_SESSION['history_filters']['amount_range'] === '20000-50000' ? 'selected' : '' ?>>20,000 - 50,000</option>
+                        <option value="50000-100000" <?= isset($_SESSION['history_filters']['amount_range']) && $_SESSION['history_filters']['amount_range'] === '50000-100000' ? 'selected' : '' ?>>50,000 - 100,000</option>
+                        <option value="100000+" <?= isset($_SESSION['history_filters']['amount_range']) && $_SESSION['history_filters']['amount_range'] === '100000+' ? 'selected' : '' ?>>100,000+</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="date_range">Payment Date:</label>
+                    <select name="date_range" id="date_range" onchange="this.form.submit()">
+                        <option value="">All Time</option>
+                        <option value="today" <?= isset($_SESSION['history_filters']['date_range']) && $_SESSION['history_filters']['date_range'] === 'today' ? 'selected' : '' ?>>Today</option>
+                        <option value="week" <?= isset($_SESSION['history_filters']['date_range']) && $_SESSION['history_filters']['date_range'] === 'week' ? 'selected' : '' ?>>This Week</option>
+                        <option value="month" <?= isset($_SESSION['history_filters']['date_range']) && $_SESSION['history_filters']['date_range'] === 'month' ? 'selected' : '' ?>>This Month</option>
+                        <option value="year" <?= isset($_SESSION['history_filters']['date_range']) && $_SESSION['history_filters']['date_range'] === 'year' ? 'selected' : '' ?>>This Year</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <a href="paymentHistory.php?reset=true"><button type="button" class="reset-btn">Reset</button></a>
+                </div>
+            </div>
+        </form>
+        <div class="active-loans-table">
+            <?php
+            error_log("customerDashboard.php: payment_history set: " . (isset($_SESSION['payment_history']) ? 'yes' : 'no'));
+            if (!isset($_SESSION['payment_history'])) {
+                error_log("customerDashboard.php: payment_history not set");
+                echo '<div class="error">Error loading transactions.</div>';
+            } elseif (empty($_SESSION['payment_history'])) {
+                error_log("customerDashboard.php: payment_history empty");
+                echo '<div class="no-lenders">No transactions found</div>';
+            } else {
+                error_log("customerDashboard.php: Rendering " . count($_SESSION['payment_history']) . " payments");
+            ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Payment ID</th>
+                            <th>Loan ID</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th>Type</th>
+                            <th>Remaining Balance</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($_SESSION['payment_history'] as $payment): ?>
+                            <?php
+                            // Fetch lender name for the payment
+                            $loan_query = "SELECT lenders.name AS lender_name
+                                           FROM loans
+                                           JOIN lenders ON loans.lender_id = lenders.lender_id
+                                           WHERE loans.loan_id = ?";
+                            $stmt = $myconn->prepare($loan_query);
+                            $stmt->bind_param("i", $payment['loan_id']);
+                            $stmt->execute();
+                            $loan_result = $stmt->get_result();
+                            $lender = $loan_result->fetch_assoc();
+                            $stmt->close();
+                            $lender_name = $lender['lender_name'] ?? 'Unknown';
+                            ?>
+                            <tr>
+                                <td><?= htmlspecialchars($payment['payment_id']) ?></td>
+                                <td><?= htmlspecialchars($payment['loan_id']) ?></td>
+                                <td><?= number_format($payment['amount'], 2) ?></td>
+                                <td><?= htmlspecialchars(ucwords(str_replace('_', ' ', $payment['payment_method']))) ?></td>
+                                <td>
+                                    <span class="payment-status <?= htmlspecialchars(strtolower($payment['payment_type'])) ?>">
+                                        <?= htmlspecialchars(ucfirst($payment['payment_type'])) ?>
+                                    </span>
+                                </td>
+                                <td><?= number_format($payment['remaining_balance'], 2) ?></td>
+                                <td><?= date('j M Y', strtotime($payment['payment_date'])) ?></td>
+                                <td>
+                                    <button class="btn-view" 
+                                            data-payment-id="<?= htmlspecialchars($payment['payment_id']) ?>"
+                                            data-loan-id="<?= htmlspecialchars($payment['loan_id']) ?>"
+                                            data-lender-name="<?= htmlspecialchars($lender_name) ?>"
+                                            data-amount="<?= htmlspecialchars($payment['amount']) ?>"
+                                            data-payment-method="<?= htmlspecialchars($payment['payment_method']) ?>"
+                                            data-payment-type="<?= htmlspecialchars($payment['payment_type']) ?>"
+                                            data-remaining-balance="<?= htmlspecialchars($payment['remaining_balance']) ?>"
+                                            data-payment-date="<?= htmlspecialchars($payment['payment_date']) ?>">
+                                        View
+                                    </button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php } ?>
+        </div>
+    </div>
+    <div class="popup-overlay3" id="paymentDetailsOverlay" style="display: none;">
+        <div  class="view-popup" id="paymentDetailsPopup" style="display: none;">
+            <h2>Payment Details</h2>
+            <button class="close-btn" id="closePaymentPopupBtn">×</button>
+            <div class="payment-details-grid">
+                <div class="detail-row">
+                    <span class="detail-label">Payment ID:</span>
+                    <span class="detail-value" id="viewPaymentId"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Loan ID:</span>
+                    <span class="detail-value" id="viewLoanId"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Lender:</span>
+                    <span class="detail-value" id="viewLenderName"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Amount:</span>
+                    <span class="detail-value" id="viewAmount"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Payment Method:</span>
+                    <span class="detail-value" id="viewPaymentMethod"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Payment Type:</span>
+                    <span class="detail-value" id="viewPaymentType"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Remaining Balance:</span>
+                    <span class="detail-value" id="viewRemainingBalance"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Payment Date:</span>
+                    <span class="detail-value" id="viewPaymentDate"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
                 <!-- Profile -->
                 <div id="profile" class="margin">
@@ -1425,6 +1438,70 @@ function closePaymentPopup() {
 function numberWithCommas(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+</script>
+
+<!-- Transaction History -->
+<script>
+// Show Payment Details popup
+function showPaymentDetailsPopup(paymentId, loanId, lenderName, amount, paymentMethod, paymentType, remainingBalance, paymentDate) {
+    document.getElementById('viewPaymentId').textContent = paymentId;
+    document.getElementById('viewLoanId').textContent = loanId;
+    document.getElementById('viewLenderName').textContent = lenderName;
+    document.getElementById('viewAmount').textContent = 'KES ' + parseFloat(amount).toLocaleString(undefined, {minimumFractionDigits: 2});
+    document.getElementById('viewPaymentMethod').textContent = paymentMethod.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    document.getElementById('viewRemainingBalance').textContent = 'KES ' + parseFloat(remainingBalance).toLocaleString(undefined, {minimumFractionDigits: 2});
+
+    // Format payment type as badge
+    const typeElement = document.getElementById('viewPaymentType');
+    typeElement.innerHTML = '';
+    const typeBadge = document.createElement('span');
+    typeBadge.className = `status-badge status-${paymentType.toLowerCase()}`;
+    typeBadge.textContent = paymentType.charAt(0).toUpperCase() + paymentType.slice(1);
+    typeElement.appendChild(typeBadge);
+
+    // Format date
+    const date = new Date(paymentDate);
+    document.getElementById('viewPaymentDate').textContent = date.toLocaleString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    // Show popup
+    document.getElementById('paymentDetailsOverlay').style.display = 'block';
+    document.getElementById('paymentDetailsPopup').style.display = 'block';
+}
+
+// Hide Payment Details popup
+function hidePaymentDetailsPopup() {
+    document.getElementById('paymentDetailsOverlay').style.display = 'none';
+    document.getElementById('paymentDetailsPopup').style.display = 'none';
+}
+
+// Initialize view buttons
+document.addEventListener('DOMContentLoaded', function() {
+    // Attach click handlers to all view buttons
+    document.querySelectorAll('.btn-view').forEach(btn => {
+        btn.addEventListener('click', function() {
+            showPaymentDetailsPopup(
+                this.dataset.paymentId,
+                this.dataset.loanId,
+                this.dataset.lenderName,
+                this.dataset.amount,
+                this.dataset.paymentMethod,
+                this.dataset.paymentType,
+                this.dataset.remainingBalance,
+                this.dataset.paymentDate
+            );
+        });
+    });
+
+    // Close when clicking overlay or close button
+    document.getElementById('paymentDetailsOverlay').addEventListener('click', hidePaymentDetailsPopup);
+    document.getElementById('closePaymentPopupBtn').addEventListener('click', hidePaymentDetailsPopup);
+});
 </script>
 
 
