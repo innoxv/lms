@@ -50,9 +50,14 @@ if (mysqli_num_rows($lenderResult) > 0) {
     exit();
 }
 
-// Include paymentReview.php *AFTER* lender_id is set
+// Include paymentReview.php 
 require_once 'paymentReview.php';
 
+// Include activeLoans.php
+$activeLoansData = require_once 'activeLoans.php';
+$activeLoanData = $activeLoansData['activeLoanData'];
+$activeFilters = $activeLoansData['filters'];
+$allLoanTypes = $activeLoansData['allLoanTypes'];
 
 // Define all loan types
 $allLoanTypes = [
@@ -72,10 +77,28 @@ $avgInterestResult = mysqli_query($myconn, $avgInterestQuery);
 $avgInterestRate = number_format((float)mysqli_fetch_row($avgInterestResult)[0], 2);
 
 // Get total loan amount owed
-$owedQuery = "SELECT SUM(remaining_balance) FROM payments WHERE lender_id = '$lender_id'";
-$owedResult = mysqli_query($myconn, $owedQuery);
-$owedData = mysqli_fetch_row($owedResult);
-$owedCapacity = $owedData[0] ? number_format((float)$owedData[0]) : 0;
+// subquery checks last payment state to determine state
+$owedQuery = "
+    SELECT COALESCE(SUM(latest_payment.remaining_balance), 0)
+    FROM loans
+    JOIN (
+        SELECT loan_id, remaining_balance
+        FROM payments
+        WHERE (loan_id, payment_date) IN (
+            SELECT loan_id, MAX(payment_date)
+            FROM payments
+            GROUP BY loan_id
+        )
+    ) latest_payment ON loans.loan_id = latest_payment.loan_id
+    WHERE loans.lender_id = ?
+    AND loans.status = 'approved'";
+
+$stmt = $myconn->prepare($owedQuery);
+$stmt->bind_param("i", $lender_id);
+$stmt->execute();
+$owedResult = $stmt->get_result();
+$owedData = $owedResult->fetch_row();
+$owedCapacity = $owedData[0] ? number_format((float)$owedData[0], 0) : '0';
 
 // Get total approved loans count
 $approvedLoansQuery = "SELECT COUNT(*) FROM loans WHERE lender_id = '$lender_id' AND status = 'approved'";
@@ -83,14 +106,29 @@ $approvedLoansResult = mysqli_query($myconn, $approvedLoansQuery);
 $approvedLoans = (int)mysqli_fetch_row($approvedLoansResult)[0];
 
 // Get active loans count (approved loans with remaining balance)
-$activeLoansQuery = "SELECT COUNT(DISTINCT loans.loan_id) 
-                     FROM loans
-                     JOIN payments ON loans.loan_id = payments.loan_id
-                     WHERE loans.lender_id = '$lender_id'
-                     AND loans.status = 'approved'
-                     AND payments.remaining_balance > 0";
-$activeLoansResult = mysqli_query($myconn, $activeLoansQuery);
-$activeLoans = (int)mysqli_fetch_row($activeLoansResult)[0];
+// subquery checks last payment state to determine state
+
+$activeLoansQuery = "
+    SELECT COUNT(DISTINCT loans.loan_id)
+    FROM loans
+    JOIN (
+        SELECT loan_id, remaining_balance
+        FROM payments
+        WHERE (loan_id, payment_date) IN (
+            SELECT loan_id, MAX(payment_date)
+            FROM payments
+            GROUP BY loan_id
+        )
+    ) latest_payment ON loans.loan_id = latest_payment.loan_id
+    WHERE loans.lender_id = ?
+    AND loans.status = 'approved'
+    AND latest_payment.remaining_balance > 0";
+
+$stmt = $myconn->prepare($activeLoansQuery);
+$stmt->bind_param("i", $lender_id);
+$stmt->execute();
+$activeLoansResult = $stmt->get_result();
+$activeLoans = (int)$activeLoansResult->fetch_row()[0] ?? 0;
 
 // Get total amount disbursed
 $disbursedAmountQuery = "SELECT SUM(amount) FROM loans WHERE lender_id = '$lender_id' AND status IN ('approved')";
@@ -316,10 +354,8 @@ mysqli_close($myconn);
                             </a>
                         </li>
                         <li><a href="#loanRequests">Loan Requests</a></li>
+                        <li><a href="#activeLoans">Active Loans</a></li>  
                         <li><a href="#paymentReview">Payment Review</a></li>  
-
-
-                        <!-- <li class="disabled-link"><a href="#notifications">Notifications</a></li>  this is still in production -->
                         <li><a href="#profile">Profile</a></li>
                     </div>
                     <div class="bottom">
@@ -684,180 +720,335 @@ mysqli_close($myconn);
                 </div>
                 </div>
                 
-<!-- payment Review -->
-
-<div id="paymentReview" class="margin">
-    <h1>Payment Review</h1>
-    <p>View and filter payment records for your loans.</p>
-
-    <?php if (isset($_SESSION['loan_message'])): ?>
-        <div class="loan-message"><?php echo htmlspecialchars($_SESSION['loan_message']); ?></div>
-        <?php unset($_SESSION['loan_message']); ?>
-    <?php endif; ?>
-
-    <div class="loan-filter-container">
-        <form method="get" action="lenderDashboard.php#paymentReview">
-            <div class="filter-row">
-
-
-                <div class="filter-group">
-                    <label for="payment_method">Payment Method:</label>
-                    <select name="payment_method" id="payment_method" onchange="this.form.submit()">
-                        <option value="">All Methods</option>
-                        <?php foreach ($paymentMethods as $method): ?>
-                            <option value="<?php echo htmlspecialchars($method); ?>" 
-                                    <?php echo ($paymentMethodFilter === $method) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($method); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                <!-- Active Loans -->
+                <div id="activeLoans" class="margin">
+                    <h1>Active Loans</h1>
+                    <p>View loans with outstanding balances.</p>
+                    <div class="loan-filter-container">
+                        <form method="get" action="lenderDashboard.php#activeLoans">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label for="active_loan_type">Loan Type:</label>
+                                    <select name="active_loan_type" id="active_loan_type" onchange="this.form.submit()">
+                                        <option value="">All Types</option>
+                                        <?php foreach ($allLoanTypes as $type): ?>
+                                            <option value="<?php echo $type; ?>" <?= ($activeFilters['loan_type'] === $type) ? 'selected' : '' ?>><?php echo $type; ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="active_date_range">Date Range:</label>
+                                    <select name="active_date_range" id="active_date_range" onchange="this.form.submit()">
+                                        <option value="">All Time</option>
+                                        <option value="today" <?= ($activeFilters['date_range'] === 'today') ? 'selected' : '' ?>>Today</option>
+                                        <option value="week" <?= ($activeFilters['date_range'] === 'week') ? 'selected' : '' ?>>This Week</option>
+                                        <option value="month" <?= ($activeFilters['date_range'] === 'month') ? 'selected' : '' ?>>This Month</option>
+                                        <option value="year" <?= ($activeFilters['date_range'] === 'year') ? 'selected' : '' ?>>This Year</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="active_amount_range">Amount Range:</label>
+                                    <select name="active_amount_range" id="active_amount_range" onchange="this.form.submit()">
+                                        <option value="">Any Amount</option>
+                                        <option value="0-5000" <?= ($activeFilters['amount_range'] === '0-5000') ? 'selected' : '' ?>>0 - 5,000</option>
+                                        <option value="5000-20000" <?= ($activeFilters['amount_range'] === '5000-20000') ? 'selected' : '' ?>>5,000 - 20,000</option>
+                                        <option value="20000-50000" <?= ($activeFilters['amount_range'] === '20000-50000') ? 'selected' : '' ?>>20,000 - 50,000</option>
+                                        <option value="50000-100000" <?= ($activeFilters['amount_range'] === '50000-100000') ? 'selected' : '' ?>>50,000 - 100,000</option>
+                                        <option value="100000+" <?= ($activeFilters['amount_range'] === '100000+') ? 'selected' : '' ?>>100,000+</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="active_duration_range">Duration:</label>
+                                    <select name="active_duration_range" id="active_duration_range" onchange="this.form.submit()">
+                                        <option value="">Any Duration</option>
+                                        <option value="0-6" <?= ($activeFilters['duration_range'] === '0-6') ? 'selected' : '' ?>>0-6 months</option>
+                                        <option value="6-12" <?= ($activeFilters['duration_range'] === '6-12') ? 'selected' : '' ?>>6-12 months</option>
+                                        <option value="12-24" <?= ($activeFilters['duration_range'] === '12-24') ? 'selected' : '' ?>>12-24 months</option>
+                                        <option value="24+" <?= ($activeFilters['duration_range'] === '24+') ? 'selected' : '' ?>>24+ months</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="active_collateral_range">Collateral Range:</label>
+                                    <select name="active_collateral_range" id="active_collateral_range" onchange="this.form.submit()">
+                                        <option value="">Any Collateral</option>
+                                        <option value="0-5000" <?= ($activeFilters['collateral_range'] === '0-5000') ? 'selected' : '' ?>>0 - 5,000</option>
+                                        <option value="5000-20000" <?= ($activeFilters['collateral_range'] === '5000-20000') ? 'selected' : '' ?>>5,000 - 20,000</option>
+                                        <option value="20000-50000" <?= ($activeFilters['collateral_range'] === '20000-50000') ? 'selected' : '' ?>>20,000 - 50,000</option>
+                                        <option value="50000+" <?= ($activeFilters['collateral_range'] === '50000+') ? 'selected' : '' ?>>50,000+</option>
+                                    </select>
+                                </div>
+                                <div class="filter-actions">
+                                    <a href="lenderDashboard.php#activeLoans"><button type="button" class="reset-btn">Reset</button></a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="loan-requests-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Loan ID</th>
+                                    <th>Customer</th>
+                                    <th>Loan Type</th>
+                                    <th>Amount</th>
+                                    <th>Rate</th>
+                                    <th>Duration</th>
+                                    <th>Collateral Value</th>
+                                    <th>Balance</th>
+                                    <th>Application Date</th>
+                                    <th style="text-align: right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (!empty($activeLoanData)): ?>
+                                    <?php foreach ($activeLoanData as $loan): ?>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars($loan['loan_id']); ?></td>
+                                            <td><?php echo htmlspecialchars($loan['name']); ?></td>
+                                            <td><?php echo htmlspecialchars($loan['loan_type']); ?></td>
+                                            <td><?php echo number_format($loan['amount'], 2); ?></td>
+                                            <td><?php echo htmlspecialchars($loan['interest_rate']); ?>%</td>
+                                            <td><?php echo htmlspecialchars($loan['duration']); ?></td>
+                                            <td><?php echo htmlspecialchars($loan['collateral_value']); ?></td>
+                                            <td><?php echo number_format($loan['remaining_balance'], 2); ?></td>
+                                            <td><?php echo date('j M Y', strtotime($loan['created_at'])); ?></td>
+                                            <td class="action-buttons">
+                                                <button class="btn-view-active" 
+                                                        data-loan-id="<?= htmlspecialchars($loan['loan_id']) ?>"
+                                                        data-customer="<?= htmlspecialchars($loan['name']) ?>"
+                                                        data-loan-type="<?= htmlspecialchars($loan['loan_type']) ?>"
+                                                        data-amount="<?= htmlspecialchars($loan['amount']) ?>"
+                                                        data-interest-rate="<?= htmlspecialchars($loan['interest_rate']) ?>"
+                                                        data-duration="<?= htmlspecialchars($loan['duration']) ?>"
+                                                        data-collateral-value="<?= htmlspecialchars($loan['collateral_value']) ?>"
+                                                        data-collateral-desc="<?= htmlspecialchars($loan['collateral_description']) ?>"
+                                                        data-remaining-balance="<?= htmlspecialchars($loan['remaining_balance']) ?>"
+                                                        data-created-at="<?= htmlspecialchars($loan['created_at']) ?>">
+                                                    View
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td style="color: tomato; font-size: 1.2em;" colspan="10" class="no-data">
+                                            No active loans found
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                
+                    <!-- View Active Loan Details Popup -->
+                    <div class="popup-overlay3" id="viewActiveLoanOverlay"></div>
+                    <div class="view-popup" id="viewActiveLoanPopup">
+                        <h2>Active Loan Details</h2>
+                        <div class="view-form">
+                            <div class="detail-row">
+                                <div class="detail-label">Loan ID:</div>
+                                <div class="detail-value" id="viewActiveLoanId"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Customer:</div>
+                                <div class="detail-value" id="viewActiveCustomer"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Loan Type:</div>
+                                <div class="detail-value" id="viewActiveLoanType"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Amount:</div>
+                                <div class="detail-value" id="viewActiveAmount"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Interest Rate:</div>
+                                <div class="detail-value" id="viewActiveInterestRate"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Duration:</div>
+                                <div class="detail-value" id="viewActiveDuration"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Collateral Value:</div>
+                                <div class="detail-value" id="viewActiveCollateralValue"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Collateral Description:</div>
+                                <div class="detail-value" id="viewActiveCollateralDesc"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Remaining Balance:</div>
+                                <div class="detail-value" id="viewActiveRemainingBalance"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Application Date:</div>
+                                <div class="detail-value" id="viewActiveCreatedAt"></div>
+                            </div>
+                            <div class="view-actions">
+                                <button type="button" class="close-btn" onclick="hideViewActiveLoanPopup()">×</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- payment Review -->
+                
+                <div id="paymentReview" class="margin">
+                    <h1>Payment Review</h1>
+                    <p>View and filter payment records for your loans.</p>
+                
+                    <?php if (isset($_SESSION['loan_message'])): ?>
+                        <div class="loan-message"><?php echo htmlspecialchars($_SESSION['loan_message']); ?></div>
+                        <?php unset($_SESSION['loan_message']); ?>
+                    <?php endif; ?>
+                
+                    <div class="loan-filter-container">
+                        <form method="get" action="lenderDashboard.php#paymentReview">
+                            <div class="filter-row">
+                
+                
+                                <div class="filter-group">
+                                    <label for="payment_method">Payment Method:</label>
+                                    <select name="payment_method" id="payment_method" onchange="this.form.submit()">
+                                        <option value="">All Methods</option>
+                                        <?php foreach ($paymentMethods as $method): ?>
+                                            <option value="<?php echo htmlspecialchars($method); ?>" 
+                                                    <?php echo ($paymentMethodFilter === $method) ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($method); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                
+                                <div class="filter-group">
+                                    <label for="date_range">Date Range:</label>
+                                    <select name="date_range" id="date_range" onchange="this.form.submit()">
+                                        <option value="">All Time</option>
+                                        <option value="today" <?php echo (isset($_GET['date_range']) && $_GET['date_range'] === 'today') ? 'selected' : ''; ?>>Today</option>
+                                        <option value="week" <?php echo (isset($_GET['date_range']) && $_GET['date_range'] === 'week') ? 'selected' : ''; ?>>This Week</option>
+                                        <option value="month" <?php echo (isset($_GET['date_range']) && $_GET['date_range'] === 'month') ? 'selected' : ''; ?>>This Month</option>
+                                        <option value="year" <?php echo (isset($_GET['date_range']) && $_GET['date_range'] === 'year') ? 'selected' : ''; ?>>This Year</option>
+                                    </select>
+                                </div>
+                
+                                <div class="filter-group">
+                                    <label for="amount_range">Amount Range:</label>
+                                    <select name="amount_range" id="amount_range" onchange="this.form.submit()">
+                                        <option value="">Any Amount</option>
+                                        <option value="0-5000" <?php echo (isset($_GET['amount_range']) && $_GET['amount_range'] === '0-5000') ? 'selected' : ''; ?>>0 - 5,000</option>
+                                        <option value="5000-20000" <?php echo (isset($_GET['amount_range']) && $_GET['amount_range'] === '5000-20000') ? 'selected' : ''; ?>>5,000 - 20,000</option>
+                                        <option value="20000-50000" <?php echo (isset($_GET['amount_range']) && $_GET['amount_range'] === '20000-50000') ? 'selected' : ''; ?>>20,000 - 50,000</option>
+                                        <option value="50000-100000" <?php echo (isset($_GET['amount_range']) && $_GET['amount_range'] === '50000-100000') ? 'selected' : ''; ?>>50,000 - 100,000</option>
+                                        <option value="100000+" <?php echo (isset($_GET['amount_range']) && $_GET['amount_range'] === '100000+') ? 'selected' : ''; ?>>100,000+</option>
+                                    </select>
+                                </div>
+                
+                                <div class="filter-actions">
+                                    <a href="lenderDashboard.php#paymentReview"><button type="button" class="reset-btn">Reset</button></a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                
+                    <div class="loan-requests-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Payment ID</th>
+                                    <th>Loan ID</th>
+                                    <th>Customer</th>
+                                    <th>Loan Type</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Type</th>
+                                    <th>Date</th>
+                                    <th style="text-align: right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (!empty($payments)): ?>
+                                    <?php foreach ($payments as $payment): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($payment['payment_id']); ?></td>
+                                        <td><?php echo htmlspecialchars($payment['loan_id']); ?></td>
+                                        <td><?php echo htmlspecialchars($payment['customer_name']); ?></td>
+                                        <td><?php echo htmlspecialchars($payment['loan_type']); ?></td>
+                                        <td><?php echo number_format($payment['amount'], 2); ?></td>
+                                        <td><?php echo htmlspecialchars($payment['payment_method']); ?></td>
+                                        <td><?php echo htmlspecialchars($payment['payment_type']); ?></td>
+                                        <td><?php echo date('j M Y', strtotime($payment['payment_date'])); ?></td>
+                                        <td class="action-buttons">
+                                            <button class="view" 
+                                                    data-payment-id="<?php echo htmlspecialchars($payment['payment_id']); ?>"
+                                                    data-loan-id="<?php echo htmlspecialchars($payment['loan_id']); ?>"
+                                                    data-customer="<?php echo htmlspecialchars($payment['customer_name']); ?>"
+                                                    data-loan-type="<?php echo htmlspecialchars($payment['loan_type']); ?>"
+                                                    data-amount="<?php echo htmlspecialchars($payment['amount']); ?>"
+                                                    data-method="<?php echo htmlspecialchars($payment['payment_method']); ?>"
+                                                    data-type="<?php echo htmlspecialchars($payment['payment_type']); ?>"
+                                                    data-date="<?php echo htmlspecialchars($payment['payment_date']); ?>">
+                                                View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td style="color: tomato; font-size: 1.2em;" colspan="10" class="no-data">
+                                            No payment records found
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                
+                    <!-- View Payment Details Popup -->
+                    <div class="popup-overlay3" id="viewPaymentOverlay"></div>
+                    <div class="view-popup" id="viewPaymentPopup">
+                        <h2>Payment Details</h2>
+                        <div class="view-form">
+                            <div class="detail-row">
+                                <div class="detail-label">Payment ID:</div>
+                                <div class="detail-value" id="viewPaymentId"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Loan ID:</div>
+                                <div class="detail-value" id="viewPaymentLoanId"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Customer:</div>
+                                <div class="detail-value" id="viewPaymentCustomer"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Loan Type:</div>
+                                <div class="detail-value" id="viewPaymentLoanType"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Amount:</div>
+                                <div class="detail-value" id="viewPaymentAmount"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Payment Method:</div>
+                                <div class="detail-value" id="viewPaymentMethod"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Payment Type:</div>
+                                <div class="detail-value" id="viewPaymentType"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Payment Date:</div>
+                                <div class="detail-value" id="viewPaymentDate"></div>
+                            </div>
+                            <div class="view-actions">
+                                <button type="button" class="close-btn" onclick="hideViewPaymentPopup()">×</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="filter-group">
-                    <label for="date_range">Date Range:</label>
-                    <select name="date_range" id="date_range" onchange="this.form.submit()">
-                        <option value="">All Time</option>
-                        <option value="today" <?php echo (isset($_GET['date_range']) && $_GET['date_range'] === 'today') ? 'selected' : ''; ?>>Today</option>
-                        <option value="week" <?php echo (isset($_GET['date_range']) && $_GET['date_range'] === 'week') ? 'selected' : ''; ?>>This Week</option>
-                        <option value="month" <?php echo (isset($_GET['date_range']) && $_GET['date_range'] === 'month') ? 'selected' : ''; ?>>This Month</option>
-                        <option value="year" <?php echo (isset($_GET['date_range']) && $_GET['date_range'] === 'year') ? 'selected' : ''; ?>>This Year</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="amount_range">Amount Range:</label>
-                    <select name="amount_range" id="amount_range" onchange="this.form.submit()">
-                        <option value="">Any Amount</option>
-                        <option value="0-5000" <?php echo (isset($_GET['amount_range']) && $_GET['amount_range'] === '0-5000') ? 'selected' : ''; ?>>0 - 5,000</option>
-                        <option value="5000-20000" <?php echo (isset($_GET['amount_range']) && $_GET['amount_range'] === '5000-20000') ? 'selected' : ''; ?>>5,000 - 20,000</option>
-                        <option value="20000-50000" <?php echo (isset($_GET['amount_range']) && $_GET['amount_range'] === '20000-50000') ? 'selected' : ''; ?>>20,000 - 50,000</option>
-                        <option value="50000-100000" <?php echo (isset($_GET['amount_range']) && $_GET['amount_range'] === '50000-100000') ? 'selected' : ''; ?>>50,000 - 100,000</option>
-                        <option value="100000+" <?php echo (isset($_GET['amount_range']) && $_GET['amount_range'] === '100000+') ? 'selected' : ''; ?>>100,000+</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="balance_range">Remaining Balance:</label>
-                    <select name="balance_range" id="balance_range" onchange="this.form.submit()">
-                        <option value="">Any Balance</option>
-                        <option value="0-5000" <?php echo (isset($_GET['balance_range']) && $_GET['balance_range'] === '0-5000') ? 'selected' : ''; ?>>0 - 5,000</option>
-                        <option value="5000-20000" <?php echo (isset($_GET['balance_range']) && $_GET['balance_range'] === '5000-20000') ? 'selected' : ''; ?>>5,000 - 20,000</option>
-                        <option value="20000-50000" <?php echo (isset($_GET['balance_range']) && $_GET['balance_range'] === '20000-50000') ? 'selected' : ''; ?>>20,000 - 50,000</option>
-                        <option value="50000-100000" <?php echo (isset($_GET['balance_range']) && $_GET['balance_range'] === '50000-100000') ? 'selected' : ''; ?>>50,000 - 100,000</option>
-                        <option value="100000+" <?php echo (isset($_GET['balance_range']) && $_GET['balance_range'] === '100000+') ? 'selected' : ''; ?>>100,000+</option>
-                    </select>
-                </div>
-
-                <div class="filter-actions">
-                    <a href="lenderDashboard.php#paymentReview"><button type="button" class="reset-btn">Reset</button></a>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <div class="loan-requests-table">
-        <table>
-            <thead>
-                <tr>
-                    <th>Payment ID</th>
-                    <th>Loan ID</th>
-                    <th>Customer</th>
-                    <th>Loan Type</th>
-                    <th>Amount</th>
-                    <th>Method</th>
-                    <th>Type</th>
-                    <th>Balance</th>
-                    <th>Date</th>
-                    <th style="text-align: right">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (!empty($payments)): ?>
-                    <?php foreach ($payments as $payment): ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($payment['payment_id']); ?></td>
-                        <td><?php echo htmlspecialchars($payment['loan_id']); ?></td>
-                        <td><?php echo htmlspecialchars($payment['customer_name']); ?></td>
-                        <td><?php echo htmlspecialchars($payment['loan_type']); ?></td>
-                        <td><?php echo number_format($payment['amount'], 2); ?></td>
-                        <td><?php echo htmlspecialchars($payment['payment_method']); ?></td>
-                        <td><?php echo htmlspecialchars($payment['payment_type']); ?></td>
-                        <td><?php echo number_format($payment['remaining_balance'], 2); ?></td>
-                        <td><?php echo date('j M Y', strtotime($payment['payment_date'])); ?></td>
-                        <td class="action-buttons">
-                            <button class="view" 
-                                    data-payment-id="<?php echo htmlspecialchars($payment['payment_id']); ?>"
-                                    data-loan-id="<?php echo htmlspecialchars($payment['loan_id']); ?>"
-                                    data-customer="<?php echo htmlspecialchars($payment['customer_name']); ?>"
-                                    data-loan-type="<?php echo htmlspecialchars($payment['loan_type']); ?>"
-                                    data-amount="<?php echo htmlspecialchars($payment['amount']); ?>"
-                                    data-method="<?php echo htmlspecialchars($payment['payment_method']); ?>"
-                                    data-type="<?php echo htmlspecialchars($payment['payment_type']); ?>"
-                                    data-balance="<?php echo htmlspecialchars($payment['remaining_balance']); ?>"
-                                    data-date="<?php echo htmlspecialchars($payment['payment_date']); ?>">
-                                View
-                            </button>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <tr>
-                        <td style="color: tomato; font-size: 1.2em;" colspan="10" class="no-data">
-                            No payment records found
-                        </td>
-                    </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- View Payment Details Popup -->
-    <div class="popup-overlay3" id="viewPaymentOverlay"></div>
-    <div class="view-popup" id="viewPaymentPopup">
-        <h2>Payment Details</h2>
-        <div class="view-form">
-            <div class="detail-row">
-                <div class="detail-label">Payment ID:</div>
-                <div class="detail-value" id="viewPaymentId"></div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Loan ID:</div>
-                <div class="detail-value" id="viewPaymentLoanId"></div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Customer:</div>
-                <div class="detail-value" id="viewPaymentCustomer"></div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Loan Type:</div>
-                <div class="detail-value" id="viewPaymentLoanType"></div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Amount:</div>
-                <div class="detail-value" id="viewPaymentAmount"></div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Payment Method:</div>
-                <div class="detail-value" id="viewPaymentMethod"></div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Payment Type:</div>
-                <div class="detail-value" id="viewPaymentType"></div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Remaining Balance:</div>
-                <div class="detail-value" id="viewPaymentBalance"></div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Payment Date:</div>
-                <div class="detail-value" id="viewPaymentDate"></div>
-            </div>
-            <div class="view-actions">
-                <button type="button" class="close-btn" onclick="hideViewPaymentPopup()">×</button>
-            </div>
-        </div>
-    </div>
-</div>
+                
                 <!-- Notifications -->
                 <!-- <div id="notifications" class="margin">
                     <h1>Notifications</h1>
@@ -1299,7 +1490,9 @@ function showViewLoanPopup(loanId, customer, loanType, amount, interestRate, dur
     document.getElementById('viewCreatedAt').textContent = date.toLocaleDateString('en-US', {
         day: 'numeric',
         month: 'short',
-        year: 'numeric'
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
     });
     
     // Show popup
@@ -1338,6 +1531,57 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<!-- Active Loans -->
+<script>
+    // View Active Loan Popup
+    function showViewActiveLoanPopup(loanId, customer, loanType, amount, interestRate, duration, 
+                                   collateralValue, collateralDesc, remainingBalance, createdAt) {
+        document.getElementById('viewActiveLoanId').textContent = loanId;
+        document.getElementById('viewActiveCustomer').textContent = customer;
+        document.getElementById('viewActiveLoanType').textContent = loanType;
+        document.getElementById('viewActiveAmount').textContent = parseFloat(amount).toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('viewActiveInterestRate').textContent = interestRate + '%';
+        document.getElementById('viewActiveDuration').textContent = duration + ' months';
+        document.getElementById('viewActiveCollateralValue').textContent = parseFloat(collateralValue).toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('viewActiveCollateralDesc').textContent = collateralDesc;
+        document.getElementById('viewActiveRemainingBalance').textContent = parseFloat(remainingBalance).toLocaleString(undefined, {minimumFractionDigits: 2});
+        const date = new Date(createdAt);
+        document.getElementById('viewActiveCreatedAt').textContent = date.toLocaleDateString('en-US', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        document.getElementById('viewActiveLoanOverlay').style.display = 'block';
+        document.getElementById('viewActiveLoanPopup').style.display = 'block';
+    }
+
+    function hideViewActiveLoanPopup() {
+        document.getElementById('viewActiveLoanOverlay').style.display = 'none';
+        document.getElementById('viewActiveLoanPopup').style.display = 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.btn-view-active').forEach(btn => {
+            btn.addEventListener('click', function() {
+                showViewActiveLoanPopup(
+                    this.dataset.loanId,
+                    this.dataset.customer,
+                    this.dataset.loanType,
+                    this.dataset.amount,
+                    this.dataset.interestRate,
+                    this.dataset.duration,
+                    this.dataset.collateralValue,
+                    this.dataset.collateralDesc,
+                    this.dataset.remainingBalance,
+                    this.dataset.createdAt
+                );
+            });
+        });
+        document.getElementById('viewActiveLoanOverlay').addEventListener('click', hideViewActiveLoanPopup);
+    });
+</script>
 
 <script>
 // Show View Payment popup
@@ -1348,15 +1592,16 @@ function showViewPaymentPopup(paymentId, loanId, customer, loanType, amount, met
     document.getElementById('viewPaymentCustomer').textContent = customer;
     document.getElementById('viewPaymentLoanType').textContent = loanType;
     document.getElementById('viewPaymentAmount').textContent = parseFloat(amount).toLocaleString(undefined, {minimumFractionDigits: 2});
-    document.getElementById('viewPaymentMethod').textContent = method;
+    document.getElementById('viewPaymentMethod').textContent = method.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     document.getElementById('viewPaymentType').textContent = type;
-    document.getElementById('viewPaymentBalance').textContent = parseFloat(balance).toLocaleString(undefined, {minimumFractionDigits: 2});
     
     const paymentDate = new Date(date);
     document.getElementById('viewPaymentDate').textContent = paymentDate.toLocaleDateString('en-US', {
         day: 'numeric',
         month: 'short',
-        year: 'numeric'
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
     });
     
     document.getElementById('viewPaymentOverlay').style.display = 'block';

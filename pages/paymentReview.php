@@ -87,7 +87,9 @@ if (!$myconn) {
     JOIN customers ON payments.customer_id = customers.customer_id
     JOIN loans ON payments.loan_id = loans.loan_id
     JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
-    WHERE payments.lender_id = '$lender_id'";
+    WHERE payments.lender_id = '$lender_id'
+        -- to prevent showing payments with payment_type unpaid (this is default in the database when a lender approves request)
+    AND payments.payment_type != 'unpaid'";
 
     // Payment type filter
     if (!empty($paymentTypeFilter)) {
