@@ -32,6 +32,7 @@ if (!$conn) {
     exit();
 }
 
+// Fetches active loans from fetchActiveLoans.php
 require_once 'fetchActiveLoans.php';
 
 // Handle filters

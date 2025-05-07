@@ -1746,14 +1746,17 @@ iframe {
     outline: none;
 
 }
-.filter-group #status, .filter-group #payment_status, .filter-group #payment_method{ 
+.filter-group #status, .filter-group #payment_status, .filter-group #payment_method,
+.filter-group #trans_payment_type, #active_loan_type{ 
     border-radius: .5em 0 0 .5em;
 
 
 }
-.filter-group #loan_type, .filter-group #amount_range, .filter-group #interest_rate
-,.filter-group #date_range, .filter-group #duration_range, .filter-group #collateral_range,
-.filter-group #balance_range
+.filter-group #loan_type, .filter-group #amount_range, .filter-group #interest_rate,
+.filter-group #date_range, .filter-group #duration_range, .filter-group #collateral_range,
+.filter-group #balance_range, .filter-group #trans_payment_method, .filter-group #trans_amount_range, 
+.filter-group #trans_date_range, #active_date_range, #active_duration_range, #active_amount_range,
+#active_collateral_range
 { 
     border-radius: 0;
 

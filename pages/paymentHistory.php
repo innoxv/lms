@@ -1,10 +1,9 @@
 <?php
-error_reporting(E_ALL);
+// Enable error display for debugging
 ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-
-if (session_status() !== PHP_SESSION_ACTIVE) {
+if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
@@ -22,65 +21,7 @@ if (!isset($_SESSION['customer_id'])) {
 
 $customer_id = $_SESSION['customer_id'];
 
-// Handle payment details request
-if (isset($_GET['payment_id'])) {
-    $paymentId = $_GET['payment_id'];
-    
-    // Verify the payment belongs to the customer
-    $verifyQuery = "SELECT customer_id FROM payments WHERE payment_id = ?";
-    $stmt = $myconn->prepare($verifyQuery);
-    $stmt->bind_param("i", $paymentId);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows === 0) {
-        $_SESSION['payment_details_message'] = "Payment not found";
-        $_SESSION['payment_details_message_type'] = "error";
-        header("Location: customerDashboard.php#transactionHistory");
-        exit();
-    }
-    
-    $paymentData = $result->fetch_assoc();
-    if ($paymentData['customer_id'] != $customer_id) {
-        $_SESSION['payment_details_message'] = "You don't have permission to view this payment";
-        $_SESSION['payment_details_message_type'] = "error";
-        header("Location: customerDashboard.php#transactionHistory");
-        exit();
-    }
-
-    // Fetch payment details
-    $paymentDetailsQuery = "SELECT 
-        payments.payment_id,
-        payments.loan_id,
-        payments.amount,
-        payments.payment_method,
-        payments.payment_type,
-        payments.remaining_balance,
-        DATE_FORMAT(payments.payment_date, '%Y-%m-%d %H:%i:%s') as payment_date,
-        lenders.name AS lender_name
-    FROM payments
-    JOIN loans ON payments.loan_id = loans.loan_id
-    JOIN lenders ON payments.lender_id = lenders.lender_id
-    WHERE payments.payment_id = ?";
-    
-    $stmt = $myconn->prepare($paymentDetailsQuery);
-    $stmt->bind_param("i", $paymentId);
-    $stmt->execute();
-    $paymentDetails = $stmt->get_result()->fetch_assoc();
-    
-    if ($paymentDetails) {
-        $_SESSION['payment_details'] = $paymentDetails;
-        header("Location: customerDashboard.php#transactionHistory");
-        exit();
-    } else {
-        $_SESSION['payment_details_message'] = "Failed to load payment details";
-        $_SESSION['payment_details_message_type'] = "error";
-        header("Location: customerDashboard.php#transactionHistory");
-        exit();
-    }
-}
-
-// Fetch payment history
+// Fetch payment history function
 function fetchPaymentHistory($myconn, $customer_id) {
     $query = "SELECT 
         payments.payment_id,
@@ -89,9 +30,14 @@ function fetchPaymentHistory($myconn, $customer_id) {
         payments.payment_method,
         payments.payment_type,
         payments.remaining_balance,
-        DATE_FORMAT(payments.payment_date, '%Y-%m-%d %H:%i:%s') as payment_date
+        DATE_FORMAT(payments.payment_date, '%Y-%m-%d %H:%i:%s') as payment_date,
+        COALESCE(lenders_direct.name, lenders_via_loans.name, 'Unknown') AS lender_name
     FROM payments
-    WHERE payments.customer_id = ?";
+    LEFT JOIN lenders AS lenders_direct ON payments.lender_id = lenders_direct.lender_id
+    LEFT JOIN loans ON payments.loan_id = loans.loan_id
+    LEFT JOIN lenders AS lenders_via_loans ON loans.lender_id = lenders_via_loans.lender_id
+    WHERE payments.customer_id = ?
+    AND payments.payment_type != 'unpaid'";
     
     $params = [$customer_id];
     $types = "i";
@@ -120,14 +66,18 @@ function fetchPaymentHistory($myconn, $customer_id) {
 
     // Amount range filter
     if ($filters['amount_range']) {
-        list($minAmount, $maxAmount) = explode('-', str_replace('+', '-', $filters['amount_range']));
-        $query .= " AND payments.amount >= ?";
-        $params[] = $minAmount;
-        $types .= "d";
-        if (is_numeric($maxAmount)) {
-            $query .= " AND payments.amount <= ?";
-            $params[] = $maxAmount;
+        $rangeParts = explode('-', str_replace('+', '-', $filters['amount_range']));
+        if (count($rangeParts) >= 1 && is_numeric($rangeParts[0])) {
+            $minAmount = $rangeParts[0];
+            $query .= " AND payments.amount >= ?";
+            $params[] = $minAmount;
             $types .= "d";
+            if (isset($rangeParts[1]) && is_numeric($rangeParts[1])) {
+                $maxAmount = $rangeParts[1];
+                $query .= " AND payments.amount <= ?";
+                $params[] = $maxAmount;
+                $types .= "d";
+            }
         }
     }
 
@@ -152,8 +102,20 @@ function fetchPaymentHistory($myconn, $customer_id) {
     $query .= " ORDER BY payments.payment_date DESC";
 
     $stmt = $myconn->prepare($query);
-    $stmt->bind_param($types, ...$params);
-    $stmt->execute();
+    if (!$stmt) {
+        $_SESSION['trans_error_message'] = "Error preparing query.";
+        return [];
+    }
+
+    if (!empty($params)) {
+        $stmt->bind_param($types, ...$params);
+    }
+
+    if (!$stmt->execute()) {
+        $_SESSION['trans_error_message'] = "Error executing query.";
+        return [];
+    }
+
     $result = $stmt->get_result();
     $payments = $result->fetch_all(MYSQLI_ASSOC);
 
@@ -164,6 +126,67 @@ function fetchPaymentHistory($myconn, $customer_id) {
     return $payments;
 }
 
+// Handle payment details request
+if (isset($_GET['payment_id'])) {
+    $paymentId = filter_var($_GET['payment_id'], FILTER_VALIDATE_INT);
+    if (!$paymentId) {
+        $_SESSION['trans_error_message'] = "Invalid payment ID";
+        header("Location: customerDashboard.php#transactionHistory");
+        exit();
+    }
+    
+    // Verify payment belongs to customer
+    $verifyQuery = "SELECT customer_id FROM payments WHERE payment_id = ?";
+    $stmt = $myconn->prepare($verifyQuery);
+    $stmt->bind_param("i", $paymentId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        $_SESSION['trans_error_message'] = "Payment not found";
+        header("Location: customerDashboard.php#transactionHistory");
+        exit();
+    }
+    
+    $paymentData = $result->fetch_assoc();
+    if ($paymentData['customer_id'] != $customer_id) {
+        $_SESSION['trans_error_message'] = "You don't have permission to view this payment";
+        header("Location: customerDashboard.php#transactionHistory");
+        exit();
+    }
+
+    // Fetch payment details
+    $paymentDetailsQuery = "SELECT 
+        payments.payment_id,
+        payments.loan_id,
+        payments.amount,
+        payments.payment_method,
+        payments.payment_type,
+        payments.remaining_balance,
+        DATE_FORMAT(payments.payment_date, '%Y-%m-%d %H:%i:%s') as payment_date,
+        COALESCE(lenders_direct.name, lenders_via_loans.name, 'Unknown') AS lender_name
+    FROM payments
+    LEFT JOIN lenders AS lenders_direct ON payments.lender_id = lenders_direct.lender_id
+    LEFT JOIN loans ON payments.loan_id = loans.loan_id
+    LEFT JOIN lenders AS lenders_via_loans ON loans.lender_id = lenders_via_loans.lender_id
+    WHERE payments.payment_id = ?";
+    
+    $stmt = $myconn->prepare($paymentDetailsQuery);
+    $stmt->bind_param("i", $paymentId);
+    $stmt->execute();
+    $paymentDetails = $stmt->get_result()->fetch_assoc();
+    
+    if ($paymentDetails) {
+        $_SESSION['payment_details'] = $paymentDetails;
+        header("Location: customerDashboard.php#transactionHistory");
+        exit();
+    } else {
+        $_SESSION['trans_error_message'] = "Failed to load payment details";
+        header("Location: customerDashboard.php#transactionHistory");
+        exit();
+    }
+}
+
 // Handle reset filters
 if (isset($_GET['reset']) && $_GET['reset'] === 'true') {
     unset($_SESSION['payment_history']);
@@ -172,7 +195,10 @@ if (isset($_GET['reset']) && $_GET['reset'] === 'true') {
     exit();
 }
 
-// Fetch payment history if not a reset or payment details request
-$paymentHistory = fetchPaymentHistory($myconn, $customer_id);
-
+// Only redirect if accessed directly preventing loop redirects (7may 1709hrs)
+if (basename($_SERVER['PHP_SELF']) === 'paymentHistory.php') {
+    fetchPaymentHistory($myconn, $customer_id);
+    header("Location: customerDashboard.php#transactionHistory");
+    exit();
+}
 ?>
