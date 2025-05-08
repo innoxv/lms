@@ -7,11 +7,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Database connection
-$myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-if (!$myconn) {
-    die("Connection failed: " . mysqli_connect_error());
-}
+// Database config file
+include '../phpconfig/config.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['customer_id'])) {
@@ -22,7 +19,7 @@ if (!isset($_SESSION['customer_id'])) {
 $customer_id = $_SESSION['customer_id'];
 
 // Fetch payment history function
-function fetchPaymentHistory($myconn, $customer_id) {
+function fetchPaymentHistory($myconn, $customer_id, $filters = []) {
     $query = "SELECT 
         payments.payment_id,
         payments.loan_id,
@@ -42,31 +39,31 @@ function fetchPaymentHistory($myconn, $customer_id) {
     $params = [$customer_id];
     $types = "i";
 
-    // Apply filters
-    $filters = [
-        'payment_type' => isset($_GET['payment_type']) ? $_GET['payment_type'] : '',
-        'payment_method' => isset($_GET['payment_method']) ? $_GET['payment_method'] : '',
-        'amount_range' => isset($_GET['amount_range']) ? $_GET['amount_range'] : '',
-        'date_range' => isset($_GET['date_range']) ? $_GET['date_range'] : ''
+    // Initialize filters: prioritize $_GET, then passed $filters, then session, then defaults
+    $appliedFilters = [
+        'payment_type' => isset($_GET['payment_type']) ? $_GET['payment_type'] : ($filters['payment_type'] ?? ($_SESSION['history_filters']['payment_type'] ?? '')),
+        'payment_method' => isset($_GET['payment_method']) ? $_GET['payment_method'] : ($filters['payment_method'] ?? ($_SESSION['history_filters']['payment_method'] ?? '')),
+        'amount_range' => isset($_GET['amount_range']) ? $_GET['amount_range'] : ($filters['amount_range'] ?? ($_SESSION['history_filters']['amount_range'] ?? '')),
+        'date_range' => isset($_GET['date_range']) ? $_GET['date_range'] : ($filters['date_range'] ?? ($_SESSION['history_filters']['date_range'] ?? ''))
     ];
 
     // Payment type filter
-    if ($filters['payment_type']) {
+    if ($appliedFilters['payment_type']) {
         $query .= " AND payments.payment_type = ?";
-        $params[] = $filters['payment_type'];
+        $params[] = $appliedFilters['payment_type'];
         $types .= "s";
     }
 
     // Payment method filter
-    if ($filters['payment_method']) {
+    if ($appliedFilters['payment_method']) {
         $query .= " AND payments.payment_method = ?";
-        $params[] = $filters['payment_method'];
+        $params[] = $appliedFilters['payment_method'];
         $types .= "s";
     }
 
     // Amount range filter
-    if ($filters['amount_range']) {
-        $rangeParts = explode('-', str_replace('+', '-', $filters['amount_range']));
+    if ($appliedFilters['amount_range']) {
+        $rangeParts = explode('-', str_replace('+', '-', $appliedFilters['amount_range']));
         if (count($rangeParts) >= 1 && is_numeric($rangeParts[0])) {
             $minAmount = $rangeParts[0];
             $query .= " AND payments.amount >= ?";
@@ -82,8 +79,8 @@ function fetchPaymentHistory($myconn, $customer_id) {
     }
 
     // Date range filter
-    if ($filters['date_range']) {
-        switch ($filters['date_range']) {
+    if ($appliedFilters['date_range']) {
+        switch ($appliedFilters['date_range']) {
             case 'today':
                 $query .= " AND DATE(payments.payment_date) = CURDATE()";
                 break;
@@ -103,6 +100,7 @@ function fetchPaymentHistory($myconn, $customer_id) {
 
     $stmt = $myconn->prepare($query);
     if (!$stmt) {
+        error_log("Error preparing fetchPaymentHistory query: " . $myconn->error);
         $_SESSION['trans_error_message'] = "Error preparing query.";
         return [];
     }
@@ -112,16 +110,22 @@ function fetchPaymentHistory($myconn, $customer_id) {
     }
 
     if (!$stmt->execute()) {
+        error_log("Error executing fetchPaymentHistory query: " . $stmt->error);
         $_SESSION['trans_error_message'] = "Error executing query.";
         return [];
     }
 
     $result = $stmt->get_result();
     $payments = $result->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
 
-    // Store results and filters in session
+    // Update session filters only if new filters were applied via $_GET
+    if (!empty(array_filter($_GET, fn($key) => in_array($key, ['payment_type', 'payment_method', 'amount_range', 'date_range']), ARRAY_FILTER_USE_KEY))) {
+        $_SESSION['history_filters'] = $appliedFilters;
+    }
+
+    // Store results in session
     $_SESSION['payment_history'] = $payments;
-    $_SESSION['history_filters'] = $filters;
 
     return $payments;
 }
@@ -189,15 +193,15 @@ if (isset($_GET['payment_id'])) {
 
 // Handle reset filters
 if (isset($_GET['reset']) && $_GET['reset'] === 'true') {
+    error_log("Reset triggered in paymentHistory.php");
     unset($_SESSION['payment_history']);
     unset($_SESSION['history_filters']);
     header("Location: customerDashboard.php#transactionHistory");
     exit();
 }
 
-// Only redirect if accessed directly preventing loop redirects (7may 1709hrs)
-if (basename($_SERVER['PHP_SELF']) === 'paymentHistory.php') {
-    fetchPaymentHistory($myconn, $customer_id);
+// Prevent direct access but allow inclusion
+if (basename($_SERVER['PHP_SELF']) === 'paymentHistory.php' && !isset($_GET['payment_id']) && !isset($_GET['reset'])) {
     header("Location: customerDashboard.php#transactionHistory");
     exit();
 }

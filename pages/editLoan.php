@@ -13,13 +13,8 @@ if (!isset($_SESSION['lender_id'])) {
 $user_id = intval($_SESSION['user_id']);
 
 
-//Connect to database
-$conn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-if (!$conn) {
-    $_SESSION['loan_message'] = "Database connection failed";
-    header("Location: lenderDashboard.php");
-    exit();
-}
+// Database config file
+include '../phpconfig/config.php';
 
 //Get and validate offer ID
 $offer_id = intval($_POST['offer_id'] ?? 0);
@@ -30,7 +25,7 @@ $check_query = "SELECT offer_id, loan_type FROM loan_offers
                 WHERE offer_id = $offer_id 
                 AND lender_id = $lender_id 
                 LIMIT 1";
-$check_result = mysqli_query($conn, $check_query);
+$check_result = mysqli_query($myconn, $check_query);
 
 if (!$check_result || mysqli_num_rows($check_result) === 0) {
     $_SESSION['loan_message'] = "Loan offer not found or you don't have permission";
@@ -64,11 +59,11 @@ if (!empty($updates)) {
     $update_query = "UPDATE loan_offers SET " . implode(", ", $updates) . 
                    " WHERE offer_id = $offer_id";
     
-    if (mysqli_query($conn, $update_query)) {
+    if (mysqli_query($myconn, $update_query)) {
         // Log the edit activity
         if (!empty($changes)) {
             $activity = "Edited loan offer, offer ID $offer_id";
-            $conn->query(
+            $myconn->query(
                 "INSERT INTO activity (user_id, activity, activity_time, activity_type)
                 VALUES ($user_id, '$activity', NOW(), 'loan offer edit')"
             );
@@ -84,20 +79,20 @@ if (!empty($updates)) {
                             )
                             WHERE lender_id = $lender_id";
             
-            if (!mysqli_query($conn, $updateLender)) {
-                error_log("Failed to update average interest rate: " . mysqli_error($conn));
+            if (!mysqli_query($myconn, $updateLender)) {
+                error_log("Failed to update average interest rate: " . mysqli_error($myconn));
             }
         }
         
         $_SESSION['loan_message'] = "Loan updated successfully";
     } else {
-        $_SESSION['loan_message'] = "Error updating: " . mysqli_error($conn);
+        $_SESSION['loan_message'] = "Error updating: " . mysqli_error($myconn);
     }
 } else {
     $_SESSION['loan_message'] = "No changes were made";
 }
 
-mysqli_close($conn);
+mysqli_close($myconn);
 header("Location: lenderDashboard.php#createLoan");
 exit();
 ?>

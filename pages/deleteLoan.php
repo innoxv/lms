@@ -13,8 +13,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['lender_id'])) {
 
 $user_id = intval($_SESSION['user_id']);
 
-
-$myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
+// Database config file
+include '../phpconfig/config.php';
 
 // Get offer ID to delete
 $offer_id = $_POST['offer_id'];

@@ -4,8 +4,8 @@ session_start();
 
 // Check if user is logged in before logging out
 if (isset($_SESSION['user_id'])) {
-    // Database connection for logging
-    $myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
+// Database config file
+    include '../phpconfig/config.php';
     
     if ($myconn) {
         // Log the logout activity

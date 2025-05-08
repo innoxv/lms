@@ -11,13 +11,8 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-$myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-
-if (!$myconn) {
-    $_SESSION['loan_message'] = "Connection failed: " . mysqli_connect_error();
-    header("Location: lenderDashboard.php#createLoan");
-    exit();
-}
+// Database config file
+include '../phpconfig/config.php';
 
 $user_id = $_SESSION['user_id'];
 

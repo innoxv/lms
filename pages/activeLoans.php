@@ -10,10 +10,8 @@ if (!isset($_SESSION['lender_id'])) {
 
 $lender_id = $_SESSION['lender_id'];
 
-$myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-if (!$myconn) {
-    die("Connection failed: " . mysqli_connect_error());
-}
+// Database config file
+include '../phpconfig/config.php';
 
 // Get filter parameters
 $activeStatusFilter = $_GET['active_status'] ?? '';

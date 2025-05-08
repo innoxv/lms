@@ -1,10 +1,7 @@
 <?php
 session_start();
-// Database connection
-$conn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-if (!$conn) {
-    die("Connection failed: " . mysqli_connect_error());
-}
+// Database config file
+include '../phpconfig/config.php';
 
 // Check if form was submitted
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -43,11 +40,11 @@ $amount = floatval($_POST['amount']);
 $interest_rate = floatval($_POST['interest_rate']);
 $duration = intval($_POST['duration']);
 $collateral_value = floatval($_POST['collateral_value']);
-$collateral_description = $conn->real_escape_string($_POST['collateral_description']);
+$collateral_description = $myconn->real_escape_string($_POST['collateral_description']);
 $installments = isset($_POST['installments']) ? floatval($_POST['installments']) : 0;
 
 // Verify customer exists
-$customer_result = $conn->query(
+$customer_result = $myconn->query(
     "SELECT customer_id FROM customers WHERE user_id = $user_id LIMIT 1"
 );
 
@@ -61,7 +58,7 @@ if (!$customer_result || $customer_result->num_rows === 0) {
 $customer_id = $customer_result->fetch_assoc()['customer_id'];
 
 // Verify loan offer belongs to lender
-$offer_check = $conn->query(
+$offer_check = $myconn->query(
     "SELECT 1 FROM loan_offers 
     WHERE offer_id = $offer_id 
     AND lender_id = $lender_id 
@@ -76,7 +73,7 @@ if (!$offer_check || $offer_check->num_rows === 0) {
 }
 
 // Check for existing active loan of same type
-$existing_loan_check = $conn->query(
+$existing_loan_check = $myconn->query(
     "SELECT loans.status, loan_offers.loan_type 
     FROM loans
     JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
@@ -107,11 +104,11 @@ $insert_query = "INSERT INTO loans (
     'pending', NOW()
 )";
 
-if ($conn->query($insert_query)) {
+if ($myconn->query($insert_query)) {
     // ACTIVITY LOGGING 
-    $loan_id = $conn->insert_id;
+    $loan_id = $myconn->insert_id;
     $activity_description = "Applied for loan, Loan ID $loan_id";
-    $conn->query(
+    $myconn->query(
         "INSERT INTO activity (user_id, activity, activity_time, activity_type)
         VALUES ($user_id, '$activity_description', NOW(), 'loan application')"
     );
@@ -119,7 +116,7 @@ if ($conn->query($insert_query)) {
     $_SESSION['loan_message'] = "Application submitted successfully";
     $_SESSION['message_type'] = "success";
 } else {
-    $_SESSION['loan_message'] = "Database error: " . $conn->error;
+    $_SESSION['loan_message'] = "Database error: " . $myconn->error;
     $_SESSION['message_type'] = "error";
 }
 

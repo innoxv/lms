@@ -15,13 +15,8 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Database connection
-$myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-
-// Check connection
-if (!$myconn) {
-    die("Connection failed: " . mysqli_connect_error());
-}
+// Database config file
+include '../phpconfig/config.php';
 
 // Fetch current user data from the database
 $userId = $_SESSION['user_id'];  
@@ -731,6 +726,43 @@ mysqli_close($myconn);
     <!-- External JavaScript for validation -->
     <script src="../js/validinput.js"></script>
    
+<script>
+    // ACTIVE NAV LINK
+function updateActiveNavLink() {
+    const navLinks = document.querySelectorAll('.nav ul li a');
+    const currentHash = window.location.hash || '#dashboard'; // Default to #dashboard if no hash
+
+    // Remove .active class from all links
+    navLinks.forEach(link => link.classList.remove('active'));
+
+    // Find the link that matches the current hash and add .active class
+    const activeLink = document.querySelector(`.nav ul li a[href="${currentHash}"]`);
+    if (activeLink) {
+        activeLink.classList.add('active');
+    } else {
+        // Default to Dashboard if no matching link
+        document.querySelector('.nav ul li a[href="#dashboard"]').classList.add('active');
+    }
+}
+
+// Initialize active link on page load and handle hash changes
+document.addEventListener('DOMContentLoaded', function() {
+    updateActiveNavLink();
+
+    // Update active link when hash changes
+    window.addEventListener('hashchange', updateActiveNavLink);
+
+    // Update active link when navigation links are clicked
+    document.querySelectorAll('.nav ul li a').forEach(link => {
+        link.addEventListener('click', function() {
+            // Remove .active from all links
+            document.querySelectorAll('.nav ul li a').forEach(l => l.classList.remove('active'));
+            // Add .active to the clicked link
+            this.classList.add('active');
+        });
+    });
+});
+</script>
 <!-- Pie Chart for user Distribution -->
 <script>
     function initializePieChart() {

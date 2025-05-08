@@ -1,10 +1,7 @@
 <?php
 session_start();
-// Database connection
-$conn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-if (!$conn) {
-    die("Connection failed: " . mysqli_connect_error());
-}
+// Database config file
+include '../phpconfig/config.php';
 
 // Basic checks
 if (!isset($_SESSION['user_id'])) {
@@ -20,7 +17,7 @@ $statusFilter = $_GET['status'] ?? '';
 
 if ($loanId) {
     // Single loan details
-    $stmt = $conn->prepare("SELECT loans.*, loan_offers.loan_type, lenders.name AS lender_name 
+    $stmt = $myconn->prepare("SELECT loans.*, loan_offers.loan_type, lenders.name AS lender_name 
                          FROM loans 
                          JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
                          JOIN lenders ON loans.lender_id = lenders.lender_id
@@ -58,7 +55,7 @@ if (!empty($statusFilter) && in_array($statusFilter, $validStatuses)) {
 
 $query .= " ORDER BY loans.created_at DESC";
 
-$stmt = $conn->prepare($query);
+$stmt = $myconn->prepare($query);
 if (!empty($statusFilter)) {
     $stmt->bind_param("is", $userId, $statusFilter);
 } else {
