@@ -1,14 +1,8 @@
 <?php
 session_start();
 
-// Database connection
-$myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-if (!$myconn) {
-    $_SESSION['loan_message'] = "Connection failed: " . mysqli_connect_error();
-    $_SESSION['message_type'] = 'error';
-    header("Location: lenderDashboard.php#loanRequests");
-    exit();
-}
+// Database config file
+include '../phpconfig/config.php';
 
 // Check if lender is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['lender_id'])) {

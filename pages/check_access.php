@@ -10,11 +10,8 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Database connection
-$myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-if (!$myconn) {
-    die("Connection failed: " . mysqli_connect_error());
-}
+// Database config file
+include '../phpconfig/config.php';
 
 // Get user role and status
 $userId = $_SESSION['user_id'];

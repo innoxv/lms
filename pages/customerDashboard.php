@@ -9,11 +9,8 @@ ini_set('display_startup_errors', 1);
 
 require_once 'check_access.php'; // Checking Restrictions from Admin
 
-// Database connection
-$myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-if (!$myconn) {
-    die("Connection failed: " . mysqli_connect_error());
-}
+// Database config file
+include '../phpconfig/config.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -206,24 +203,29 @@ if (isset($_GET['loan_id'])) {
 }
 
 // Payment Tracking
-// Fetches active loans for payment Tracking
 require_once 'fetchActiveLoans.php';  
-if (!isset($_SESSION['active_loans'])) {
-    $_SESSION['active_loans'] = fetchActiveLoans($myconn, $customer_id);
-}
+// Use existing filters or initialize empty
+$filters = $_SESSION['payment_filters'] ?? [
+    'payment_status' => '',
+    'loan_type' => '',
+    'amount_range' => '',
+    'date_range' => ''
+];
+// Always fetch fresh data with current filters
+$_SESSION['active_loans'] = fetchActiveLoans($myconn, $customer_id, $filters);
 
 // Transaction History
 require_once 'paymentHistory.php';
-if (!isset($_SESSION['payment_history'])) {
-    $_SESSION['payment_history'] = fetchPaymentHistory($myconn, $customer_id);
-}
-
+// Use existing filters or initialize empty
 $historyFilters = $_SESSION['history_filters'] ?? [
     'payment_type' => '',
     'payment_method' => '',
     'amount_range' => '',
     'date_range' => ''
 ];
+// Always fetch fresh data with current filters
+$_SESSION['payment_history'] = fetchPaymentHistory($myconn, $customer_id, $historyFilters);
+
 
 // METRICS AND CHARTS DATA
 // Approve Loans Count
@@ -1038,59 +1040,59 @@ $status = 'active'; // Placeholder for access status
 
                 <!-- Transaction History -->
                 <div id="transactionHistory" class="margin">
-                    <h1>Transaction History</h1>
-                    <p>View all your payment transactions.</p>
-                    <div class="transaction-history-container">
-                        <?php if (isset($_SESSION['trans_error_message'])): ?>
-                            <div class="alert error"><?= htmlspecialchars($_SESSION['trans_error_message']) ?></div>
-                            <?php unset($_SESSION['trans_error_message']); ?>
-                        <?php endif; ?>
-                        <form method="get" action="paymentHistory.php">
-                            <div class="filter-row">
-                                <div class="filter-group">
-                                    <label for="trans_payment_type">Payment Type:</label>
-                                    <select name="payment_type" id="trans_payment_type" onchange="this.form.submit()">
-                                        <option value="">All</option>
-                                        <option value="partial" <?= isset($_SESSION['history_filters']['payment_type']) && $_SESSION['history_filters']['payment_type'] === 'partial' ? 'selected' : '' ?>>Partial</option>
-                                        <option value="full" <?= isset($_SESSION['history_filters']['payment_type']) && $_SESSION['history_filters']['payment_type'] === 'full' ? 'selected' : '' ?>>Full</option>
-                                    </select>
-                                </div>
-                                <div class="filter-group">
-                                    <label for="trans_payment_method">Payment Method:</label>
-                                    <select name="payment_method" id="trans_payment_method" onchange="this.form.submit()">
-                                        <option value="">All Methods</option>
-                                        <option value="mpesa" <?= isset($_SESSION['history_filters']['payment_method']) && $_SESSION['history_filters']['payment_method'] === 'mpesa' ? 'selected' : '' ?>>M-Pesa</option>
-                                        <option value="bank_transfer" <?= isset($_SESSION['history_filters']['payment_method']) && $_SESSION['history_filters']['payment_method'] === 'bank_transfer' ? 'selected' : '' ?>>Bank Transfer</option>
-                                        <option value="credit_card" <?= isset($_SESSION['history_filters']['payment_method']) && $_SESSION['history_filters']['payment_method'] === 'credit_card' ? 'selected' : '' ?>>Credit Card</option>
-                                        <option value="debit_card" <?= isset($_SESSION['history_filters']['payment_method']) && $_SESSION['history_filters']['payment_method'] === 'debit_card' ? 'selected' : '' ?>>Debit Card</option>
-                                    </select>
-                                </div>
-                                <div class="filter-group">
-                                    <label for="trans_amount_range">Amount Range:</label>
-                                    <select name="amount_range" id="trans_amount_range" onchange="this.form.submit()">
-                                        <option value="">Any Amount</option>
-                                        <option value="0-5000" <?= isset($_SESSION['history_filters']['amount_range']) && $_SESSION['history_filters']['amount_range'] === '0-5000' ? 'selected' : '' ?>>0 - 5,000</option>
-                                        <option value="5000-20000" <?= isset($_SESSION['history_filters']['amount_range']) && $_SESSION['history_filters']['amount_range'] === '5000-20000' ? 'selected' : '' ?>>5,000 - 20,000</option>
-                                        <option value="20000-50000" <?= isset($_SESSION['history_filters']['amount_range']) && $_SESSION['history_filters']['amount_range'] === '20000-50000' ? 'selected' : '' ?>>20,000 - 50,000</option>
-                                        <option value="50000-100000" <?= isset($_SESSION['history_filters']['amount_range']) && $_SESSION['history_filters']['amount_range'] === '50000-100000' ? 'selected' : '' ?>>50,000 - 100,000</option>
-                                        <option value="100000+" <?= isset($_SESSION['history_filters']['amount_range']) && $_SESSION['history_filters']['amount_range'] === '100000+' ? 'selected' : '' ?>>100,000+</option>
-                                    </select>
-                                </div>
-                                <div class="filter-group">
-                                    <label for="trans_date_range">Payment Date:</label>
-                                    <select name="date_range" id="trans_date_range" onchange="this.form.submit()">
-                                        <option value="">All Time</option>
-                                        <option value="today" <?= isset($_SESSION['history_filters']['date_range']) && $_SESSION['history_filters']['date_range'] === 'today' ? 'selected' : '' ?>>Today</option>
-                                        <option value="week" <?= isset($_SESSION['history_filters']['date_range']) && $_SESSION['history_filters']['date_range'] === 'week' ? 'selected' : '' ?>>This Week</option>
-                                        <option value="month" <?= isset($_SESSION['history_filters']['date_range']) && $_SESSION['history_filters']['date_range'] === 'month' ? 'selected' : '' ?>>This Month</option>
-                                        <option value="year" <?= isset($_SESSION['history_filters']['date_range']) && $_SESSION['history_filters']['date_range'] === 'year' ? 'selected' : '' ?>>This Year</option>
-                                    </select>
-                                </div>
-                                <div class="filter-actions">
-                                    <a href="paymentHistory.php?reset=true"><button type="button" class="reset-btn">Reset</button></a>
-                                </div>
-                            </div>
-                        </form>
+    <h1>Transaction History</h1>
+    <p>View all your payment transactions.</p>
+    <div class="transaction-history-container">
+        <?php if (isset($_SESSION['trans_error_message'])): ?>
+            <div class="alert error"><?= htmlspecialchars($_SESSION['trans_error_message']) ?></div>
+            <?php unset($_SESSION['trans_error_message']); ?>
+        <?php endif; ?>
+        <form method="get" action="customerDashboard.php#transactionHistory">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="trans_payment_type">Payment Type:</label>
+                    <select name="payment_type" id="trans_payment_type" onchange="this.form.submit()">
+                        <option value="">All</option>
+                        <option value="partial" <?= isset($_GET['payment_type']) && $_GET['payment_type'] === 'partial' ? 'selected' : '' ?>>Partial</option>
+                        <option value="full" <?= isset($_GET['payment_type']) && $_GET['payment_type'] === 'full' ? 'selected' : '' ?>>Full</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="trans_payment_method">Payment Method:</label>
+                    <select name="payment_method" id="trans_payment_method" onchange="this.form.submit()">
+                        <option value="">All Methods</option>
+                        <option value="mpesa" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'mpesa' ? 'selected' : '' ?>>M-Pesa</option>
+                        <option value="bank_transfer" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'bank_transfer' ? 'selected' : '' ?>>Bank Transfer</option>
+                        <option value="credit_card" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'credit_card' ? 'selected' : '' ?>>Credit Card</option>
+                        <option value="debit_card" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'debit_card' ? 'selected' : '' ?>>Debit Card</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="trans_amount_range">Amount Range:</label>
+                    <select name="amount_range" id="trans_amount_range" onchange="this.form.submit()">
+                        <option value="">Any Amount</option>
+                        <option value="0-5000" <?= isset($_GET['amount_range']) && $_GET['amount_range'] === '0-5000' ? 'selected' : '' ?>>0 - 5,000</option>
+                        <option value="5000-20000" <?= isset($_GET['amount_range']) && $_GET['amount_range'] === '5000-20000' ? 'selected' : '' ?>>5,000 - 20,000</option>
+                        <option value="20000-50000" <?= isset($_GET['amount_range']) && $_GET['amount_range'] === '20000-50000' ? 'selected' : '' ?>>20,000 - 50,000</option>
+                        <option value="50000-100000" <?= isset($_GET['amount_range']) && $_GET['amount_range'] === '50000-100000' ? 'selected' : '' ?>>50,000 - 100,000</option>
+                        <option value="100000+" <?= isset($_GET['amount_range']) && $_GET['amount_range'] === '100000+' ? 'selected' : '' ?>>100,000+</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="trans_date_range">Payment Date:</label>
+                    <select name="date_range" id="trans_date_range" onchange="this.form.submit()">
+                        <option value="">All Time</option>
+                        <option value="today" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'today' ? 'selected' : '' ?>>Today</option>
+                        <option value="week" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'week' ? 'selected' : '' ?>>This Week</option>
+                        <option value="month" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'month' ? 'selected' : '' ?>>This Month</option>
+                        <option value="year" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'year' ? 'selected' : '' ?>>This Year</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <a href="paymentHistory.php?reset=true"><button type="button" class="reset-btn">Reset</button></a>
+                </div>
+            </div>
+        </form>
                         <div class="active-loans-table">
                             <?php
                             if (!isset($_SESSION['payment_history'])) {
@@ -1637,6 +1639,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Initialize popup functionality
     initPopups();
 
+    
     // Loan Application Messages Handling - shows message before popup disappears
     const popup = document.getElementById('loanPopup');
     const alert = popup?.querySelector('.alert');
@@ -1677,6 +1680,43 @@ document.addEventListener('DOMContentLoaded', function () {
             }, 500);
         }, 3000);
     }
+});
+
+
+// ACTIVE NAV LINK
+function updateActiveNavLink() {
+    const navLinks = document.querySelectorAll('.nav ul li a');
+    const currentHash = window.location.hash || '#dashboard'; // Default to #dashboard if no hash
+
+    // Remove .active class from all links
+    navLinks.forEach(link => link.classList.remove('active'));
+
+    // Find the link that matches the current hash and add .active class
+    const activeLink = document.querySelector(`.nav ul li a[href="${currentHash}"]`);
+    if (activeLink) {
+        activeLink.classList.add('active');
+    } else {
+        // Default to Dashboard if no matching link
+        document.querySelector('.nav ul li a[href="#dashboard"]').classList.add('active');
+    }
+}
+
+// Initialize active link on page load and handle hash changes
+document.addEventListener('DOMContentLoaded', function() {
+    updateActiveNavLink();
+
+    // Update active link when hash changes
+    window.addEventListener('hashchange', updateActiveNavLink);
+
+    // Update active link when navigation links are clicked
+    document.querySelectorAll('.nav ul li a').forEach(link => {
+        link.addEventListener('click', function() {
+            // Remove .active from all links
+            document.querySelectorAll('.nav ul li a').forEach(l => l.classList.remove('active'));
+            // Add .active to the clicked link
+            this.classList.add('active');
+        });
+    });
 });
 
 // POPUP MANAGEMENT

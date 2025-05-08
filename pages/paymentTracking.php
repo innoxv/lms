@@ -23,14 +23,8 @@ if (!$customerId) {
     exit();
 }
 
-// Database connection
-$conn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-if (!$conn) {
-    $_SESSION['payment_message'] = "Connection failed: " . mysqli_connect_error();
-    $_SESSION['payment_message_type'] = 'error';
-    header("Location: customerDashboard.php#paymentTracking");
-    exit();
-}
+// Database config file
+include '../phpconfig/config.php';
 
 // Fetches active loans from fetchActiveLoans.php
 require_once 'fetchActiveLoans.php';
@@ -56,14 +50,14 @@ if (isset($_GET['reset']) && $_GET['reset'] === 'true') {
 }
 
 // Fetch active loans
-$_SESSION['active_loans'] = fetchActiveLoans($conn, $customerId, $filters);
+$_SESSION['active_loans'] = fetchActiveLoans($myconn, $customerId, $filters);
 $_SESSION['payment_filters'] = $filters;
 
 // Handle payment submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
     $loanId = intval($_POST['loan_id']);
     $amount = floatval($_POST['amount']);
-    $paymentMethod = $conn->real_escape_string($_POST['payment_method']);
+    $paymentMethod = $myconn->real_escape_string($_POST['payment_method']);
 
     // Verify loan exists and belongs to the customer
     $verifyQuery = "SELECT 
@@ -74,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
         loans.duration
     FROM loans 
     WHERE loans.loan_id = ? AND loans.status = 'approved'";
-    $stmt = $conn->prepare($verifyQuery);
+    $stmt = $myconn->prepare($verifyQuery);
     $stmt->bind_param("i", $loanId);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -99,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
         $paymentSumQuery = "SELECT COALESCE(SUM(amount), 0) AS total_paid 
                            FROM payments 
                            WHERE loan_id = ?";
-        $stmt = $conn->prepare($paymentSumQuery);
+        $stmt = $myconn->prepare($paymentSumQuery);
         $stmt->bind_param("i", $loanId);
         $stmt->execute();
         $totalPaid = $stmt->get_result()->fetch_assoc()['total_paid'];
@@ -123,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
                 loan_id, customer_id, lender_id, amount, 
                 payment_method, payment_type, remaining_balance
             ) VALUES (?, ?, ?, ?, ?, ?, ?)";
-            $stmt = $conn->prepare($insertQuery);
+            $stmt = $myconn->prepare($insertQuery);
             $stmt->bind_param(
                 "iiidssd",
                 $loanId,
@@ -143,21 +137,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
                 $activity = "Processed payment of $amount for loan ID $loanId";
                 $activityQuery = "INSERT INTO activity (user_id, activity, activity_time, activity_type) 
                                  VALUES (?, ?, NOW(), 'payment')";
-                $stmt = $conn->prepare($activityQuery);
+                $stmt = $myconn->prepare($activityQuery);
                 $stmt->bind_param("is", $userId, $activity);
                 $stmt->execute();
 
                 // Refresh active loans
-                $_SESSION['active_loans'] = fetchActiveLoans($conn, $customerId, $filters);
+                $_SESSION['active_loans'] = fetchActiveLoans($myconn, $customerId, $filters);
             } else {
-                $_SESSION['payment_message'] = "Error processing payment: " . $conn->error;
+                $_SESSION['payment_message'] = "Error processing payment: " . $myconn->error;
                 $_SESSION['payment_message_type'] = 'error';
             }
         }
     }
 }
 
-mysqli_close($conn);
+mysqli_close($myconn);
 header("Location: customerDashboard.php#paymentTracking");
 exit();
 ?>

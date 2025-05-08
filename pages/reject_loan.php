@@ -1,10 +1,8 @@
 <?php
 session_start();
 
-$myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-if (!$myconn) {
-    die("Connection failed: " . mysqli_connect_error());
-}
+// Database config file
+include '../phpconfig/config.php';
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: signin.html");

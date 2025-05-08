@@ -7,15 +7,9 @@ error_reporting(E_ALL);  // Reports all PHP errors
 // Function to start or resume the session to store user data across pages
 session_start();
 
-// Database connection setup:
-// $myconn is a global variable that creates a connection to MySQL database using mysqli_connect() function that opens a new connection to the MySQL server
-// Parameters: server, username, password, database 
-$myconn = mysqli_connect('localhost', 'inno', 'figureitouttoo', 'LMSDB');
+// Database config file
+include '../phpconfig/config.php';
 
-// Check if connection failed
-if (!$myconn) {
-    die("Connection failed!");  // Terminate script if no database connection
-}
 
 // Check if form was submitted using POST method
 // $_SERVER["REQUEST_METHOD"] checks the HTTP request method

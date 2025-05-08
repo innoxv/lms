@@ -1,7 +1,7 @@
 
 <!-- This is for Payment Tracking to fetch Active Loans -->
 <?php
-function fetchActiveLoans($conn, $customerId, $filters = []) {
+function fetchActiveLoans($myconn, $customerId, $filters = []) {
     $query = "SELECT 
         loans.loan_id,
         loan_offers.loan_type,
@@ -60,9 +60,9 @@ function fetchActiveLoans($conn, $customerId, $filters = []) {
 
     $query .= " GROUP BY loans.loan_id ORDER BY loans.created_at DESC";
 
-    $stmt = $conn->prepare($query);
+    $stmt = $myconn->prepare($query);
     if (!$stmt) {
-        error_log("Query preparation failed: " . $conn->error);
+        error_log("Query preparation failed: " . $myconn->error);
         return [];
     }
 

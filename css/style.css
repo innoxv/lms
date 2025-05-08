@@ -616,11 +616,12 @@ img{
 .top li a{
     color: lightgray;
     font-weight: 700;
+    padding: .3em .1em;
 }
 .bottom li a{
     color: #74C0FC;
     font-weight: 700;
-
+    padding: .3em .1em;
 }
 .top li a:hover{
     color: #74C0FC;
@@ -631,6 +632,29 @@ img{
     transition: .2s ease-in-out;
 
 }
+
+/* Active state for top navigation links */
+.top li a.active {
+    color: #74C0FC; 
+    background-color: rgba(0, 0, 0, 0.3);
+    border-left: 3px solid #74C0FC; 
+    padding-left: 0.7em; 
+}
+
+/* Active state for bottom navigation links */
+.bottom li a.active {
+    color: lightgray; 
+    background-color: rgba(0, 0, 0, 0.3);
+    border-left: 3px solid lightgray; 
+    padding-left: 0.7em; 
+
+}
+
+/* Smooth transition for active state changes */
+.nav ul li a {
+    transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-left 0.2s ease-in-out, padding-left 0.2s ease-in-out;
+}
+
 /* Show the Dashboard section by default */
 #dashboard {
     display: block;

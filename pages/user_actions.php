@@ -12,11 +12,8 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Database connection
-$myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-if (!$myconn) {
-    die("Connection failed: " . mysqli_connect_error());
-}
+// Database config file
+include '../phpconfig/config.php';
 
 $userId = $_POST['user_id'] ?? 0;
 $action = $_POST['action'] ?? '';

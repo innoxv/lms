@@ -7,15 +7,8 @@ error_reporting(E_ALL);
 // Start the session
 session_start();
 
-// Database connection
-// $myconn is a global variable that creates a connection to MySQL database using mysqli_connect() function that opens a new connection to the MySQL server
-// Parameters: server, username, password, database 
-$myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
-
-// Check connection
-if (!$myconn) {
-    die("Connection failed");
-}
+// Database config file
+include '../phpconfig/config.php';
 
 // checks if form was submitted (POST request exists) and the specific submit button was clicked
 if (isset($_POST['submit'])) {  // isset is a PHP function that determines if a variable is considered set

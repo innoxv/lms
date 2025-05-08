@@ -23,8 +23,9 @@ if (!isset($_SESSION['user_id'])) {
 $payments = [];
 $paymentMethods = [];
 
-// Database connection
-$myconn = mysqli_connect('localhost', 'root', 'figureitout', 'LMSDB');
+// Database config file
+include '../phpconfig/config.php';
+
 if (!$myconn) {
     error_log("Database connection failed: " . mysqli_connect_error());
     $_SESSION['loan_message'] = "Database connection error. Please try again later.";
