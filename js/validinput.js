@@ -347,3 +347,147 @@ function validateFormUsers() {
 }
 
 
+// Loan Application Form Validation
+function validateLoanApplicationForm() {
+    displayError("");
+
+
+    // Validate Amount Needed
+    const amountNeeded = document.getElementById("amountNeeded").value.trim();
+    if (amountNeeded === "" || isNaN(amountNeeded) || parseFloat(amountNeeded) <= 0) {
+        displayError("Amount needed must be a positive number.");
+        document.getElementById("amountNeeded").focus();
+        return false;
+    }
+
+    // Validate Duration
+    const duration = document.getElementById("duration").value.trim();
+    if (duration === "" || isNaN(duration) || parseInt(duration, 10) <= 0) {
+        displayError("Duration must be a positive number.");
+        document.getElementById("duration").focus();
+        return false;
+    }
+
+    // Validate Collateral Value
+    const collateralValue = document.getElementById("collateralValue").value.trim();
+    if (collateralValue === "" || isNaN(collateralValue) || parseFloat(collateralValue) <= 0) {
+        displayError("Collateral value must be a positive number.");
+        document.getElementById("collateralValue").focus();
+        return false;
+    }
+
+    // Validate Collateral Description
+    const collateralDesc = document.getElementById("collateralDesc").value.trim();
+    if (collateralDesc === "") {
+        displayError("Please enter a collateral description.");
+        document.getElementById("collateralDesc").focus();
+        return false;
+    }
+
+    // Validate Amount Needed against Maximum Amount
+    const maxAmountText = document.getElementById("displayMaxAmount").innerText.replace(/,/g, '');
+    const maxAmount = parseFloat(maxAmountText);
+    if (isNaN(maxAmount)) {
+        displayError("Invalid maximum amount value.");
+        return false;
+    }
+    if (parseFloat(amountNeeded) > maxAmount) {
+        displayError("Amount needed cannot exceed the maximum amount.");
+        document.getElementById("amountNeeded").focus();
+        return false;
+    }
+
+    // Validate Duration against Maximum Duration
+    const maxDurationText = document.getElementById("displayMaxDuration").innerText.replace(/[^0-9]/g, '');
+    const maxDuration = parseInt(maxDurationText, 10);
+    if (isNaN(maxDuration)) {
+        displayError("Invalid maximum duration value.");
+        return false;
+    }
+    if (parseInt(duration, 10) > maxDuration) {
+        displayError("Duration cannot exceed the maximum duration.");
+        document.getElementById("duration").focus();
+        return false;
+    }
+
+    return true;
+}
+
+
+// Payment Pop Up Validation
+// Display error message for Payment Form (id="payment_error")
+function displayPaymentError(message, autoClearTimeout = 2000) {
+    const errorField = document.getElementById('payment_error');
+    if (errorField) {
+        errorField.innerText = message;
+        if (message && autoClearTimeout > 0) {
+            setTimeout(() => clearPaymentError(), autoClearTimeout);
+        }
+    } else {
+        console.error("Error div with ID 'payment_error' not found!");
+    }
+}
+
+// Clear error message for Payment Form (id="payment_error")
+function clearPaymentError() {
+    const errorField = document.getElementById('payment_error');
+    if (errorField) {
+        errorField.innerText = "";
+    }
+}
+
+function validatePaymentForm() {
+    displayPaymentError(""); // Clear previous error
+
+    // Validate Payment Amount
+    const paymentAmountInput = document.getElementById("payment_amount");
+    if (!paymentAmountInput) {
+        displayPaymentError("Payment amount input field is missing. Please try again.");
+        return false;
+    }
+
+    const paymentAmount = paymentAmountInput.value.trim();
+    if (paymentAmount === "" || isNaN(paymentAmount) || parseFloat(paymentAmount) <= 0) {
+        displayPaymentError("Payment amount must be a positive number.");
+        paymentAmountInput.focus();
+        return false;
+    }
+
+    // Validate Payment Amount against Balance
+    const balanceElement = document.getElementById("payment_balance");
+    if (!balanceElement) {
+        displayPaymentError("Balance field is missing. Please try again.");
+        return false;
+    }
+
+    // Parse balance and validate
+    const balanceText = balanceElement.value.replace(/[^0-9.]/g, '');
+    const balance = parseFloat(balanceText);
+    if (isNaN(balance) || balance < 0) {
+        displayPaymentError("Invalid balance value. Please contact support.");
+        return false;
+    }
+
+    const paymentAmountValue = parseFloat(paymentAmount);
+    if (paymentAmountValue > balance) {
+        displayPaymentError("Payment amount cannot exceed the remaining balance.");
+        paymentAmountInput.focus();
+        return false;
+    }
+
+    // Validate Payment Method
+    const paymentMethodInput = document.getElementById("payment_method");
+    if (!paymentMethodInput) {
+        displayPaymentError("Payment method field is missing. Please try again.");
+        return false;
+    }
+
+    const paymentMethod = paymentMethodInput.value.trim();
+    if (paymentMethod === "") {
+        displayPaymentError("Please select a payment method.");
+        paymentMethodInput.focus();
+        return false;
+    }
+
+    return true; // Validation passed
+}
