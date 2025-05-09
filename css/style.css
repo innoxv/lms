@@ -668,10 +668,11 @@ img{
 ::-webkit-scrollbar {
     width: .6em; 
 }
-#loanHistory{
+#loanHistory, #transactionHistory, #paymentTracking{
     height: 100%;
-    /* overflow-y: auto; */
+    overflow-y: auto;
 }
+
 
 /* Scrollbar Track (background) */
 ::-webkit-scrollbar-track {

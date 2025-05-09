@@ -369,7 +369,7 @@ mysqli_close($myconn);
                 </ul>
             </div>
             <div class="display">
-                <!-- Apply for Loan -->
+                <!-- Create Loan Offer -->
                 <div id="createLoan" class="margin">
                     <div class="loan-split">
                         <div class="loan-split-left">

@@ -624,7 +624,7 @@ $status = 'active'; // Placeholder for access status
                                 <?php endif; ?>
                             <?php endif; ?>
                         </div>
-
+                                    <!-- Loan Application Form -->
                         <div class="popup-overlay2" id="loanPopup" style="display: none;">
                             <div class="popup-content">
                                 <h2>Loan Application</h2>
@@ -637,7 +637,7 @@ $status = 'active'; // Placeholder for access status
                                     unset($_SESSION['message_type']);
                                     ?>
                                 <?php endif; ?>
-                                <form id="loanApplicationForm" action="applyLoan.php" method="post">
+                                <form id="loanApplicationForm" action="applyLoan.php" method="post" onsubmit="return validateLoanApplicationForm()">
                                     <div class="form-group">
                                         <input type="hidden" id="offerId" name="offer_id">
                                         <input type="hidden" id="lenderId" name="lender_id">
@@ -663,28 +663,31 @@ $status = 'active'; // Placeholder for access status
                                         <label>Maximum Duration:</label>
                                         <div id="displayMaxDuration" class="display-info"></div>
                                     </div>
+                                    <!-- Error Message -->
+                                    <div id="error" style="color: tomato;font-weight:700"></div>
+
                                     <div class="form-group">
                                         <label for="amountNeeded">Amount Needed (KES):*</label>
-                                        <input type="text" id="amountNeeded" name="amount" required>
+                                        <input type="text" id="amountNeeded" name="amount">
                                     </div>
                                     <div class="form-group">
                                         <label for="duration">Duration (months):*</label>
-                                        <input type="text" id="duration" name="duration" required>
+                                        <input type="text" id="duration" name="duration">
                                     </div>
                                     <div class="form-group">
                                         <label for="installments">Monthly Installment (KES):</label>
-                                        <input style="border-bottom: none;" type="text" id="installments" name="installments" placeholder="auto-calculated" readonly>
+                                        <input style="border-bottom: none;" type="text" id="installments" name="installments" placeholder="auto-calculated">
                                     </div>
                                     <div class="form-group">
                                         <label for="collateralValue">Collateral Value (KES):*</label>
-                                        <input type="text" id="collateralValue" name="collateral_value" required >
+                                        <input type="text" id="collateralValue" name="collateral_value">
                                     </div>
                                     <div class="form-group">
                                         <label for="collateralDesc">Collateral Description:*</label>
-                                        <textarea id="collateralDesc" name="collateral_description" placeholder="enter a short description" required></textarea>
+                                        <textarea id="collateralDesc" name="collateral_description" placeholder="enter a short description" ></textarea>
                                     </div>
                                     <div class="form-actions">
-                                        <button type="button" class="cancel-btn" id="cancelBtn">Cancel</button>
+                                        <button type="reset" class="cancel-btn" id="cancelBtn">Cancel</button>
                                         <button type="submit" class="submit-btn">Submit Application</button>
                                     </div>
                                 </form>
@@ -995,7 +998,7 @@ $status = 'active'; // Placeholder for access status
                     <div class="popup-content3">
                         <h2>Make Payment</h2>
                         <button class="close-btn" onclick="closePaymentPopup()">×</button>
-                        <form id="paymentForm" method="post" action="paymentTracking.php#paymentTracking">
+                        <form id="paymentForm" method="post" action="paymentTracking.php#paymentTracking" onsubmit="return validatePaymentForm()">
                             <input type="hidden" name="loan_id" id="payment_loan_id">
                             <input type="hidden" name="remaining_balance" id="payment_remaining_balance">
                             <div class="form-group">
@@ -1014,13 +1017,17 @@ $status = 'active'; // Placeholder for access status
                                 <label for="payment_balance">Balance:</label>
                                 <input style="border: none;" type="text" id="payment_balance" readonly>
                             </div>
+
+                            <!-- Error Message -->
+                            <div id="payment_error" style="color: tomato;font-weight:700"></div>
+
                             <div class="form-group">
                                 <label for="payment_amount">Payment Amount:*</label>
-                                <input type="text" id="payment_amount" name="amount" min="1" required>
+                                <input type="text" id="payment_amount" name="amount" min="1" >
                             </div>
                             <div class="form-group">
                                 <label for="payment_method">Payment Method:*</label>
-                                <select class="select" id="payment_method" name="payment_method" required>
+                                <select class="select" id="payment_method" name="payment_method" >
                                     <option value="">Select Method</option>
                                     <option value="mpesa">M-Pesa</option>
                                     <option value="bank_transfer">Bank Transfer</option>
@@ -1040,59 +1047,59 @@ $status = 'active'; // Placeholder for access status
 
                 <!-- Transaction History -->
                 <div id="transactionHistory" class="margin">
-    <h1>Transaction History</h1>
-    <p>View all your payment transactions.</p>
-    <div class="transaction-history-container">
-        <?php if (isset($_SESSION['trans_error_message'])): ?>
-            <div class="alert error"><?= htmlspecialchars($_SESSION['trans_error_message']) ?></div>
-            <?php unset($_SESSION['trans_error_message']); ?>
-        <?php endif; ?>
-        <form method="get" action="customerDashboard.php#transactionHistory">
-            <div class="filter-row">
-                <div class="filter-group">
-                    <label for="trans_payment_type">Payment Type:</label>
-                    <select name="payment_type" id="trans_payment_type" onchange="this.form.submit()">
-                        <option value="">All</option>
-                        <option value="partial" <?= isset($_GET['payment_type']) && $_GET['payment_type'] === 'partial' ? 'selected' : '' ?>>Partial</option>
-                        <option value="full" <?= isset($_GET['payment_type']) && $_GET['payment_type'] === 'full' ? 'selected' : '' ?>>Full</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="trans_payment_method">Payment Method:</label>
-                    <select name="payment_method" id="trans_payment_method" onchange="this.form.submit()">
-                        <option value="">All Methods</option>
-                        <option value="mpesa" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'mpesa' ? 'selected' : '' ?>>M-Pesa</option>
-                        <option value="bank_transfer" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'bank_transfer' ? 'selected' : '' ?>>Bank Transfer</option>
-                        <option value="credit_card" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'credit_card' ? 'selected' : '' ?>>Credit Card</option>
-                        <option value="debit_card" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'debit_card' ? 'selected' : '' ?>>Debit Card</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="trans_amount_range">Amount Range:</label>
-                    <select name="amount_range" id="trans_amount_range" onchange="this.form.submit()">
-                        <option value="">Any Amount</option>
-                        <option value="0-5000" <?= isset($_GET['amount_range']) && $_GET['amount_range'] === '0-5000' ? 'selected' : '' ?>>0 - 5,000</option>
-                        <option value="5000-20000" <?= isset($_GET['amount_range']) && $_GET['amount_range'] === '5000-20000' ? 'selected' : '' ?>>5,000 - 20,000</option>
-                        <option value="20000-50000" <?= isset($_GET['amount_range']) && $_GET['amount_range'] === '20000-50000' ? 'selected' : '' ?>>20,000 - 50,000</option>
-                        <option value="50000-100000" <?= isset($_GET['amount_range']) && $_GET['amount_range'] === '50000-100000' ? 'selected' : '' ?>>50,000 - 100,000</option>
-                        <option value="100000+" <?= isset($_GET['amount_range']) && $_GET['amount_range'] === '100000+' ? 'selected' : '' ?>>100,000+</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="trans_date_range">Payment Date:</label>
-                    <select name="date_range" id="trans_date_range" onchange="this.form.submit()">
-                        <option value="">All Time</option>
-                        <option value="today" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'today' ? 'selected' : '' ?>>Today</option>
-                        <option value="week" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'week' ? 'selected' : '' ?>>This Week</option>
-                        <option value="month" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'month' ? 'selected' : '' ?>>This Month</option>
-                        <option value="year" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'year' ? 'selected' : '' ?>>This Year</option>
-                    </select>
-                </div>
-                <div class="filter-actions">
-                    <a href="paymentHistory.php?reset=true"><button type="button" class="reset-btn">Reset</button></a>
-                </div>
-            </div>
-        </form>
+                    <h1>Transaction History</h1>
+                    <p>View all your payment transactions.</p>
+                    <div class="transaction-history-container">
+                        <?php if (isset($_SESSION['trans_error_message'])): ?>
+                            <div class="alert error"><?= htmlspecialchars($_SESSION['trans_error_message']) ?></div>
+                            <?php unset($_SESSION['trans_error_message']); ?>
+                        <?php endif; ?>
+                        <form method="get" action="customerDashboard.php#transactionHistory">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label for="trans_payment_type">Payment Type:</label>
+                                    <select name="payment_type" id="trans_payment_type" onchange="this.form.submit()">
+                                        <option value="">All</option>
+                                        <option value="partial" <?= isset($_GET['payment_type']) && $_GET['payment_type'] === 'partial' ? 'selected' : '' ?>>Partial</option>
+                                        <option value="full" <?= isset($_GET['payment_type']) && $_GET['payment_type'] === 'full' ? 'selected' : '' ?>>Full</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="trans_payment_method">Payment Method:</label>
+                                    <select name="payment_method" id="trans_payment_method" onchange="this.form.submit()">
+                                        <option value="">All Methods</option>
+                                        <option value="mpesa" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'mpesa' ? 'selected' : '' ?>>M-Pesa</option>
+                                        <option value="bank_transfer" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'bank_transfer' ? 'selected' : '' ?>>Bank Transfer</option>
+                                        <option value="credit_card" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'credit_card' ? 'selected' : '' ?>>Credit Card</option>
+                                        <option value="debit_card" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'debit_card' ? 'selected' : '' ?>>Debit Card</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="trans_amount_range">Amount Range:</label>
+                                    <select name="amount_range" id="trans_amount_range" onchange="this.form.submit()">
+                                        <option value="">Any Amount</option>
+                                        <option value="0-5000" <?= isset($_GET['amount_range']) && $_GET['amount_range'] === '0-5000' ? 'selected' : '' ?>>0 - 5,000</option>
+                                        <option value="5000-20000" <?= isset($_GET['amount_range']) && $_GET['amount_range'] === '5000-20000' ? 'selected' : '' ?>>5,000 - 20,000</option>
+                                        <option value="20000-50000" <?= isset($_GET['amount_range']) && $_GET['amount_range'] === '20000-50000' ? 'selected' : '' ?>>20,000 - 50,000</option>
+                                        <option value="50000-100000" <?= isset($_GET['amount_range']) && $_GET['amount_range'] === '50000-100000' ? 'selected' : '' ?>>50,000 - 100,000</option>
+                                        <option value="100000+" <?= isset($_GET['amount_range']) && $_GET['amount_range'] === '100000+' ? 'selected' : '' ?>>100,000+</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="trans_date_range">Payment Date:</label>
+                                    <select name="date_range" id="trans_date_range" onchange="this.form.submit()">
+                                        <option value="">All Time</option>
+                                        <option value="today" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'today' ? 'selected' : '' ?>>Today</option>
+                                        <option value="week" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'week' ? 'selected' : '' ?>>This Week</option>
+                                        <option value="month" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'month' ? 'selected' : '' ?>>This Month</option>
+                                        <option value="year" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'year' ? 'selected' : '' ?>>This Year</option>
+                                    </select>
+                                </div>
+                                <div class="filter-actions">
+                                    <a href="paymentHistory.php?reset=true"><button type="button" class="reset-btn">Reset</button></a>
+                                </div>
+                            </div>
+                        </form>
                         <div class="active-loans-table">
                             <?php
                             if (!isset($_SESSION['payment_history'])) {
@@ -1417,6 +1424,9 @@ $status = 'active'; // Placeholder for access status
             </div>
         </div>
     </main>
+
+<!-- External JS for input validation -->
+<script src="../js/validinput.js"></script>
 
 
 <!-- Loan Details -->
