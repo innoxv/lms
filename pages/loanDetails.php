@@ -3,8 +3,9 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
-// Create database connection
-$mysqli = new mysqli('localhost', 'root', 'figureitout', 'LMSDB');
+// Database config file
+include '../phpconfig/config.php';
+
 // Session handling
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
@@ -48,7 +49,7 @@ $query = "SELECT
           JOIN lenders ON loans.lender_id = lenders.lender_id
           WHERE loans.loan_id = ? AND loans.customer_id = ?";
 
-$stmt = $mysqli->prepare($query);
+$stmt = $myconn->prepare($query);
 if (!$stmt) {
     $_SESSION['loan_message'] = "Database error";
     header("Location: /lms/pages/customerDashboard.php#loanHistory");
