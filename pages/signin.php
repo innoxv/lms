@@ -8,7 +8,7 @@ error_reporting(E_ALL);  // Reports all PHP errors
 session_start();
 
 // Database config file
-include '../phpconfig/config.php';
+include '../phpconfig/phpconfiglogin.php';
 
 
 // Check if form was submitted using POST method
