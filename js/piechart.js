@@ -4,14 +4,14 @@
 
     // Define dummy data
     const pieData = {
-        labels: ['Pending', 'Approved', 'Rejected'],
+        labels: ['Pending', 'Disbursed', 'Rejected'],
         values: [50, 30, 20], // Percentages for each status
     };
 
     // Define colors for each status
     const statusColors = {
         'Pending': 'white', 
-        'Approved': 'lightgreen', 
+        'Disbursed': 'lightgreen', 
         'Rejected': 'tomato',
     };
 

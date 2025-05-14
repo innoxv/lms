@@ -48,7 +48,7 @@ $query = "SELECT loans.loan_id, loan_offers.loan_type, lenders.name AS lender_na
           WHERE customers.user_id = ?";
 
 // Add status filter if specified and valid
-$validStatuses = ['approved', 'pending', 'rejected'];
+$validStatuses = ['disbursed', 'pending', 'rejected'];
 if (!empty($statusFilter) && in_array($statusFilter, $validStatuses)) {
     $query .= " AND loans.status = ?";
 }

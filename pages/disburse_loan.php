@@ -6,7 +6,7 @@ include '../phpconfig/config.php';
 
 // Check if lender is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['lender_id'])) {
-    $_SESSION['loan_message'] = "Please log in to approve loans.";
+    $_SESSION['loan_message'] = "Please log in to disburse loans.";
     $_SESSION['message_type'] = 'error';
     header("Location: signin.html");
     exit();
@@ -80,8 +80,8 @@ if ($interestRate >= 0) {
     error_log("Invalid interest rate for Loan ID $loanId: interest_rate=$interestRate");
 }
 
-// Update loan status to approved
-$updateQuery = "UPDATE loans SET status = 'approved' 
+// Update loan status to disbursed
+$updateQuery = "UPDATE loans SET status = 'disbursed' 
                 WHERE loan_id = ? AND lender_id = ? AND status = 'pending'";
 $stmt = $myconn->prepare($updateQuery);
 if (!$stmt) {
@@ -148,7 +148,7 @@ if (!$stmt->execute()) {
 }
 
 // Log loan approval activity
-$activity = "Approved loan application #$loanId";
+$activity = "Disbursed loan application #$loanId";
 $logQuery = "INSERT INTO activity (user_id, activity, activity_time, activity_type)
              VALUES (?, ?, NOW(), 'loan approval')";
 $stmt = $myconn->prepare($logQuery);
@@ -176,7 +176,7 @@ if (!$stmt->execute()) {
 // Commit transaction
 $myconn->commit();
 
-$_SESSION['loan_message'] = "Loan $loanId has been approved!";
+$_SESSION['loan_message'] = "Loan $loanId has been disbursed!";
 $_SESSION['message_type'] = 'success';
 
 $myconn->close();

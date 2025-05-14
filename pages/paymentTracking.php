@@ -67,14 +67,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
         loans.interest_rate, 
         loans.duration
     FROM loans 
-    WHERE loans.loan_id = ? AND loans.status = 'approved'";
+    WHERE loans.loan_id = ? AND loans.status = 'disbursed'";
     $stmt = $myconn->prepare($verifyQuery);
     $stmt->bind_param("i", $loanId);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows === 0 || $result->fetch_assoc()['customer_id'] != $customerId) {
-        $_SESSION['payment_message'] = "Invalid or unapproved loan selected for payment";
+        $_SESSION['payment_message'] = "Invalid or undisbursed loan selected for payment";
         $_SESSION['payment_message_type'] = 'error';
     } else {
         // Reset result cursor and fetch loan details

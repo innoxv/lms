@@ -86,7 +86,7 @@ $owedQuery = "
         )
     ) latest_payment ON loans.loan_id = latest_payment.loan_id
     WHERE loans.lender_id = ?
-    AND loans.status = 'approved'";
+    AND loans.status = 'disbursed'";
 
 $stmt = $myconn->prepare($owedQuery);
 $stmt->bind_param("i", $lender_id);
@@ -95,12 +95,12 @@ $owedResult = $stmt->get_result();
 $owedData = $owedResult->fetch_row();
 $owedCapacity = $owedData[0] ? number_format((float)$owedData[0], 0) : '0';
 
-// Get total approved loans count
-$approvedLoansQuery = "SELECT COUNT(*) FROM loans WHERE lender_id = '$lender_id' AND status = 'approved'";
-$approvedLoansResult = mysqli_query($myconn, $approvedLoansQuery);
-$approvedLoans = (int)mysqli_fetch_row($approvedLoansResult)[0];
+// Get total disbursed loans count
+$disbursedLoansQuery = "SELECT COUNT(*) FROM loans WHERE lender_id = '$lender_id' AND status = 'disbursed'";
+$disbursedLoansResult = mysqli_query($myconn, $disbursedLoansQuery);
+$disbursedLoans = (int)mysqli_fetch_row($disbursedLoansResult)[0];
 
-// Get active loans count (approved loans with remaining balance)
+// Get active loans count (disbursed loans with remaining balance)
 // subquery checks last payment state to determine state
 
 $activeLoansQuery = "
@@ -116,7 +116,7 @@ $activeLoansQuery = "
         )
     ) latest_payment ON loans.loan_id = latest_payment.loan_id
     WHERE loans.lender_id = ?
-    AND loans.status = 'approved'
+    AND loans.status = 'disbursed'
     AND latest_payment.remaining_balance > 0";
 
 $stmt = $myconn->prepare($activeLoansQuery);
@@ -126,23 +126,23 @@ $activeLoansResult = $stmt->get_result();
 $activeLoans = (int)$activeLoansResult->fetch_row()[0] ?? 0;
 
 // Get total amount disbursed
-$disbursedAmountQuery = "SELECT SUM(amount) FROM loans WHERE lender_id = '$lender_id' AND status IN ('approved')";
+$disbursedAmountQuery = "SELECT SUM(amount) FROM loans WHERE lender_id = '$lender_id' AND status IN ('disbursed')";
 $disbursedAmountResult = mysqli_query($myconn, $disbursedAmountQuery);
 $disbursedAmountData = mysqli_fetch_row($disbursedAmountResult);
 $totalDisbursedAmount = $disbursedAmountData[0] ? number_format((float)$disbursedAmountData[0]) : 0;
 
-// Get loan offers with their approved loans count
+// Get loan offers with their disbursed loans count
 $loanOffersQuery = "SELECT 
                       loan_offers.offer_id,
                       loan_offers.loan_type,
                       loan_offers.interest_rate,
                       loan_offers.max_amount,
                       loan_offers.max_duration,
-                      COUNT(loans.loan_id) as approved_count
+                      COUNT(loans.loan_id) as disbursed_count
                     FROM loan_offers
                     LEFT JOIN loans ON loan_offers.offer_id = loans.offer_id
                       AND loans.lender_id = '$lender_id'
-                      AND loans.status = 'approved'
+                      AND loans.status = 'disbursed'
                     WHERE loan_offers.lender_id = '$lender_id'
                     GROUP BY loan_offers.offer_id, loan_offers.loan_type, loan_offers.interest_rate, 
                              loan_offers.max_amount, loan_offers.max_duration";
@@ -156,7 +156,7 @@ $offersData = [];
 if ($loanOffersResult) {
     while ($row = mysqli_fetch_assoc($loanOffersResult)) {
         $loanType = $row['loan_type'];
-        $loanCounts[$loanType] = (int)$row['approved_count'];
+        $loanCounts[$loanType] = (int)$row['disbursed_count'];
         
         $offersData[] = [
             'offer_id' => $row['offer_id'],
@@ -191,6 +191,7 @@ $loanRequestsQuery = "SELECT
     loans.duration,
     loans.collateral_value,
     loans.collateral_description,
+    loans.risk_level,
     loans.status,
     loans.created_at,
     customers.name,
@@ -201,7 +202,7 @@ JOIN customers ON loans.customer_id = customers.customer_id
 WHERE loans.lender_id = '$lender_id'";
 
 // Status filter
-if (!empty($statusFilter) && in_array($statusFilter, ['pending', 'approved', 'rejected'])) {
+if (!empty($statusFilter) && in_array($statusFilter, ['pending', 'disbursed', 'rejected'])) {
     $loanRequestsQuery .= " AND loans.status = '$statusFilter'";
 }
 
@@ -283,7 +284,7 @@ while ($row = mysqli_fetch_assoc($statusResult)) {
 // Calculate percentages for each status
 $pieData = [
     'pending' => isset($statusData['pending']) ? ($statusData['pending'] / $totalLoans * 100) : 0,
-    'approved' => isset($statusData['approved']) ? ($statusData['approved'] / $totalLoans * 100) : 0,
+    'disbursed' => isset($statusData['disbursed']) ? ($statusData['disbursed'] / $totalLoans * 100) : 0,
     'rejected' => isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0
 ];
 
@@ -510,7 +511,7 @@ mysqli_close($myconn);
                                     <select name="status" id="status"  onchange="this.form.submit()">  <!-- this submits the form on select -->
                                         <option value="">All Statuses</option>
                                         <option value="pending" <?= ($statusFilter === 'pending') ? 'selected' : '' ?>>Pending</option>
-                                        <option value="approved" <?= ($statusFilter === 'approved') ? 'selected' : '' ?>>Approved</option>
+                                        <option value="disbursed" <?= ($statusFilter === 'disbursed') ? 'selected' : '' ?>>Disbursed</option>
                                         <option value="rejected" <?= ($statusFilter === 'rejected') ? 'selected' : '' ?>>Rejected</option>
                                     </select>
                                 </div>
@@ -593,9 +594,9 @@ mysqli_close($myconn);
                                     <th>Customer</th>
                                     <th>Loan Type</th>
                                     <th>Amount</th>
-                                    <th> Rate</th>
                                     <th>Duration</th>
                                     <th>Collateral Value</th>
+                                    <th>Risk Level</th>
                                     <th>Status</th>
                                     <th >Application Date</th>
                                     <th style="text-align: center">Actions</th>
@@ -609,9 +610,13 @@ mysqli_close($myconn);
                                         <td><?php echo htmlspecialchars($request['name']); ?></td>
                                         <td><?php echo htmlspecialchars($request['loan_type']); ?></td>
                                         <td><?php echo number_format($request['amount'], 2); ?></td>
-                                        <td><?php echo htmlspecialchars($request['interest_rate']); ?>%</td>
                                         <td style="text-align: center"><?php echo htmlspecialchars($request['duration']); ?></td>
                                         <td style="text-align: center"><?php echo htmlspecialchars($request['collateral_value']); ?></td>
+                                        <td>
+                                            <span class="risk-badge risk-<?php echo strtolower(htmlspecialchars($request['risk_level'])); ?>">
+                                                <?php echo htmlspecialchars($request['risk_level']); ?>
+                                            </span>
+                                        </td>
                                         <td>
                                             <span class="status-badge status-<?php echo strtolower(htmlspecialchars($request['status'])); ?>">
                                                 <?php echo htmlspecialchars($request['status']); ?>
@@ -635,17 +640,17 @@ mysqli_close($myconn);
                                                 View
                                             </button>
 
-                                            <form action="approve_loan.php" method="post" class="inline-form">
+                                            <form action="disburse_loan.php" method="post" class="inline-form">
                                                 <input type="hidden" name="loan_id" value="<?php echo $request['loan_id']; ?>">
-                                                <button type="submit" class="btn-approve <?php echo $request['status'] !== 'pending' ? 'disabled' : ''; ?>" 
+                                                <button type="submit" class="btn-disburse <?php echo $request['status'] !== 'pending' ? 'disabled' : ''; ?>" 
                                                     <?php echo $request['status'] !== 'pending' ? 'disabled' : ''; ?>>
-                                                    Approve
+                                                    Disburse
                                                 </button>
                                             </form>
                                             <form action="reject_loan.php" method="post" class="inline-form">
                                                 <input type="hidden" name="loan_id" value="<?php echo $request['loan_id']; ?>">
                                                 <button type="submit" class="btn-reject <?php echo $request['status'] === 'rejected' ? 'disabled' : ''; ?>" 
-                                                    <?php echo $request['status'] === 'rejected' ? 'disabled' : ''; ?>>
+                                                    <?php echo $request['status'] !== 'pending' ? 'disabled' : ''; ?>>
                                                     Reject
                                                 </button>
                                             </form>
@@ -1199,9 +1204,9 @@ mysqli_close($myconn);
                             </div>
                         </div>
                         <div>
-                            <p>Approved Loans</p>
+                            <p>Disbursed Loans</p>
                             <div class="metric-value-container">
-                            <span class="span-2"><?php echo $approvedLoans; ?></span>
+                            <span class="span-2"><?php echo $disbursedLoans; ?></span>
                             </div>
                         </div>
                         <div>
@@ -1229,7 +1234,7 @@ mysqli_close($myconn);
                     
                     <div class="visuals">
                         <div>
-                        <p>Number of Approved Loans per Loan Type</p>
+                        <p>Number of Disbursed Loans per Loan Type</p>
                         <canvas id="barChart" width="800" height="300"></canvas>
                         
                         </div>
@@ -1763,11 +1768,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Get the actual data from PHP
         const pieData = {
-            labels: ['Pending', 'Approved', 'Rejected'
+            labels: ['Pending', 'Disbursed', 'Rejected'
             ],
             values: [
                 <?php echo round($pieData['pending'], 2); ?>,
-                <?php echo round($pieData['approved'], 2); ?>,
+                <?php echo round($pieData['disbursed'], 2); ?>,
                 <?php echo round($pieData['rejected'], 2); ?>,
                 
             ]
@@ -1776,7 +1781,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Define colors for each status
         const statusColors = {
             'Pending': '#ddd',  
-            'Approved': 'teal',
+            'Disbursed': 'teal',
             'Rejected': 'tomato', 
         };
 
