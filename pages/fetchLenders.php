@@ -16,9 +16,10 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Database connection
-$mysqli = new mysqli('localhost', 'root', 'figureitout', 'LMSDB');
-if ($mysqli->connect_error) {
+// Database config file
+include '../phpconfig/config.php';
+
+if ($myconn->connect_error) {
     $_SESSION['loan_message'] = "Database connection failed";
     $_SESSION['message_type'] = "error";
     header("Location: /lms/pages/customerDashboard.php#applyLoan");
@@ -42,8 +43,8 @@ $filters = [
 
 // Process loan type filter
 if (isset($_GET['loan_type']) && is_array($_GET['loan_type'])) {
-    $filters['loan_types'] = array_map(function($type) use ($mysqli) {
-        return $mysqli->real_escape_string($type);
+    $filters['loan_types'] = array_map(function($type) use ($myconn) {
+        return $myconn->real_escape_string($type);
     }, $_GET['loan_type']);
 }
 
@@ -117,9 +118,9 @@ if (!empty($whereConditions)) {
 $query .= " ORDER BY loan_offers.offer_id DESC";
 
 // Prepare statement
-$stmt = $mysqli->prepare($query);
+$stmt = $myconn->prepare($query);
 if (!$stmt) {
-    $_SESSION['loan_message'] = "Failed to prepare query: " . $mysqli->error;
+    $_SESSION['loan_message'] = "Failed to prepare query: " . $myconn->error;
     $_SESSION['message_type'] = "error";
     header("Location: customerDashboard.php#applyLoan");
     exit();
@@ -188,7 +189,7 @@ if (!empty($_GET['loan_type']) || isset($_GET['min_amount']) ||
 }
 
 $stmt->close();
-$mysqli->close();
+$myconn->close();
 
 // Redirect back to loan application page
 header("Location: customerDashboard.php#applyLoan");
