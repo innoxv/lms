@@ -48,13 +48,13 @@ $activeLoansQuery = "
         )
     ) latest_payment ON loans.loan_id = latest_payment.loan_id
     WHERE loans.lender_id = '$lender_id'
-    AND loans.status = 'approved'
+    AND loans.status = 'disbursed'
     AND latest_payment.remaining_balance > 0
     AND latest_payment.payment_type != 'full'";
 
 // Apply filters
 // Status filter
-if (!empty($activeStatusFilter) && in_array($activeStatusFilter, ['approved'])) {
+if (!empty($activeStatusFilter) && in_array($activeStatusFilter, ['disbursed'])) {
     $activeLoansQuery .= " AND loans.status = '$activeStatusFilter'";
 }
 

@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['loan_id'])) {
             $_SESSION['loan_message'] = "Loan $loanId has been rejected!";
             $_SESSION['message_type'] = 'success';
         } else {
-            $_SESSION['loan_message'] = "Loan $loanId has already been approved!";
+            $_SESSION['loan_message'] = "Loan $loanId has already been disbursed!";
             $_SESSION['message_type'] = 'warning';
         }
     } else {

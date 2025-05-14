@@ -55,7 +55,7 @@ $customer_id = $_SESSION['customer_id'];
 // LOAN DATA FETCHING
 
 // Status filter
-$statusFilter = isset($_GET['status']) && in_array($_GET['status'], ['approved', 'pending', 'rejected']) 
+$statusFilter = isset($_GET['status']) && in_array($_GET['status'], ['disbursed', 'pending', 'rejected']) 
     ? $_GET['status'] 
     : '';
 
@@ -228,18 +228,18 @@ $_SESSION['payment_history'] = fetchPaymentHistory($myconn, $customer_id, $histo
 
 
 // METRICS AND CHARTS DATA
-// Approve Loans Count
-$approvedQuery = "SELECT COUNT(*) as total_approved, SUM(amount) as total_borrowed 
+// Disburse Loans Count
+$disbursedQuery = "SELECT COUNT(*) as total_disbursed, SUM(amount) as total_borrowed 
                  FROM loans 
                  WHERE customer_id = ? 
-                 AND status = 'approved'";
-$stmt = $myconn->prepare($approvedQuery);
+                 AND status = 'disbursed'";
+$stmt = $myconn->prepare($disbursedQuery);
 $stmt->bind_param("i", $customer_id);
 $stmt->execute();
-$approvedResult = $stmt->get_result();
-$approvedData = $approvedResult->fetch_assoc();
-$totalApprovedLoans = (int)($approvedData['total_approved'] ?? 0);
-$totalBorrowed = (int)($approvedData['total_borrowed'] ?? 0);
+$disbursedResult = $stmt->get_result();
+$disbursedData = $disbursedResult->fetch_assoc();
+$totalDisbursedLoans = (int)($disbursedData['total_disbursed'] ?? 0);
+$totalBorrowed = (int)($disbursedData['total_borrowed'] ?? 0);
 
 // Active Loans Count
 // sub query checks latest payment balance to determine status
@@ -256,7 +256,7 @@ $activeQuery = "
         )
     ) latest_payment ON loans.loan_id = latest_payment.loan_id     
     WHERE loans.customer_id = ?
-    AND loans.status = 'approved'
+    AND loans.status = 'disbursed'
     AND latest_payment.remaining_balance > 0";
 
 $stmt = $myconn->prepare($activeQuery);
@@ -279,7 +279,7 @@ $balanceQuery = "
         )
     ) latest_payment ON loans.loan_id = latest_payment.loan_id
     WHERE loans.customer_id = ?
-    AND loans.status = 'approved'";
+    AND loans.status = 'disbursed'";
 
 $stmt = $myconn->prepare($balanceQuery);
 $stmt->bind_param("i", $customer_id);
@@ -301,7 +301,7 @@ $dateQuery = "
         )
     ) latest_payment ON loans.loan_id = latest_payment.loan_id
     WHERE loans.customer_id = ?
-    AND loans.status = 'approved'
+    AND loans.status = 'disbursed'
     AND latest_payment.remaining_balance > 0";
 
 $stmt = $myconn->prepare($dateQuery);
@@ -326,7 +326,7 @@ $loanTypesQuery = "SELECT
 FROM loans 
 JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
 WHERE loans.customer_id = ?
-AND loans.status IN ('approved', 'disbursed', 'active')
+AND loans.status IN ('disbursed', 'disbursed', 'active')
 GROUP BY loan_offers.loan_type";
 $stmt = $myconn->prepare($loanTypesQuery);
 $stmt->bind_param("i", $customer_id);
@@ -359,7 +359,7 @@ while ($row = $statusResult->fetch_assoc()) {
 
 $pieData = [
     'pending' => isset($statusData['pending']) ? ($statusData['pending'] / $totalLoans * 100) : 0,
-    'approved' => isset($statusData['approved']) ? ($statusData['approved'] / $totalLoans * 100) : 0,
+    'disbursed' => isset($statusData['disbursed']) ? ($statusData['disbursed'] / $totalLoans * 100) : 0,
     'rejected' => isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0
 ];
 
@@ -709,7 +709,7 @@ $status = 'active'; // Placeholder for access status
                                     <select name="status" id="status" onchange="this.form.submit()">
                                         <option value="">All Loans</option>
                                         <option value="pending" <?= ($statusFilter === 'pending') ? 'selected' : '' ?>>Pending</option>
-                                        <option value="approved" <?= ($statusFilter === 'approved') ? 'selected' : '' ?>>Approved</option>
+                                        <option value="disbursed" <?= ($statusFilter === 'disbursed') ? 'selected' : '' ?>>Disbursed</option>
                                         <option value="rejected" <?= ($statusFilter === 'rejected') ? 'selected' : '' ?>>Rejected</option>
                                     </select>
                                 </div>
@@ -1386,9 +1386,9 @@ $status = 'active'; // Placeholder for access status
                             </div>
                         </div>
                         <div>
-                            <p>Approved Loans</p>
+                            <p>Disbursed Loans</p>
                             <div class="metric-value-container">
-                                <span class="span-2"><?php echo $totalApprovedLoans; ?></span>
+                                <span class="span-2"><?php echo $totalDisbursedLoans; ?></span>
                             </div>
                         </div>
                         <div>
@@ -1412,7 +1412,7 @@ $status = 'active'; // Placeholder for access status
                     </div>
                     <div class="visuals">
                         <div>
-                            <p>Number of Approved Loans per Loan Type</p>
+                            <p>Number of Disbursed Loans per Loan Type</p>
                             <canvas id="barChart" width="800" height="300"></canvas>
                         </div>
                         <div>
@@ -1899,16 +1899,16 @@ function initializePieChart() {
     const pieCanvas = document.getElementById('pieChart');
     const pieCtx = pieCanvas.getContext('2d');
     
-    const labels = ['Pending', 'Approved', 'Rejected'];
+    const labels = ['Pending', 'Disbursed', 'Rejected'];
     const values = [
         pieData.pending,
-        pieData.approved,
+        pieData.disbursed,
         pieData.rejected
     ];
     
     const statusColors = {
         'Pending': '#ddd',
-        'Approved': 'teal',
+        'Disbursed': 'teal',
         'Rejected': 'tomato'
     };
 

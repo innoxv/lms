@@ -1652,9 +1652,17 @@ iframe {
 .loan-requests-table .action-buttons button{
     margin-inline: .1em;
 }
-.action-buttons .btn-approve{
+.loan-requests-table .action-buttons .btn-disburse{
     border-radius: 0;
-    /* outline: 1px solid #74C0FC; */
+    background-color: teal;
+    color: whitesmoke;
+    outline: none;
+    
+}
+.loan-requests-table .action-buttons .btn-disburse:hover{
+    background: transparent;
+    outline: 1px solid teal;
+    border: none;
     
 }
 .loan-requests-table .action-buttons .btn-reject{
@@ -1663,9 +1671,43 @@ iframe {
     /* outline: 1px solid tomato; */
 }
 .loan-requests-table .action-buttons .btn-reject:hover{
-    background: transparent;
+    background: unset;
+    color: unset;
+    outline: 1px solid tomato;
+}
+/* Style for disabled buttons */
+.loan-requests-table .action-buttons button:disabled {
+    opacity: .3;
+    cursor: not-allowed;
+}
+/* Risk Level Badges */
+.risk-badge {
+    padding: 4px 8px;
+    font-size: 0.85em;
+    font-weight: 700;
+}
+
+.risk-high {
     color: tomato;
     outline: 1px solid tomato;
+}
+
+.risk-medium {
+    color: #74C0FC;
+    outline: 1px solid #74C0FC;
+
+}
+
+.risk-low {
+    color: lightgreen;
+    outline: 1px solid lightgreen;
+
+}
+
+.risk-unverified {
+    color: lightgray;
+    outline: 1px solid lightgray
+
 }
 
 /* View Loan Popup Styles */
@@ -1721,24 +1763,10 @@ iframe {
 }
 
 
-/* Style for disabled buttons */
-.loan-requests-table .action-buttons button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
 
-/* Specific styles for disabled approve/reject buttons */
-.loan-requests-table .action-buttons .btn-approve:disabled {
-    background-color: #d4edda;
-    /* color: #155724;
-    border: 1px solid #c3e6cb; */
-}
 
-.loan-requests-table .action-buttons .btn-reject:disabled {
-    background-color: #f8d7da;
-    /* color: #721c24;
-    border: 1px solid #f5c6cb; */
-}
+
+
 
 /* Enhanced Filter Styles */
 
@@ -1772,7 +1800,7 @@ iframe {
 
 }
 .filter-group #status, .filter-group #payment_status, .filter-group #payment_method,
-.filter-group #trans_payment_type, #active_loan_type{ 
+.filter-group #trans_payment_type, #active_loan_type, #risk_level{ 
     border-radius: .5em 0 0 .5em;
 
 
@@ -1812,6 +1840,20 @@ iframe {
 
 
 /* Admin Dashboard */
+
+.evaluate-btn:disabled {
+    background-color: lightgray;
+    color: #2C2C2C;
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+#riskAssessment{
+    overflow-y: auto;
+    height: 100%;
+
+
+}
 #viewUsers{
     width: 98%;
     overflow-y: auto;

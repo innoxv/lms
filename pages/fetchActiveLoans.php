@@ -17,7 +17,7 @@ function fetchActiveLoans($myconn, $customerId, $filters = []) {
     JOIN lenders ON loans.lender_id = lenders.lender_id
     LEFT JOIN payments ON loans.loan_id = payments.loan_id
     WHERE loans.customer_id = ?
-    AND loans.status IN ('approved', 'disbursed', 'active')";
+    AND loans.status IN ('disbursed', 'disbursed', 'active')";
 
     $params = [$customerId];
     $types = "i";

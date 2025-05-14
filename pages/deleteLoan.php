@@ -42,7 +42,7 @@ $offer = mysqli_fetch_assoc($verifyResult);
 // Check if there are active loans for this offer
 $loansCheck = "SELECT COUNT(*) as loan_count FROM loans 
               WHERE offer_id = $offer_id 
-              AND status IN ('pending', 'approved', 'disbursed', 'active')";
+              AND status IN ('pending', 'disbursed', 'disbursed', 'active')";
 $loansResult = mysqli_query($myconn, $loansCheck);
 $loansData = mysqli_fetch_assoc($loansResult);
 
