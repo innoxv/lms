@@ -351,7 +351,7 @@ mysqli_close($myconn);
                         </li>
                         <li><a href="#loanRequests">Loan Requests</a></li>
                         <li><a href="#activeLoans">Active Loans</a></li>  
-                        <li><a href="#paymentReview">Payment Review</a></li>  
+                        <li><a href="#paymentReview">Payment Tracking</a></li>  
                         <li><a href="#profile">Profile</a></li>
                     </div>
                     <div class="bottom">
@@ -895,7 +895,7 @@ mysqli_close($myconn);
                 <!-- payment Review -->
                 
                 <div id="paymentReview" class="margin">
-                    <h1>Payment Review</h1>
+                    <h1>Payment Tracking</h1>
                     <p>View and filter payment records for your loans.</p>
                 
                     <?php if (isset($_SESSION['loan_message'])): ?>
