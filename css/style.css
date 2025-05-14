@@ -658,7 +658,7 @@ img{
 /* Show the Dashboard section by default */
 #dashboard {
     display: block;
-    height: 95%;
+    height: 100%;
     /* outline: 1px solid red; */
 }
 #applyLoan{
@@ -1612,8 +1612,11 @@ iframe {
     width: 95%;
     overflow-y: auto;
     height: 90%;
-
-
+}
+#paymentReview{
+        width: 95%;
+        overflow-y: auto;
+        height: 90%;
 }
 .filter-actions .apply-btn{
     color: #28282B;
