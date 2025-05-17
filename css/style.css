@@ -563,6 +563,76 @@ img{
         border-top: 1px solid #555;
     }
 
+/* Hide default checkbox */
+.checkbox-label input[type="checkbox"] {
+    display: none;
+  }
+  
+  /* Label container */
+  .checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    vertical-align: middle; /* Aligns with password input in table cell */
+  }
+  
+  /* Custom checkbox */
+  .custom-checkbox {
+    width: 18px; /* Smaller size to fit next to password input */
+    height: 18px;
+    border: 2px solid #333; /* Dark border */
+    border-radius: 4px; /* Rounded corners */
+    position: relative;
+    background: transparent; 
+    transition: all 0.3s ease;
+    margin: 0; 
+  }
+  
+  /* Checked state (show password, open eye) */
+  .checkbox-label input[type="checkbox"]:checked + .custom-checkbox {
+    background-color: #74C0FC; 
+    border-color: #74C0FC;
+  }
+  
+  /* Open eye icon when checked */
+  .checkbox-label input[type="checkbox"]:checked + .custom-checkbox::after {
+    content: "👁"; /* Open eye for show password */
+    color: #1D1E20; 
+    font-size: 12px; 
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  
+  /* Strikethrough eye when unchecked */
+  .checkbox-label input[type="checkbox"]:not(:checked) + .custom-checkbox::after {
+    content: "👁"; /* Same open eye */
+    color: lightgray; 
+    font-size: 12px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  
+  /* Add strikethrough slash for unchecked state */
+  .checkbox-label input[type="checkbox"]:not(:checked) + .custom-checkbox::before {
+    content: "";
+    position: absolute;
+    width: 16px; /* Length of slash */
+    height: 1px; /* Thickness of slash */
+    background-color:lightgray; 
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(45deg); /* Diagonal slash */
+  }
+  
+  /* Hover effect */
+  .checkbox-label:hover .custom-checkbox {
+    border-color: #74C0FC; 
+  }
+
 
 /* Customer DashBoard */
 .customer-content{
