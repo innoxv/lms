@@ -20,8 +20,12 @@
                         </tr>
                         <tr>
                             <td><label for="signinPassword">Password</label></td>
-                            <td><input type="password" id="signinPassword" name="signinPassword" placeholder="your password"></td>
+                            <td><input type="password" style="margin-right:0;" id="signinPassword" name="signinPassword" placeholder="your password">
+                                <!-- show password-->
+                                <input type="checkbox" style="margin:0; " onclick="signinPassword.type = this.checked ? 'text' : 'password'"> 
+                            </td>
                         </tr>
+
                         <tr class="submit-action">
                             <td><button type="submit" name="submit">LOG IN</button></td>
                             <td>
