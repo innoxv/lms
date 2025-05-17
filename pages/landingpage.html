@@ -153,35 +153,35 @@
                 
                 <div class="faq-container">
                     <div class="faq-item">
-                        <h3 class="faq-question" onclick="toggleFAQ(this)">How do I apply for a loan? <span class="faq-toggle">+</span></h3>
+                        <h3 class="faq-question" onclick="toggleFAQ(this)">How do I apply for a loan? <span class="faq-toggle">⮟</span></h3>
                         <div class="faq-answer">
                             <p>To apply for a loan, simply register an account, complete your profile, and submit a loan application through our platform. You'll need to provide some basic financial information and the purpose of the loan. Our system will process your application and provide a decision quickly.</p>
                         </div>
                     </div>
                     
                     <div class="faq-item">
-                        <h3 class="faq-question" onclick="toggleFAQ(this)">What are the requirements to become a lender? <span class="faq-toggle">+</span></h3>
+                        <h3 class="faq-question" onclick="toggleFAQ(this)">What are the requirements to become a lender? <span class="faq-toggle">⮟</span></h3>
                         <div class="faq-answer">
                             <p>To become a lender on our platform, you need to be at least 18 years old, have a valid bank account, and complete our identity verification process. There's no minimum amount required to start lending, but we recommend diversifying your investments across multiple loans.</p>
                         </div>
                     </div>
                     
                     <div class="faq-item">
-                        <h3 class="faq-question" onclick="toggleFAQ(this)">How are interest rates determined? <span class="faq-toggle">+</span></h3>
+                        <h3 class="faq-question" onclick="toggleFAQ(this)">How are interest rates determined? <span class="faq-toggle">⮟</span></h3>
                         <div class="faq-answer">
                             <p>Interest rates are determined based on several factors including the borrower's creditworthiness, loan amount, loan term, and current market conditions. Our algorithm assesses risk and suggests rates that are fair to both borrowers and lenders.</p>
                         </div>
                     </div>
                     
                     <div class="faq-item">
-                        <h3 class="faq-question" onclick="toggleFAQ(this)">Is my personal information secure? <span class="faq-toggle">+</span></h3>
+                        <h3 class="faq-question" onclick="toggleFAQ(this)">Is my personal information secure? <span class="faq-toggle">⮟</span></h3>
                         <div class="faq-answer">
                             <p>Yes, we take security very seriously. All personal and financial information is encrypted using industry-standard protocols. We comply with all relevant data protection regulations and never share your information with third parties without your consent.</p>
                         </div>
                     </div>
                     
                     <div class="faq-item">
-                        <h3 class="faq-question" onclick="toggleFAQ(this)">What happens if a borrower defaults? <span class="faq-toggle">+</span></h3>
+                        <h3 class="faq-question" onclick="toggleFAQ(this)">What happens if a borrower defaults? <span class="faq-toggle">⮟</span></h3>
                         <div class="faq-answer">
                             <p>We have a collections process in place for late payments. While we can't guarantee against defaults, we carefully screen all borrowers and our platform has historically maintained a low default rate. As a lender, you can further reduce risk by diversifying your investments across multiple loans.</p>
                         </div>
@@ -257,13 +257,13 @@
             document.querySelectorAll('#faqs .faq-answer').forEach(faq => {
                 if (faq !== answer) {
                     faq.style.display = 'none';
-                    faq.previousElementSibling.querySelector('.faq-toggle').textContent = '+';
+                    faq.previousElementSibling.querySelector('.faq-toggle').textContent = '⮟';
                 }
             });
             
             // Toggle current FAQ
             answer.style.display = isHidden ? 'block' : 'none';
-            element.querySelector('.faq-toggle').textContent = isHidden ? '−' : '+';
+            element.querySelector('.faq-toggle').textContent = isHidden ? '⮝' : '⮟';
         }
     </script>
 </body>
