@@ -9,11 +9,11 @@
 <body class="centered-page">
         <div class="container">
         <label class="header-label"><a href="./landingpage.html">LMS</a></label>
-            <div class="content">
+            <div class="content" id="signin">
                 <form action="signin.php" method="post" onsubmit="return validateForm2()">
-                    <div><label style="font-size: 1.5em;">Welcome Back!</label></div>
+                    <div style="margin-bottom:2%;"><label style="font-size: 1.5em;">Welcome Back!</label></div>
                     <div id="error" style="color: tomato;font-weight:700"></div>
-                    <table>
+                    <table class="signin">
                         <tr>  
                             <td><label for="signinEmail">Email</label></td>
                             <td><input type="text" id="signinEmail" name="signinEmail" placeholder="you@example.com" autofocus></td>
@@ -25,17 +25,20 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" style="margin:0;" onclick="signinPassword.type = this.checked ? 'text' : 'password'">
                                     <span class="custom-checkbox"></span>
-                                  </label>
+                                </label>
                             </td>
                         </tr>
 
-                        <tr class="submit-action">
-                            <td><button type="submit" name="submit">LOG IN</button></td>
-                            <td>
-                                <div class="alt">don't have an account?<button type="button"><a href="./signup.html">SIGN UP</a></button></div>
-                            </td>
-                    </tr>
+                        <tr class="signin-submit-action">
+                            <td></td>
+                            <td><button style="width: 100%;" type="submit" name="submit">LOG IN</button></td>
+
+                        </tr>
+
+                        
                     </table>
+                    <div class="alt">don't have an account yet?<button type="button"><a href="./signup.html">SIGN UP</a></button></div>
+
                 </form>
             </div>
         </div>
