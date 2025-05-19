@@ -41,7 +41,7 @@ body{
     min-width: 320px; /* Minimum mobile width */
     max-width: 900px; /* Maximum width for larger screens */
     height: auto;
-    padding: 2rem;
+    padding: 1rem;
     border-radius: .5em;
     background-color: rgba(0, 0, 0, 0.3);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -76,7 +76,23 @@ body{
     align-items: center;
     height: 100%;
 }
+#signin form{
+    width: 100%;
+}
+#signin table{
+    width: 100%;;
+}
+.signin tr{
+    display: flex;
+    flex-direction: column;
+}
 
+.signin input{
+    padding: .5em;
+    margin: .2em 0;
+    width: 84%;
+
+}
 label{
     color: lightgray;
     font-size: 1em;
@@ -111,11 +127,13 @@ input::placeholder{
     color: white;
     font-size: 1em;
 }
-.submit-action{
-    
-height: 5em;
-
-    
+.signin-submit-action{
+    display: flex;
+    justify-content: center;
+    height: 4em;
+}
+.signup-submit-action{
+    height: 4em;
 }
 .hidden{
     display: none;
@@ -142,15 +160,16 @@ button:hover{
     color: lightgray;
     display: flex;
     flex-direction: row;
-    justify-content: space-evenly;
+    justify-content: space-between;
     align-items: center;
 }
-.alt button{
+.alt button, .signup-alt button{
     border: none;
     background: transparent;
     font-weight: unset;
+    padding: unset;
 }
-.alt button:hover{
+.alt button:hover, .signup-alt button:hover{
     outline: none;
     background: transparent;
     font-weight: 700;
@@ -160,9 +179,21 @@ a{
     text-decoration: none;
     color: #74C0FC;
 }
+.signup-alt{
+    color: lightgray;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+.signup-alt > :first-child{
+    margin-inline: 1.5em;
+}
 
 /* Landingpage */
 
+.landingpage{
+    height: 100vh;
+}
 
 /* Default margins (for larger screens) */
 main {
@@ -268,24 +299,30 @@ main {
 .hero-section p{
     font-size: 1.1em;
     color: lightgray;
+    margin-bottom: 2em;
 }
 .left, .right{
     width: 50%;
     
 }
 
-.left button{
+.left a{
+    padding: 0.7em;
+    border-radius: .5em;
+    border: none;
     background: transparent;
     color: #74C0FC;
     outline: 1px solid #74C0FC;
-    border: none;
-    font-size: 1em;
     margin-top: 2em;
+    cursor: pointer;
+    font-weight: 700;
 }
-.left button:hover{
-    color: #1D1E20;
+.left a:hover{
     background-color: #74C0FC;
+    color: #1D1E20;
+    transition: .3s ease-in-out;
 }
+
 img{
     height: 65vh;
 
@@ -322,7 +359,7 @@ img{
     
     .content-section {
         display: none;
-        padding: 2rem;
+        padding: 0;
         animation: fadeIn 0.5s ease-in-out;
     }
     /* display home by default */
@@ -357,30 +394,18 @@ img{
         from { opacity: 0; }
         to { opacity: 1; }
     }
-    
-    /* Style for active nav item */
-    .nav-link {
-        color: inherit;
-        text-decoration: none;
-    }
-    
-    .nav-link[href="#home"]:target,
-    .nav-link[href="#features"]:target,
-    .nav-link[href="#about"]:target,
-    .nav-link[href="#blog"]:target,
-    .nav-link[href="#contact"]:target,
-    .nav-link[href="#faqs"]:target {
+    .nav-logo{
         color: #74C0FC;
-        font-weight: bold;
-        border-bottom: 2px solid #74C0FC;
     }
-    
-    /* Default active nav link for home */
-    .display:not(:has(:target)) .nav-link[href="#home"] {
+    .nav-link{
+        color: whitesmoke;
+    }
+    .nav-link:hover{
         color: #74C0FC;
-        font-weight: bold;
-        border-bottom: 2px solid #74C0FC;
+        transition: color .2s ease-in-out;
+
     }
+
     .content-section h1, .content-section h2{
         color: whitesmoke;
     }
@@ -438,6 +463,10 @@ img{
         overflow: hidden;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
+    .blog-card:hover{
+        box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+        transition: .2s ease-in-out;
+    }
     
     .blog-image {
         height: 200px;
@@ -461,7 +490,7 @@ img{
     }
     
     .contact-info,
-    .contact-form {
+    .social-media {
         flex: 1;
     }
     
@@ -473,33 +502,14 @@ img{
         margin-top: 2rem;
     }
     
-    .form-grid {
-        display: grid;
-        gap: 1rem;
-    }
-    
-    .form-input {
-        width: 100%;
-        padding: 0.5rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
-    
-    .form-textarea {
-        width: 100%;
-        padding: 0.5rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
-    
-    .form-button {
-        background: #74C0FC;
-        color: white;
-        border: none;
-        padding: 0.75rem 1.5rem;
-        border-radius: 4px;
-        cursor: pointer;
-    }
+.social-media-links{
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+}
+.social-media-links a:hover{
+color: whitesmoke;
+}
     
     /* FAQs section */
     .faq-container {
@@ -519,6 +529,7 @@ img{
     
     .faq-toggle {
         float: right;
+        font-size: .8em;
     }
     
     .faq-answer {
@@ -528,40 +539,56 @@ img{
     
     /* Footer */
     .footer {
-        background: #333;
-        color: white;
-        /* padding: 2rem;
-        margin-top: 2rem; */
+        /* background-color: rgba(0, 0, 0, 0.3); */
+        color: whitesmoke;
+        /* width: 100%; */
     }
     
     .footer-container {
         display: flex;
         justify-content: space-between;
-        max-width: 1200px;
         margin: 0 auto;
+        border-top: 1px solid #555;
+
+    }
+    .footer-container > div{
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 1em;
     }
     
     .footer-list {
+        display: flex;
+        justify-content: space-between;
+        gap: 1em;
         list-style: none;
         padding: 0;
     }
     
-    .footer-link {
-        color: white;
-        text-decoration: none;
-    }
     
     .social-links {
         display: flex;
-        gap: 1rem;
+        flex-direction: row;
+        gap: 1em;
     }
     
-    .footer-bottom {
-        text-align: center;
-        margin-top: 2rem;
-        padding-top: 1rem;
-        border-top: 1px solid #555;
+    .footer h4{
+        color: gray;
+        font-weight: 900;
     }
+    .footer .logo{
+        color: #74C0FC;
+    }
+    .footer a{
+        color: lightgray;
+        font-weight: 100;
+    }
+    .footer a:hover{
+        color: #74C0FC;
+    }
+
+/* Sign In checkbox mods */
 
 /* Hide default checkbox */
 .checkbox-label input[type="checkbox"] {
@@ -578,12 +605,12 @@ img{
   
   /* Custom checkbox */
   .custom-checkbox {
-    width: 18px; /* Smaller size to fit next to password input */
-    height: 18px;
+    width: 1.2em; /* Smaller size to fit next to password input */
+    height: 1.2em;
     border: 2px solid #333; /* Dark border */
     border-radius: 4px; /* Rounded corners */
     position: relative;
-    background: transparent; 
+    background: lightgray; 
     transition: all 0.3s ease;
     margin: 0; 
   }
@@ -598,7 +625,7 @@ img{
   .checkbox-label input[type="checkbox"]:checked + .custom-checkbox::after {
     content: "👁"; /* Open eye for show password */
     color: #1D1E20; 
-    font-size: 12px; 
+    font-size: .8em; 
     position: absolute;
     top: 50%;
     left: 50%;
@@ -608,24 +635,24 @@ img{
   /* Strikethrough eye when unchecked */
   .checkbox-label input[type="checkbox"]:not(:checked) + .custom-checkbox::after {
     content: "👁"; /* Same open eye */
-    color: lightgray; 
-    font-size: 12px;
+    color: #1D1E20; 
+    font-size: .8em;
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
   }
   
-  /* Add strikethrough slash for unchecked state */
+  /* Strikethrough slash for unchecked state */
   .checkbox-label input[type="checkbox"]:not(:checked) + .custom-checkbox::before {
     content: "";
     position: absolute;
-    width: 16px; /* Length of slash */
-    height: 1px; /* Thickness of slash */
-    background-color:lightgray; 
+    width: 1.2em; /* Length of slash */
+    height: 2px; /* Thickness of slash */
+    background-color: #1D1E20; 
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) rotate(45deg); /* Diagonal slash */
+    transform: translate(-50%, -50%) rotate(50deg); /* Diagonal slash */
   }
   
   /* Hover effect */

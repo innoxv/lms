@@ -149,7 +149,7 @@ function validateForm2() {
     // Validate Email
     var email = document.getElementById("signinEmail").value;
     if (email === "" || !email.includes("@") || !email.includes(".")) {
-        displayError("Please enter a valid Email address.");
+        displayError("Please enter a valid Email Address.");
         document.getElementById("signinEmail").focus();
         return false;
     }
