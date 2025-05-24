@@ -346,7 +346,7 @@ mysqli_close($myconn);
                         <li>
                             <a href="#createLoan" 
                             class="<?php echo ($status === 'restricted_create') ? 'disabled-link' : '' ?>">
-                            Create Loan Offers
+                            Loan Offers
                             </a>
                         </li>
                         <li><a href="#loanRequests">Loan Requests</a></li>
@@ -355,16 +355,15 @@ mysqli_close($myconn);
                         <li><a href="#profile">Profile</a></li>
                     </div>
                     <div class="bottom">
-                        <li><a href="#feedback">Feedback</a></li>
+                        <!-- <li><a href="#feedback">Feedback</a></li> -->
                         <li><a href="#contactSupport">Help</a></li>
                                 <!-- Copyright -->
                                 <div class="copyright">
-                                    <p><?php
+                                    <div><?php
                                         $currentYear = date("Y");
                                         echo "&copy; $currentYear";
                                         ?>
-                                        <a href="mailto:innocentmukabwa@gmail.com">dev</a>
-                                    </p>
+                                    </div>
                                 </div>
                     </div>
                 </ul>
@@ -379,7 +378,7 @@ mysqli_close($myconn);
                                 <p>Fill out the form to create a new loan offer.</p>
                             </div>         
                             <div>
-                                <form action="createLoan.php" method="post" onsubmit="return validateFormLoans()">
+                                <form id="loanOfferForm" action="createLoan.php" method="post" onsubmit="return validateFormLoans()">
                                 <div id="error" style="color: tomato; font-weight:700"></div>
                                 <table>
                                         <tr>
@@ -406,7 +405,7 @@ mysqli_close($myconn);
                                             <td><input type="text" id="interestRate" name="interestRate"></td>
                                         </tr>
                                         <tr>
-                                            <td><label for="maxAmount">Maximum Amount <br>(in shillings)</label></td>
+                                            <td><label for="maxAmount">Maximum Amount</label></td>
                                             <td><input type="text" id="maxAmount" name="maxAmount"></td>
                                         </tr>
                                         <tr>
@@ -414,6 +413,7 @@ mysqli_close($myconn);
                                             <td><input type="text" id="maxDuration" name="maxDuration"></td>
                                         </tr>
                                         <tr class="submit-action">
+                                            <td></td>
                                             <td><button type="submit" name="submit">SUBMIT</button></td>
                                         </tr>
                                     </table>
@@ -659,7 +659,7 @@ mysqli_close($myconn);
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td style="color: tomato; font-size: 1.2em;" colspan="9" class="no-data">
+                                        <td style="color: tomato; font-size: 1.5em;" colspan="9" class="no-data">
                                             No loan requests found for your offers
                                         </td>
                                     </tr>
@@ -710,7 +710,7 @@ mysqli_close($myconn);
                             <div class="detail-value" id="viewStatus"></div>
                         </div>
                         <div class="detail-row">
-                            <div class="detail-label">Application Date:</div>
+                            <div class="detail-label">Application <br> Date:</div>
                             <div class="detail-value" id="viewCreatedAt"></div>
                         </div>
                         <div class="view-actions">
@@ -831,7 +831,7 @@ mysqli_close($myconn);
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td style="color: tomato; font-size: 1.2em;" colspan="10" class="no-data">
+                                        <td style="color: tomato; font-size: 1.5em;" colspan="10" class="no-data">
                                             No active loans found
                                         </td>
                                     </tr>
@@ -882,7 +882,7 @@ mysqli_close($myconn);
                                 <div class="detail-value" id="viewActiveRemainingBalance"></div>
                             </div>
                             <div class="detail-row">
-                                <div class="detail-label">Application Date:</div>
+                                <div class="detail-label">Application <br> Date:</div>
                                 <div class="detail-value" id="viewActiveCreatedAt"></div>
                             </div>
                             <div class="view-actions">
@@ -903,7 +903,7 @@ mysqli_close($myconn);
                         <?php unset($_SESSION['loan_message']); ?>
                     <?php endif; ?>
                 
-                    <div class="loan-filter-container">
+                    <div class="transaction-history-container">
                         <form method="get" action="lenderDashboard.php#paymentReview">
                             <div class="filter-row">
                 
@@ -951,7 +951,7 @@ mysqli_close($myconn);
                         </form>
                     </div>
                 
-                    <div class="loan-requests-table">
+                    <div class="active-loans-table">
                         <table>
                             <thead>
                                 <tr>
@@ -995,7 +995,7 @@ mysqli_close($myconn);
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td style="color: tomato; font-size: 1.2em;" colspan="10" class="no-data">
+                                        <td style="color: tomato; font-size: 1.5em;" colspan="10" class="no-data">
                                             No payment records found
                                         </td>
                                     </tr>
@@ -1146,10 +1146,10 @@ mysqli_close($myconn);
                 </div>
 
                 <!-- Feedback -->
-                <div id="feedback" class="margin">
+                <!-- <div id="feedback" class="margin">
                     <h1>Feedback</h1>
                     <p>Share your feedback with us.</p>
-                </div>
+                </div> -->
 
                 <!-- Contact Support -->
                 <div id="contactSupport" class="margin">
@@ -1190,64 +1190,61 @@ mysqli_close($myconn);
                             </p>
                         </div>
                     </div>
-                    <div class="metrics">
-                        <div>
-                            <p>Loan Types Offered</p>
-                            <div class="metric-value-container">
-                                <span class="span-2"><?php echo $totalOffers; ?></span>
+                    <div class="data"> 
+                        <div class="metrics">
+                            <div>
+                                <p>Loan Offers</p>
+                                <div class="metric-value-container">
+                                    <span class="span-2"><?php echo $totalOffers; ?></span>
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <p>Active Loans</p>
-                            <div class="metric-value-container">
-                            <span class="span-2"><?php echo $activeLoans; ?></span>
+                            <div>
+                                <p>Active Loans</p>
+                                <div class="metric-value-container">
+                                <span class="span-2"><?php echo $activeLoans; ?></span>
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <p>Disbursed Loans</p>
-                            <div class="metric-value-container">
-                            <span class="span-2"><?php echo $disbursedLoans; ?></span>
+                            <div>
+                                <p>Disbursed Loans</p>
+                                <div class="metric-value-container">
+                                <span class="span-2"><?php echo $disbursedLoans; ?></span>
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <p>Amount Disbursed</p>
-                            <div class="metric-value-container">
-                                <span class="span-2"><?php echo $totalDisbursedAmount; ?></span>
+                            <div>
+                                <p>Amount Disbursed</p>
+                                <div class="metric-value-container">
+                                    <span class="span-2"><?php echo $totalDisbursedAmount; ?></span>
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <p>Total Amount Owed</p>
-                            <div class="metric-value-container">
-                                <span class="span-2"><?php echo $owedCapacity; ?></span>
+                            <div>
+                                <p>Amount Owed</p>
+                                <div class="metric-value-container">
+                                    <span class="span-2"><?php echo $owedCapacity; ?></span>
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <p>Avg. Interest Rate</p>
-                            <div class="metric-value-container">
-                                <div class="span-2">
-                                    <span class="avg"><?php echo $avgInterestRate; ?></span>
-                                    <span class="percentage">%</span>
+                            <div>
+                                <p>Avg. Interest Rate</p>
+                                <div class="metric-value-container">
+                                    <div class="span-2">
+                                        <span class="avg"><?php echo $avgInterestRate; ?></span>
+                                        <span class="percentage">%</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="visuals">
-                        <div>
-                        <p>Number of Disbursed Loans per Loan Type</p>
-                        <canvas id="barChart" width="800" height="300"></canvas>
                         
-                        </div>
-                        <div>
-                            <p>Loan Status </p>
-                            <canvas id="pieChart" width="400" height="200"></canvas>
-                             
+                        <div class="visuals">
+                            <div>
+                            <p>Number of Disbursed Loans per Loan Type</p>
+                            <canvas id="barChart" width="650" height="300"></canvas>
                             
+                            </div>
+                            <div>
+                                <p>Loan Status </p>
+                                <canvas id="pieChart" width="400" height="200"></canvas>
+                            </div>
                         </div>
-                    
-
- 
-                    </div>
+                        </div> 
                 </div>
             </div>
         </div>
@@ -1689,11 +1686,11 @@ document.addEventListener('DOMContentLoaded', function() {
         barCtx.clearRect(0, 0, barCanvas.width, barCanvas.height);
         
         // Chart dimensions
-        const barWidth = 30;
+        const barWidth = 20;
         const barSpacing = 20;
-        const startX = 50;
-        const startY = barCanvas.height - 80;
-        const axisPadding = 5;
+        const startX = 30;
+        const startY = barCanvas.height - 50;
+        const axisPadding = 10;
         
         // Calculate Y-axis max (minimum of 5 for visibility)
         const maxCount = Math.max(5, ...counts);
@@ -1740,13 +1737,13 @@ document.addEventListener('DOMContentLoaded', function() {
             barCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
             barCtx.beginPath();
             barCtx.moveTo(startX - axisPadding, y);
-            barCtx.lineTo(barCanvas.width - 250, y);
+            barCtx.lineTo(barCanvas.width - 240, y);
             barCtx.stroke();
         }
         
         // Legend
-        const legendX = barCanvas.width - 250;
-        const legendY = 40;
+        const legendX = barCanvas.width - 240;
+        const legendY = 60;
         const legendSpacing = 20;
         
         barCtx.font = '16px Trebuchet MS';
