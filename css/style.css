@@ -118,7 +118,7 @@ input::placeholder{
     text-align: end;
 }
 .select{
-    padding: .7em;
+    padding: .7em 0;
     background: #28282B;
     border: none;
     border-bottom: 1px solid whitesmoke;
@@ -539,15 +539,19 @@ color: whitesmoke;
     
     /* Footer */
     .footer {
-        /* background-color: rgba(0, 0, 0, 0.3); */
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+
+
         color: whitesmoke;
-        /* width: 100%; */
     }
     
     .footer-container {
         display: flex;
         justify-content: space-between;
-        margin: 0 auto;
+        margin: 0 3em;
         border-top: 1px solid #555;
 
     }
@@ -691,6 +695,7 @@ color: whitesmoke;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    padding: 0 1em;
 }
 .nav ul li{
     list-style: none;
@@ -775,7 +780,7 @@ color: whitesmoke;
 ::-webkit-scrollbar-track {
     background: lightgray; 
     border-radius: .2em; 
-    margin: 2em 0;
+    margin: 5em 0;
 }
 
 /* Scrollbar Thumb (the draggable part) */
@@ -829,17 +834,24 @@ color: whitesmoke;
     height: 80%;
     overflow-y: auto;
 }
+.data{
+    display: flex;
+    flex-direction: column;
+    height:75%;
+    /* outline: 1px solid red; */
+    justify-content: space-between;
+}
 .metrics {
     height: 30%;
     width: 100%;
-    margin: .2em 0;
+    /* margin-bottom: 1em; */
     display: flex;
     justify-content: space-around;
 }
 
 .metrics > div {
     width: 20%;
-    height: 70%;
+    /* height: 70%; */
     outline: 1px solid gray;
     border-radius: 1em;
     margin-inline: .5em;
@@ -892,16 +904,16 @@ color: whitesmoke;
 .visuals{
     margin: .6em 0 0 0;
     height: 50%;
-    width: 95%;
-    /* outline: 1px solid blue; */
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
     align-items: center;
-    /* text-align: center; */
-    /* overflow-y: auto; */
-
+    justify-content: space-between;
+    width: 90%;
+   
 }
+
+
+
 .metrics, .visuals, .admin-visuals, .profile-details{
     animation: fadeIn 0.3s ease-in-out;
 
@@ -1218,15 +1230,50 @@ iframe {
     color: lightgray;
 }
 .form-actions{
+    display: flex;
+    gap: 1px;
     margin: 2.5% 0 0 0;
+    width: 100%;
     
     
 }
+#loanApplicationForm input{
+padding: .7em 0;
+background: none;
+border: none;
+border-bottom: 1px solid whitesmoke;
+outline: none;
+color: white;
+font-size: 1.1em;
+margin: .2em 0;
+border-radius: 6px;
+}
+#paymentForm input, #profileEditForm input{
+padding: .7em 0;
+margin: .2em 0;
+}
+#loanOfferForm input{
+    padding: .7em 0;
+    margin: .2em;
+    text-align: right;
+}
+#loanOfferForm select{
+    margin: 0;
+    width: 100%;
+}
+#editForm input{
+    width: 100%;
+    padding: .7em 0;
+    margin: 0 0 .5em 0;
+}
+
 .form-actions .cancel-btn{
         border-radius: .5em 0 0 .5em;
+        width: 30%;
 }
 .form-actions .submit-btn{
     border-radius: 0 .5em .5em 0;
+    width: 70%;
 }
 .display-info{
     color: whitesmoke;
@@ -1257,11 +1304,9 @@ iframe {
     justify-content: space-between;
 }
 .form-group textarea{
-    /* padding: 1.5em 3em; */
     height: 3em;
-    width: 65%;
+    width: 100%;
     outline: none;
-    margin-right: 5%;
     background-color: lightgray;
     font-size: 1.2em;
     margin-top: 2%;
@@ -1299,7 +1344,7 @@ iframe {
 
 
 .simple-loan-table {
-    width: 98%;
+    width: 99%;
     border-collapse: collapse;
 }
 
@@ -1355,13 +1400,11 @@ iframe {
     color: #74C0FC;
     padding: 0 .2em;
     font-weight: 100;
-    margin: 0;
   }
 
   .close-btn:hover {
     color: tomato;
     outline: none;
-    font-weight: 900;
     transition: .2s ease-in-out;
   }
 
@@ -1372,6 +1415,7 @@ iframe {
 
 .popup-content3 .delete-btn{
     background-color: tomato;
+    width: 100%;
 }
 .popup-content3 .delete-btn:hover{
     background: transparent;
@@ -1450,6 +1494,7 @@ iframe {
 }
 .save-btn{
     border-radius: 0 .5em .5em 0;
+    width: 70%;
 }
 .additional-settings{
     width: 50%;
@@ -1479,7 +1524,7 @@ iframe {
 
 
 .active-loans-table table{
-    width: 98%;
+    width: 99%;
     border-collapse: collapse;
     margin: .5em 0;
     animation: fadeIn 0.3s ease-in-out;
@@ -1579,7 +1624,9 @@ iframe {
 
 
 
-
+.submit-action button{
+    width: 100%;
+}
 
 .action-buttons{
     display: flex;
@@ -1681,7 +1728,6 @@ iframe {
 
 .copyright{
     width: 100%;
-    text-align: center;
     color: lightslategray;
     margin-top: 1%;
     font-weight: 800;
@@ -1699,21 +1745,27 @@ iframe {
     color: white;
     transition: .2s ease-in-out;
 }
+.edit-act{
+    width: 100%;
+    display: flex;
+    gap: 1px;
+}
 .edit-act .del{
     border-radius: .5em 0  0 .5em ;
+    width: 30%;
 }
 .edit-act .act{
     border-radius: 0 .5em .5em 0;
+    width: 70%;
 }
 #loanRequests{
-    width: 95%;
+    width: 98%;
     overflow-y: auto;
-    height: 90%;
+    height: 100%;
 }
 #paymentReview{
-        width: 95%;
         overflow-y: auto;
-        height: 90%;
+        height: 100%;
 }
 .filter-actions .apply-btn{
     color: #28282B;
@@ -1951,6 +2003,7 @@ iframe {
 #riskAssessment{
     overflow-y: auto;
     height: 100%;
+    width: 98%;
 
 
 }

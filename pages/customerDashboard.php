@@ -423,7 +423,7 @@ $status = 'active'; // Placeholder for access status
                 <ul class="nav-split">
                     <div class="top">
                         <li><a href="#dashboard" id="dashboardLink">Dashboard</a></li>
-                        <li><a href="#applyLoan" id="applyLoanLink" class="<?php echo ($status === 'restricted_apply') ? 'disabled-link' : ''; ?>">Apply for Loan</a></li>
+                        <li><a href="#applyLoan" id="applyLoanLink" class="<?php echo ($status === 'restricted_apply') ? 'disabled-link' : ''; ?>">Apply Loan</a></li>
                         <li><a href="#loanHistory" id="loanHistoryLink">Loan History</a></li>
                         <li><a href="#paymentTracking" id="">Payment Tracking</a></li> 
                         <li><a href="#transactionHistory" id="">Transaction History</a></li> 
@@ -431,10 +431,10 @@ $status = 'active'; // Placeholder for access status
                         <li><a href="#profile">Profile</a></li>
                     </div>
                     <div class="bottom">
-                        <li><a href="#feedback">Feedback</a></li>
+                        <!-- <li><a href="#feedback">Feedback</a></li> -->
                         <li><a href="#contactSupport">Help</a></li>
                         <div class="copyright">
-                            <p>© <?php echo $currentYear; ?> <a href="mailto:innocentmukabwa@gmail.com">dev</a></p>
+                            <p> <?php echo "&copy; $currentYear"; ?></p>
                         </div>
                     </div>
                 </ul>
@@ -856,7 +856,7 @@ $status = 'active'; // Placeholder for access status
                                         <span class="detail-value" id="viewStatus"></span>
                                     </div>
                                     <div class="detail-row">
-                                        <span class="detail-label">Application Date:</span>
+                                        <span class="detail-label">Application <br> Date:</span>
                                         <span class="detail-value" id="viewCreatedAt"></span>
                                     </div>
                                 </div>
@@ -1351,10 +1351,10 @@ $status = 'active'; // Placeholder for access status
                 </div>
 
                 <!-- Feedback -->
-                <div id="feedback" class="margin">
+                <!-- <div id="feedback" class="margin">
                     <h1>Feedback</h1>
                     <p>Share your feedback with us.</p>
-                </div>
+                </div> -->
 
                 <!-- Contact Support -->
                 <div id="contactSupport" class="margin">
@@ -1378,46 +1378,48 @@ $status = 'active'; // Placeholder for access status
                             </p>
                         </div>
                     </div>
-                    <div class="metrics">
-                        <div>
-                            <p>Active Loans</p>
-                            <div class="metric-value-container">
-                                <span class="span-2"><?php echo $activeLoansCount; ?></span>
+                    <div class="data">
+                        <div class="metrics">
+                            <div>
+                                <p>Active Loans</p>
+                                <div class="metric-value-container">
+                                    <span class="span-2"><?php echo $activeLoansCount; ?></span>
+                                </div>
+                            </div>
+                            <div>
+                                <p>Disbursed Loans</p>
+                                <div class="metric-value-container">
+                                    <span class="span-2"><?php echo $totalDisbursedLoans; ?></span>
+                                </div>
+                            </div>
+                            <div>
+                                <p>Amount Borrowed</p>
+                                <div class="metric-value-container">
+                                    <span class="span-2"><?php echo number_format($totalBorrowed); ?></span>
+                                </div>
+                            </div>
+                            <div>
+                                <p>Outstanding Balance</p>
+                                <div class="metric-value-container">
+                                    <span class="span-2"><?php echo number_format($outstandingBalance); ?></span>
+                                </div>
+                            </div>
+                            <div>
+                                <p>Next Payment Date</p>
+                                <div class="metric-value-container">
+                                    <span class="span-2"><?php echo $nextPaymentDate; ?></span>
+                                </div>
                             </div>
                         </div>
-                        <div>
-                            <p>Disbursed Loans</p>
-                            <div class="metric-value-container">
-                                <span class="span-2"><?php echo $totalDisbursedLoans; ?></span>
+                        <div class="visuals">
+                            <div>
+                                <p>Number of Disbursed Loans per Loan Type</p>
+                                <canvas id="barChart" width="650" height="300"></canvas>
                             </div>
-                        </div>
-                        <div>
-                            <p>Total Amount Borrowed</p>
-                            <div class="metric-value-container">
-                                <span class="span-2"><?php echo number_format($totalBorrowed); ?></span>
+                            <div>
+                                <p>Loan Status</p>
+                                <canvas id="pieChart" width="400" height="200"></canvas>
                             </div>
-                        </div>
-                        <div>
-                            <p>Outstanding Balance</p>
-                            <div class="metric-value-container">
-                                <span class="span-2"><?php echo number_format($outstandingBalance); ?></span>
-                            </div>
-                        </div>
-                        <div>
-                            <p>Next Payment Date</p>
-                            <div class="metric-value-container">
-                                <span class="span-2"><?php echo $nextPaymentDate; ?></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="visuals">
-                        <div>
-                            <p>Number of Disbursed Loans per Loan Type</p>
-                            <canvas id="barChart" width="800" height="300"></canvas>
-                        </div>
-                        <div>
-                            <p>Loan Status</p>
-                            <canvas id="pieChart" width="400" height="200"></canvas>
                         </div>
                     </div>
                 </div>
@@ -1827,11 +1829,11 @@ function initializeBarChart() {
     barCtx.clearRect(0, 0, barCanvas.width, barCanvas.height);
     
     // Chart dimensions
-    const barWidth = 30;
+    const barWidth = 20;
     const barSpacing = 20;
-    const startX = 50;
-    const startY = barCanvas.height - 80;
-    const axisPadding = 5;
+    const startX = 30;
+    const startY = barCanvas.height - 50;
+    const axisPadding = 10;
     
     // Calculate Y-axis max
     const maxCount = Math.max(5, ...counts);
@@ -1876,13 +1878,13 @@ function initializeBarChart() {
         barCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
         barCtx.beginPath();
         barCtx.moveTo(startX - axisPadding, y);
-        barCtx.lineTo(barCanvas.width - 250, y);
+        barCtx.lineTo(barCanvas.width - 240, y);
         barCtx.stroke();
     }
     
     // Legend
-    const legendX = barCanvas.width - 250;
-    const legendY = 40;
+    const legendX = barCanvas.width - 240;
+    const legendY = 60;
     const legendSpacing = 20;
     
     barCtx.font = '16px Trebuchet MS';

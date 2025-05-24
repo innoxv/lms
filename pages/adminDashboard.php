@@ -282,7 +282,6 @@ mysqli_close($myconn);
                                         $currentYear = date("Y");
                                         echo "&copy; $currentYear";
                                         ?>
-                                        <a href="mailto:innocentmukabwa@gmail.com">dev</a>
                                     </p>
                                 </div>
                     </div>
