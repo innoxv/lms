@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['admin_message_type'] = 'error';
     }
     
-    header("Location: adminDashboard.php#loanApplicationReview");
+    header("Location: adminDashboard.php#riskAssessment");
     exit();
 }
 ?>
