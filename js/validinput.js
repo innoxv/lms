@@ -409,6 +409,33 @@ function validateLoanApplicationForm() {
         document.getElementById("duration").focus();
         return false;
     }
+    
+    // Validate Collateral Image
+    const collateralImageInput = document.getElementById("collateralImage");
+    const file = collateralImageInput.files[0]; // Get the selected file
+
+    // Check if a file is selected
+    if (!file) {
+        displayError("Please select a collateral image.");
+        collateralImageInput.focus();
+        return false;
+    }
+
+    // Validate file type (image only)
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+        displayError("Only JPEG, PNG, and GIF images are allowed.");
+        collateralImageInput.focus();
+        return false;
+    }
+
+    // Validate file size (e.g., max 2MB)
+    const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+    if (file.size > maxSize) {
+        displayError("Image file size must not exceed 2MB.");
+        collateralImageInput.focus();
+        return false;
+    }
 
     return true;
 }

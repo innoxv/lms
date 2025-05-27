@@ -191,7 +191,6 @@ $loanRequestsQuery = "SELECT
     loans.duration,
     loans.collateral_value,
     loans.collateral_description,
-    loans.risk_level,
     loans.status,
     loans.created_at,
     customers.name,
@@ -199,7 +198,8 @@ $loanRequestsQuery = "SELECT
 FROM loans
 JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
 JOIN customers ON loans.customer_id = customers.customer_id
-WHERE loans.lender_id = '$lender_id'";
+WHERE loans.lender_id = '$lender_id'  -- exclude loans with status submitted
+AND loans.status != 'submitted'";
 
 // Status filter
 if (!empty($statusFilter) && in_array($statusFilter, ['pending', 'disbursed', 'rejected'])) {
@@ -278,14 +278,17 @@ $totalLoans = 0;
 
 while ($row = mysqli_fetch_assoc($statusResult)) {
     $statusData[$row['status']] = (int)$row['count'];
-    $totalLoans += (int)$row['count'];
+    // Only include "pending", "disbursed", and "rejected" in the total
+    if (in_array($row['status'], ['pending', 'disbursed', 'rejected'])) {
+        $totalLoans += (int)$row['count'];
+    }
 }
 
-// Calculate percentages for each status
+// Calculate percentages for each status, only for relevant statuses
 $pieData = [
-    'pending' => isset($statusData['pending']) ? ($statusData['pending'] / $totalLoans * 100) : 0,
-    'disbursed' => isset($statusData['disbursed']) ? ($statusData['disbursed'] / $totalLoans * 100) : 0,
-    'rejected' => isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0
+    'pending' => $totalLoans > 0 && isset($statusData['pending']) ? ($statusData['pending'] / $totalLoans * 100) : 0,
+    'disbursed' => $totalLoans > 0 && isset($statusData['disbursed']) ? ($statusData['disbursed'] / $totalLoans * 100) : 0,
+    'rejected' => $totalLoans > 0 && isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0
 ];
 
 // Fetch lender profile data
@@ -596,7 +599,7 @@ mysqli_close($myconn);
                                     <th>Amount</th>
                                     <th>Duration</th>
                                     <th>Collateral Value</th>
-                                    <th>Risk Level</th>
+                                    <!-- <th>Risk Level</th> -->
                                     <th>Status</th>
                                     <th >Application Date</th>
                                     <th style="text-align: center">Actions</th>
@@ -612,11 +615,6 @@ mysqli_close($myconn);
                                         <td><?php echo number_format($request['amount'], 2); ?></td>
                                         <td style="text-align: center"><?php echo htmlspecialchars($request['duration']); ?></td>
                                         <td style="text-align: center"><?php echo htmlspecialchars($request['collateral_value']); ?></td>
-                                        <td>
-                                            <span class="risk-badge risk-<?php echo strtolower(htmlspecialchars($request['risk_level'])); ?>">
-                                                <?php echo htmlspecialchars($request['risk_level']); ?>
-                                            </span>
-                                        </td>
                                         <td>
                                             <span class="status-badge status-<?php echo strtolower(htmlspecialchars($request['status'])); ?>">
                                                 <?php echo htmlspecialchars($request['status']); ?>

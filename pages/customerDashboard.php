@@ -354,13 +354,17 @@ $statusData = [];
 $totalLoans = 0;
 while ($row = $statusResult->fetch_assoc()) {
     $statusData[$row['status']] = (int)$row['count'];
-    $totalLoans += (int)$row['count'];
+    // Only include "pending", "disbursed", and "rejected" in the total
+    if (in_array($row['status'], ['pending', 'disbursed', 'rejected'])) {
+        $totalLoans += (int)$row['count'];
+    }
 }
 
+// Calculate percentages for each status, only for relevant statuses
 $pieData = [
-    'pending' => isset($statusData['pending']) ? ($statusData['pending'] / $totalLoans * 100) : 0,
-    'disbursed' => isset($statusData['disbursed']) ? ($statusData['disbursed'] / $totalLoans * 100) : 0,
-    'rejected' => isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0
+    'pending' => $totalLoans > 0 && isset($statusData['pending']) ? ($statusData['pending'] / $totalLoans * 100) : 0,
+    'disbursed' => $totalLoans > 0 && isset($statusData['disbursed']) ? ($statusData['disbursed'] / $totalLoans * 100) : 0,
+    'rejected' => $totalLoans > 0 && isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0
 ];
 
 // MESSAGES HANDLING
@@ -624,7 +628,8 @@ $status = 'active'; // Placeholder for access status
                                 <?php endif; ?>
                             <?php endif; ?>
                         </div>
-                                    <!-- Loan Application Form -->
+
+                        <!-- Loan Application Form -->
                         <div class="popup-overlay2" id="loanPopup" style="display: none;">
                             <div class="popup-content">
                                 <h2>Loan Application</h2>
@@ -637,7 +642,8 @@ $status = 'active'; // Placeholder for access status
                                     unset($_SESSION['message_type']);
                                     ?>
                                 <?php endif; ?>
-                                <form id="loanApplicationForm" action="applyLoan.php" method="post" onsubmit="return validateLoanApplicationForm()">
+                                <!-- enctype="multipart/form-data" ensures the form data, including files, is encoded properly for submission. -->
+                                <form id="loanApplicationForm" action="applyLoan.php" method="post" enctype="multipart/form-data" onsubmit="return validateLoanApplicationForm()">
                                     <div class="form-group">
                                         <input type="hidden" id="offerId" name="offer_id">
                                         <input type="hidden" id="lenderId" name="lender_id">
@@ -667,7 +673,7 @@ $status = 'active'; // Placeholder for access status
                                     <div id="error" style="color: tomato;font-weight:700"></div>
 
                                     <div class="form-group">
-                                        <label for="amountNeeded">Amount Needed (KES):*</label>
+                                        <label for="amountNeeded">Amount Needed:*</label>
                                         <input type="text" id="amountNeeded" name="amount">
                                     </div>
                                     <div class="form-group">
@@ -675,16 +681,20 @@ $status = 'active'; // Placeholder for access status
                                         <input type="text" id="duration" name="duration">
                                     </div>
                                     <div class="form-group">
-                                        <label for="installments">Monthly Installment (KES):</label>
-                                        <input style="border-bottom: none;" type="text" id="installments" name="installments" placeholder="auto-calculated">
+                                        <label for="installments">Monthly Installment:</label>
+                                        <input style="border-bottom: none;" type="text" id="installments" name="installments" placeholder="auto-calculated" readonly>
                                     </div>
                                     <div class="form-group">
-                                        <label for="collateralValue">Collateral Value (KES):*</label>
+                                        <label for="collateralValue">Collateral Value:*</label>
                                         <input type="text" id="collateralValue" name="collateral_value">
                                     </div>
                                     <div class="form-group">
                                         <label for="collateralDesc">Collateral Description:*</label>
                                         <textarea id="collateralDesc" name="collateral_description" placeholder="enter a short description" ></textarea>
+                                    </div>
+                                    <div id="collateralImageGroup">
+                                        <div><label for="collateralImage">Collateral Image:*</label></div>
+                                        <div><input style="border-bottom: none;"  type="file" id="collateralImage" name="collateral_image" accept="image/*"></div>
                                     </div>
                                     <div class="form-actions">
                                         <button type="reset" class="cancel-btn" id="cancelBtn">Cancel</button>
@@ -692,7 +702,7 @@ $status = 'active'; // Placeholder for access status
                                     </div>
                                 </form>
                             </div>
-                        </div>   
+                        </div>  
                     </div>   
                 </div>
 
