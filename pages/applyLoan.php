@@ -15,12 +15,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $required = [
     'offer_id', 'lender_id', 'interest_rate',
     'amount', 'duration', 'collateral_value', 
-    'collateral_description'
+    'collateral_description', 'collateral_image'
 ];
 
 $missing = [];
 foreach ($required as $field) {
-    if (empty($_POST[$field])) {
+    if (empty($_POST[$field]) && ($field !== 'collateral_image' || empty($_FILES['collateral_image']['name']))) {
         $missing[] = $field;
     }
 }
@@ -42,6 +42,63 @@ $duration = intval($_POST['duration']);
 $collateral_value = floatval($_POST['collateral_value']);
 $collateral_description = $myconn->real_escape_string($_POST['collateral_description']);
 $installments = isset($_POST['installments']) ? floatval($_POST['installments']) : 0;
+
+// Handle image upload
+$collateral_image = '';
+if (!empty($_FILES['collateral_image']['name'])) {
+    $target_dir = "../uploads/"; // Absolute path to uploads directory
+    $target_file = $target_dir . basename($_FILES['collateral_image']['name']);
+    $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+    $allowed_types = ['jpg', 'jpeg', 'png', 'gif'];
+
+    // Check if file is an image
+    $check = getimagesize($_FILES['collateral_image']['tmp_name']);
+    if ($check === false) {
+        $_SESSION['loan_message'] = "File is not an image";
+        $_SESSION['message_type'] = "error";
+        header("Location: customerDashboard.php#applyLoan");
+        exit;
+    }
+
+    // Check file size (limit to 2MB)
+    if ($_FILES['collateral_image']['size'] > 2000000) {
+        $_SESSION['loan_message'] = "File size too large (max 2MB)";
+        $_SESSION['message_type'] = "error";
+        header("Location: customerDashboard.php#applyLoan");
+        exit;
+    }
+
+    // Allow only specific file types
+    if (!in_array($imageFileType, $allowed_types)) {
+        $_SESSION['loan_message'] = "Only JPG, JPEG, PNG, and GIF files are allowed";
+        $_SESSION['message_type'] = "error";
+        header("Location: customerDashboard.php#applyLoan");
+        exit;
+    }
+
+    // Debug directory and writability
+    if (!is_dir($target_dir) || !is_writable($target_dir)) {
+        $_SESSION['loan_message'] = "Upload directory does not exist or is not writable. Path: " . $target_dir;
+        $_SESSION['message_type'] = "error";
+        header("Location: customerDashboard.php#applyLoan");
+        exit;
+    }
+
+    // Move file to server
+    if (move_uploaded_file($_FILES['collateral_image']['tmp_name'], $target_file)) {
+        $collateral_image = $target_file;
+    } else {
+        $_SESSION['loan_message'] = "Error uploading file: " . $_FILES['collateral_image']['error'];
+        $_SESSION['message_type'] = "error";
+        header("Location: customerDashboard.php#applyLoan");
+        exit;
+    }
+} else {
+    $_SESSION['loan_message'] = "Collateral image is required";
+    $_SESSION['message_type'] = "error";
+    header("Location: customerDashboard.php#applyLoan");
+    exit;
+}
 
 // Verify customer exists
 $customer_result = $myconn->query(
@@ -95,13 +152,13 @@ if ($existing_loan_check && $existing_loan_check->num_rows > 0) {
 $insert_query = "INSERT INTO loans (
     offer_id, customer_id, lender_id,
     amount, interest_rate, duration,
-    installments, collateral_description, collateral_value,
+    installments, collateral_description, collateral_value, collateral_image,
     status, created_at
 ) VALUES (
     $offer_id, $customer_id, $lender_id,
     $amount, $interest_rate, $duration,
-    $installments, '$collateral_description', $collateral_value,
-    'pending', NOW()
+    $installments, '$collateral_description', $collateral_value, '$collateral_image',
+    'submitted', NOW()  -- this is to ensure the admin approves the loan for the new status to be pending 26may1630hrs
 )";
 
 if ($myconn->query($insert_query)) {

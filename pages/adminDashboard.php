@@ -267,7 +267,7 @@ mysqli_close($myconn);
                 <ul class="nav-split">
                     <div class="top">
                         <li><a href="#dashboard">Dashboard</a></li>
-                        <li><a href="#riskAssessment">Risk Assessment</a></li>
+                        <li><a href="#riskAssessment">Application Review</a></li>
                         <li><a href="#viewUsers">View Users</a></li>
                         <li><a href="#addUsers">Add New User</a></li>
                         <li><a href="#activityLogs">Activity Logs</a></li>
@@ -290,108 +290,135 @@ mysqli_close($myconn);
 
             <!-- Dynamic display enabled by CSS -->
             <div class="display">
-                
-<!-- Risk Assessment -->
-<div id="riskAssessment" class="margin">
-    <h1>Risk Assessment</h1>
-    <p>Evaluate collateral and assign risk levels to pending loan applications.</p>
-
-    <!-- Messages -->
-    <?php if (isset($_SESSION['admin_message'])): ?>
-        <div class="alert <?= $_SESSION['admin_message_type'] ?? 'info' ?>">
-            <?= htmlspecialchars($_SESSION['admin_message']) ?>
-        </div>
-        <?php 
-        unset($_SESSION['admin_message']);
-        unset($_SESSION['admin_message_type']);
-        ?>
-    <?php endif; ?>
-
-    <div class="risk-assessment-container">
-        <form method="get" action="adminDashboard.php#riskAssessment">
-            <div class="filter-row">
-                <div class="filter-group">
-                    <label for="risk_level">Risk Level:</label>
-                    <select name="risk_level" id="risk_level" onchange="this.form.submit()">
-                        <option value="" <?= empty($_GET['risk_level']) ? 'selected' : '' ?>>All</option>
-                        <option value="high" <?= isset($_GET['risk_level']) && $_GET['risk_level'] === 'high' ? 'selected' : '' ?>>High</option>
-                        <option value="low" <?= isset($_GET['risk_level']) && $_GET['risk_level'] === 'low' ? 'selected' : '' ?>>Low</option>
-                        <option value="medium" <?= isset($_GET['risk_level']) && $_GET['risk_level'] === 'medium' ? 'selected' : '' ?>>Medium</option>
-                        <option value="unverified" <?= isset($_GET['risk_level']) && $_GET['risk_level'] === 'unverified' ? 'selected' : '' ?>>Unverified</option>
-                    </select>
+                            
+            <!-- Application Review -->
+            <div id="riskAssessment" class="margin">
+                <h1>Application Review</h1>
+                <p>Assess submitted loan applications to approve for lender processing or reject.</p>
+            
+                <!-- Messages -->
+                <?php if (isset($_SESSION['admin_message'])): ?>
+                    <div class="alert <?= $_SESSION['admin_message_type'] ?? 'info' ?>">
+                        <?= htmlspecialchars($_SESSION['admin_message']) ?>
+                    </div>
+                    <?php 
+                    unset($_SESSION['admin_message']);
+                    unset($_SESSION['admin_message_type']);
+                    ?>
+                <?php endif; ?>
+            
+                <div class="risk-assessment-container">
+                    <div class="active-loans-table">
+                        <?php
+                        // Include risk assessment logic
+                        include 'riskAssessment.php';
+            
+                        // Fetch pending loans
+                        $_SESSION['pending_loans'] = fetchAllLoans($myconn);
+                        $pendingLoans = $_SESSION['pending_loans'];
+                        ?>
+                        <?php if (empty($pendingLoans)): ?>
+                            <div style="color: tomato; font-size: 1.2em; margin-top: .3em;">No loan applications found</div>
+                        <?php else: ?>
+                            <table class="users-table">
+                                <thead>
+                                    <tr>
+                                        <th>Loan ID</th>
+                                        <th>Customer ID</th>
+                                        <th>Customer Name</th>
+                                        <th>Amount</th>
+                                        <th>Duration</th>
+                                        <th>Collateral Value</th>
+                                        <th>Collateral Description</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($pendingLoans as $loan): ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($loan['loan_id']) ?></td>
+                                            <td><?= htmlspecialchars($loan['customer_id']) ?></td>
+                                            <td><?php echo htmlspecialchars($loan['customer_name'] ?? 'Unknown Customer'); ?></td>
+                                            <td><?= number_format($loan['amount'], 2) ?></td>
+                                            <td><?= htmlspecialchars($loan['duration']) ?></td>
+                                            <td><?= number_format($loan['collateral_value'], 2) ?></td>
+                                            <td><?= htmlspecialchars($loan['collateral_description']) ?></td>
+                                            <td>
+                                                <button class="view-btn" onclick="openLoanPopup(<?= htmlspecialchars(json_encode($loan)) ?>)">
+                                                    View
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        <?php endif; ?>
+                    </div>
                 </div>
-                <div class="filter-actions">
-                    <a href="adminDashboard.php?reset=true#riskAssessment"><button type="button" class="reset-btn">Reset</button></a>
+            
+                <!-- Popup for Loan Details -->
+                <div id="loanPopup" class="popup-overlay3" style="display: none;">
+                    <div class="popup-content3">
+                        <span class="close-btn" onclick="closeLoanPopup()">&times;</span>
+                        <h2>Loan Details</h2>
+                        <div class="loan-details-grid">
+                            <div class="detail-row">
+                                <span class="detail-label">Loan ID:</span>
+                                <span class="detail-value" id="popup-loan-id"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Customer ID:</span>
+                                <span class="detail-value" id="popup-customer-id"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Customer Name:</span>
+                                <span class="detail-value" id="popup-customer-name"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Amount:</span>
+                                <span class="detail-value" id="popup-amount"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Duration:</span>
+                                <span class="detail-value" id="popup-duration"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Collateral Value:</span>
+                                <span class="detail-value" id="popup-collateral-value"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Collateral Description:</span>
+                                <span class="detail-value" id="popup-collateral-desc"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Collateral Image:</span> <br>
+                            </div>
+                            <img id="popup-collateral-image" src="" alt="Collateral Image" style="width: 100%; max-height: 200px;">
+                            
+                            <div class="risk-action-buttons">
+                                <div>
+                                    <form class="risk" action="riskAssessment.php" method="post" style="display: inline;">
+                                        <input type="hidden" name="loan_id" id="popup-loan-id-input">
+                                        <button type="submit" name="approve" class="risk-approve-btn">Approve</button>
+                                    </form>
+                                </div>
+                                <div>
+                                    <form class="risk" action="riskAssessment.php" method="post" style="display: inline;">
+                                        <input type="hidden" name="loan_id" id="popup-loan-id-input-reject">
+                                        <button type="submit" name="reject" class="risk-reject-btn">Reject</button>
+                                    </form>
+                                </div>
+                                
+                                
+                            </div>
+                        </div>
+
+                        
+                    </div>
                 </div>
             </div>
-        </form>
-        <div class="active-loans-table">
-            <?php
-            // Include risk assessment logic
-            include 'riskAssessment.php';
 
-            // Handle filters
-            $filters = ['risk_level' => $_GET['risk_level'] ?? ''];
-            if (isset($_GET['reset']) && $_GET['reset'] === 'true') {
-                $filters = ['risk_level' => ''];
-                unset($_SESSION['pending_loans']);
-                unset($_SESSION['risk_filters']);
-            }
-
-            // Fetch pending loans
-            $_SESSION['pending_loans'] = fetchAllLoans($myconn, $filters);
-            $_SESSION['risk_filters'] = $filters;
-            $pendingLoans = $_SESSION['pending_loans'];
-            ?>
-            <?php if (empty($pendingLoans)): ?>
-                <div style="color: tomato; font-size: 1.2em; margin-top: .3em;">No loan applications found</div>
-            <?php else: ?>
-                <table class="users-table">
-                    <thead>
-                        <tr>
-                            <th>Loan ID</th>
-                            <th>Customer ID</th>
-                            <th>Amount</th>
-                            <th>Duration</th>
-                            <th>Collateral Value</th>
-                            <th>Collateral Description</th>
-                            <th>Risk Level</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($pendingLoans as $loan): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($loan['loan_id']) ?></td>
-                                <td><?= htmlspecialchars($loan['customer_id']) ?></td>
-                                <td><?= number_format($loan['amount'], 2) ?></td>
-                                <td><?= htmlspecialchars($loan['duration']) ?></td>
-                                <td><?= number_format($loan['collateral_value'], 2) ?></td>
-                                <td><?= htmlspecialchars($loan['collateral_description']) ?></td>
-                                <td>
-                                    <span class="risk-level <?= htmlspecialchars($loan['risk_level']) ?>">
-                                        <?= ucfirst(htmlspecialchars($loan['risk_level'])) ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <form action="riskAssessment.php" method="post">
-                                        <input type="hidden" name="loan_id" value="<?= $loan['loan_id'] ?>">
-                                        <button type="submit" name="evaluate" class="evaluate-btn" 
-                                        <?php echo $loan['risk_level'] !== 'unverified' ? 'disabled' : ''; ?>>
-                                    Evaluate
-                                </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php endif; ?>
-        </div>
-    </div>
-</div>
-
-                <!-- View Users -->
+            <!-- View Users -->
             <div id="viewUsers" class="margin">
                 <h1>View and manage Users</h1>
                 <p>View all the users and perform necessary activities.</p>
@@ -607,13 +634,11 @@ mysqli_close($myconn);
                                     <option value="application deletion" <?= $activityFilter==='application deletion'?'selected':'' ?>>Application Deletion</option>
                                     <option value="loan approval" <?= $activityFilter==='loan approval'?'selected':'' ?>>Loan Approval</option>
                                     <option value="loan rejection" <?= $activityFilter==='loan rejection'?'selected':'' ?>>Loan Rejection</option>
+                                    <option value="loan disbursal" <?= $activityFilter==='loan disbursal'?'selected':'' ?>>Loan Disbursal</option>
                                     <option value="loan offer creation" <?= $activityFilter==='loan offer creation'?'selected':'' ?>>Loan Offer Creation</option>
                                     <option value="loan offer edit" <?= $activityFilter==='loan offer edit'?'selected':'' ?>>Loan Offer Edit</option>
                                     <option value="loan offer deletion" <?= $activityFilter==='loan offer deletion'?'selected':'' ?>>Loan Offer Deletion</option>
                                     <option value="payment" <?= $activityFilter==='payment'?'selected':'' ?>>Loan Payment</option>
-                                    <option value="loan evaluation" <?= $activityFilter==='loan evaluation'?'selected':'' ?>>Loan Evaluation</option>
-
-
                                 </optgroup>
                                 
                                 <optgroup label="User Management">
@@ -969,6 +994,34 @@ document.addEventListener('DOMContentLoaded', initializePieChart);
         window.onload = hideAdminMessage;
     </script>
 
+<!-- Pop Up -->
+<script>
+    function openLoanPopup(loan) {
+        document.getElementById('popup-loan-id').textContent = loan.loan_id;
+        document.getElementById('popup-customer-id').textContent = loan.customer_id;
+        document.getElementById('popup-customer-name').textContent = loan.customer_name;
+        document.getElementById('popup-amount').textContent = parseFloat(loan.amount).toFixed(2);
+        document.getElementById('popup-duration').textContent = loan.duration;
+        document.getElementById('popup-collateral-value').textContent = parseFloat(loan.collateral_value).toFixed(2);
+        document.getElementById('popup-collateral-desc').textContent = loan.collateral_description;
+        document.getElementById('popup-collateral-image').src = loan.collateral_image || '';
+        document.getElementById('popup-loan-id-input').value = loan.loan_id;
+        document.getElementById('popup-loan-id-input-reject').value = loan.loan_id;
+        document.getElementById('loanPopup').style.display = 'block';
+    }
+
+    function closeLoanPopup() {
+        document.getElementById('loanPopup').style.display = 'none';
+    }
+
+    // Close popup when clicking outside of it
+    window.onclick = function(event) {
+        const popup = document.getElementById('loanPopup');
+        if (event.target == popup) {
+            popup.style.display = 'none';
+        }
+    }
+</script>
     
 </body>
 </html>

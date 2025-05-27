@@ -21,26 +21,18 @@ $userId = $_SESSION['user_id'];
 // Database config file
 include '../phpconfig/config.php';
 
-// Function to fetch all loans with optional risk level filter
-function fetchAllLoans($conn, $filters) {
+// Function to fetch all submitted loans with customer name
+function fetchAllLoans($conn) {
     $query = "SELECT loans.loan_id, loans.customer_id, loans.amount, loans.duration, 
-                     loans.collateral_value, loans.collateral_description, loans.status, 
-                     loans.risk_level 
-              FROM loans";
-    
-    $params = [];
-    if (!empty($filters['risk_level']) && in_array($filters['risk_level'], ['high', 'low', 'medium', 'unverified'])) {
-        $query .= " WHERE loans.risk_level = ?";
-        $params[] = $filters['risk_level'];
-    }
-    
-    $query .= " ORDER BY loans.loan_id DESC";
+                     loans.collateral_value, loans.collateral_description, loans.collateral_image, 
+                     loans.status, loans.created_at, loan_offers.loan_type, customers.name AS customer_name
+              FROM loans
+              JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
+              JOIN customers ON loans.customer_id = customers.customer_id
+              WHERE loans.status = 'submitted'
+              ORDER BY loans.loan_id DESC";
     
     $stmt = $conn->prepare($query);
-    if ($stmt && !empty($params)) {
-        $stmt->bind_param("s", $params[0]);
-    }
-    
     if ($stmt && $stmt->execute()) {
         $result = $stmt->get_result();
         $loans = [];
@@ -53,69 +45,72 @@ function fetchAllLoans($conn, $filters) {
     return [];
 }
 
-// Function to calculate risk level
-function calculateRiskLevel($loanAmount, $collateralValue) {
-    if ($loanAmount <= 0) {
-        return 'unverified';
-    }
+// Fetch loans initially and store in session
+$_SESSION['pending_loans'] = fetchAllLoans($myconn);
 
-    $percentageDifference = (($collateralValue - $loanAmount) / $loanAmount) * 100;
-
-    if ($percentageDifference >= 50) {
-        return 'low';
-    } elseif ($percentageDifference >= 0) {
-        return 'medium';
-    } else {
-        return 'high';
-    }
-}
-
-// Handle evaluation form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['evaluate'])) {
+// Handle approve/reject form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $loanId = intval($_POST['loan_id']);
     $officerId = $userId;
 
-    // Verify loan exists
-    $verifyQuery = "SELECT loans.amount, loans.collateral_value, loans.duration 
+    // Verify loan exists and is submitted
+    $verifyQuery = "SELECT loans.status 
                     FROM loans 
-                    WHERE loans.loan_id = ?";
+                    WHERE loans.loan_id = ? AND loans.status = 'submitted'";
     $stmt = $myconn->prepare($verifyQuery);
     $stmt->bind_param("i", $loanId);
     
     if ($stmt->execute()) {
         $result = $stmt->get_result();
         if ($result->num_rows === 0) {
-            $_SESSION['admin_message'] = "Invalid loan selected for evaluation.";
+            $_SESSION['admin_message'] = "Invalid loan selected or loan is not submitted.";
             $_SESSION['admin_message_type'] = 'error';
-            header("Location: adminDashboard.php#riskAssessment");
+            header("Location: adminDashboard.php#loanApplicationReview");
+            exit();
+        }
+        $stmt->close();
+
+        // Handle Approve or Reject
+        if (isset($_POST['approve'])) {
+            $newStatus = 'pending';
+            $activityType = "loan approval";
+            $activity = "Approved loan ID $loanId.";
+            $_SESSION['admin_message'] = "Loan approved successfully.";
+            $_SESSION['admin_message_type'] = 'success';
+        } elseif (isset($_POST['reject'])) {
+            $newStatus = 'rejected';
+            $activityType = "loan rejection";
+            $activity = "Rejected loan ID $loanId.";
+            $_SESSION['admin_message'] = "Loan rejected successfully.";
+            $_SESSION['admin_message_type'] = 'success';
+        } else {
+            $_SESSION['admin_message'] = "Invalid action.";
+            $_SESSION['admin_message_type'] = 'error';
+            header("Location: adminDashboard.php#loanApplicationReview");
             exit();
         }
 
-        $loan = $result->fetch_assoc();
-        $stmt->close();
-
-        // Calculate and update risk level
-        $riskLevel = calculateRiskLevel($loan['amount'], $loan['collateral_value']);
-        
-        $updateStmt = $myconn->prepare("UPDATE loans SET risk_level = ? WHERE loan_id = ?");
-        $updateStmt->bind_param("si", $riskLevel, $loanId);
+        // Update loan status
+        $updateStmt = $myconn->prepare("UPDATE loans SET status = ? WHERE loan_id = ?");
+        $updateStmt->bind_param("si", $newStatus, $loanId);
         $updateStmt->execute();
         $updateStmt->close();
 
         // Log activity
         $activityStmt = $myconn->prepare("INSERT INTO activity (user_id, activity, activity_type, activity_time) 
                                         VALUES (?, ?, ?, NOW())");
-        $activity = "Evaluated loan ID $loanId with risk level $riskLevel.";
-        $activityType = "loan evaluation";
         $activityStmt->bind_param("iss", $officerId, $activity, $activityType);
         $activityStmt->execute();
         $activityStmt->close();
 
-        $_SESSION['admin_message'] = "Loan evaluated and risk level set to $riskLevel.";
-        $_SESSION['admin_message_type'] = 'success';
-        $_SESSION['pending_loans'] = fetchAllLoans($myconn, $_SESSION['risk_filters'] ?? ['risk_level' => '']);
+        // Refresh pending loans
+        $_SESSION['pending_loans'] = fetchAllLoans($myconn);
+    } else {
+        $_SESSION['admin_message'] = "Database error during verification.";
+        $_SESSION['admin_message_type'] = 'error';
     }
     
-    header("Location: adminDashboard.php#riskAssessment");
+    header("Location: adminDashboard.php#loanApplicationReview");
     exit();
 }
+?>

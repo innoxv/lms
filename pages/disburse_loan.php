@@ -147,10 +147,10 @@ if (!$stmt->execute()) {
     exit();
 }
 
-// Log loan approval activity
-$activity = "Disbursed loan application #$loanId";
+// Log loan disbursal activity
+$activity = "Disbursed loan ID $loanId";
 $logQuery = "INSERT INTO activity (user_id, activity, activity_time, activity_type)
-             VALUES (?, ?, NOW(), 'loan approval')";
+             VALUES (?, ?, NOW(), 'loan disbursal')";
 $stmt = $myconn->prepare($logQuery);
 if (!$stmt) {
     $myconn->rollback();
@@ -176,7 +176,7 @@ if (!$stmt->execute()) {
 // Commit transaction
 $myconn->commit();
 
-$_SESSION['loan_message'] = "Loan $loanId has been disbursed!";
+$_SESSION['loan_message'] = "Loan ID $loanId has been disbursed!";
 $_SESSION['message_type'] = 'success';
 
 $myconn->close();
