@@ -948,9 +948,6 @@ color: whitesmoke;
 .loan-filter > form > div{
     /* outline: 1px solid green; */
     margin-block: -1.5em;
-
-    
-
 }
 .loan-filter > form > div > ul{
     display: flex;
@@ -976,6 +973,13 @@ color: whitesmoke;
     font-weight: unset;
 
 }
+
+/*  checkboxes */
+input[type="checkbox"] {
+    accent-color: #74C0FC;
+}
+
+
 .range{
     display: flex;
     flex-direction: column;
