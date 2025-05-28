@@ -76,14 +76,6 @@ if (!empty($_FILES['collateral_image']['name'])) {
         exit;
     }
 
-    // Debug directory and writability
-    if (!is_dir($target_dir) || !is_writable($target_dir)) {
-        $_SESSION['loan_message'] = "Upload directory does not exist or is not writable. Path: " . $target_dir;
-        $_SESSION['message_type'] = "error";
-        header("Location: customerDashboard.php#applyLoan");
-        exit;
-    }
-
     // Move file to server
     if (move_uploaded_file($_FILES['collateral_image']['tmp_name'], $target_file)) {
         $collateral_image = $target_file;
@@ -131,18 +123,68 @@ if (!$offer_check || $offer_check->num_rows === 0) {
 
 // Check for existing active loan of same type
 $existing_loan_check = $myconn->query(
-    "SELECT loans.status, loan_offers.loan_type 
+    "SELECT status, loan_type 
     FROM loans
     JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
     WHERE loans.customer_id = $customer_id
     AND loans.offer_id = $offer_id
-    AND loans.status != 'Paid'
+    AND EXISTS (
+        SELECT 1
+        FROM payments
+        WHERE payments.loan_id = loans.loan_id
+        AND payments.customer_id = $customer_id
+        AND payments.payment_date = (
+            SELECT MAX(payment_date)
+            FROM payments
+            WHERE payments.loan_id = loans.loan_id
+            AND payments.customer_id = $customer_id
+        )
+        AND payments.payment_type != 'full'
+    )
     LIMIT 1"
 );
 
 if ($existing_loan_check && $existing_loan_check->num_rows > 0) {
     $existing_loan = $existing_loan_check->fetch_assoc();
     $_SESSION['loan_message'] = "Loan is already active, pay first to reapply.";
+    $_SESSION['message_type'] = "error";
+    header("Location: customerDashboard.php#applyLoan");
+    exit;
+}
+
+// Check for unpaid loans (more than 2)
+$unpaid_loans_query = "
+    SELECT COUNT(DISTINCT loan_id) as unpaid_count
+    FROM loans
+    WHERE customer_id = $customer_id
+    AND EXISTS (
+        SELECT 1
+        FROM payments
+        WHERE payments.loan_id = loans.loan_id
+        AND payments.customer_id = $customer_id
+        AND payments.payment_date = (
+            SELECT MAX(payment_date)
+            FROM payments
+            WHERE payments.loan_id = loans.loan_id
+            AND payments.customer_id = $customer_id
+        )
+        AND payments.payment_type != 'full'
+    )
+";
+
+$unpaid_loans_result = $myconn->query($unpaid_loans_query);
+
+if (!$unpaid_loans_result) {
+    $_SESSION['loan_message'] = "Error checking unpaid loans: " . $myconn->error;
+    $_SESSION['message_type'] = "error";
+    header("Location: customerDashboard.php#applyLoan");
+    exit;
+}
+
+$unpaid_count = $unpaid_loans_result->fetch_assoc()['unpaid_count'];
+
+if ($unpaid_count > 2) {
+    $_SESSION['loan_message'] = "You have more than 2 unpaid loans. Settle them to apply.";
     $_SESSION['message_type'] = "error";
     header("Location: customerDashboard.php#applyLoan");
     exit;
@@ -158,7 +200,7 @@ $insert_query = "INSERT INTO loans (
     $offer_id, $customer_id, $lender_id,
     $amount, $interest_rate, $duration,
     $installments, '$collateral_description', $collateral_value, '$collateral_image',
-    'submitted', NOW()  -- this is to ensure the admin approves the loan for the new status to be pending 26may1630hrs
+    'submitted', NOW()  -- this is to ensure the admin approves the loan for the new status to be pending
 )";
 
 if ($myconn->query($insert_query)) {
