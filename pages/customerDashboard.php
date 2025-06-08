@@ -505,7 +505,7 @@ $status = 'active'; // Placeholder for access status
                                             </span>
                                         </li>
                                         <li>
-                                            <p>Amount Range (sh)</p>
+                                            <p>Amount Range</p>
                                             <span class="range">
                                                 <div class="input">
                                                     <input type="text" name="min_amount" placeholder="500" min="500" value="<?= htmlspecialchars($current_filters['min_amount'] ?? ($_GET['min_amount'] ?? '')) ?>">
@@ -1543,10 +1543,10 @@ function showPaymentPopup(button) {
     const remainingBalance = parseFloat(button.getAttribute('data-remaining-balance')) || 0;
     
     document.getElementById('payment_loan_id').value = loanId;
-    document.getElementById('payment_loan_amount').value = numberWithCommas(loanAmount);
-    document.getElementById('payment_amount_due').value = numberWithCommas(amountDue);
-    document.getElementById('payment_amount_paid').value = numberWithCommas(amountPaid);
-    document.getElementById('payment_balance').value = numberWithCommas(remainingBalance);
+    document.getElementById('payment_loan_amount').value = formatCurrency(loanAmount);
+    document.getElementById('payment_amount_due').value = formatCurrency(amountDue);
+    document.getElementById('payment_amount_paid').value = formatCurrency(amountPaid);
+    document.getElementById('payment_balance').value = formatCurrency(remainingBalance);
     
     // Reset form
     document.getElementById('payment_amount').value = '';
@@ -1561,8 +1561,10 @@ function closePaymentPopup() {
     document.body.classList.remove('popup-open');
 }
 
-function numberWithCommas(x) {
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+function formatCurrency(x) {
+    // Round up to two decimal places and format with KES
+    const roundedUp = Math.ceil(parseFloat(x) * 100) / 100;
+    return roundedUp.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 </script>
 

@@ -80,7 +80,7 @@ if (mysqli_query($myconn, $deleteQuery)) {
 } else {
     $_SESSION['loan_message'] = "Error deleting loan: " . mysqli_error($myconn);
 }
-mysqli_close($myconn);
+// mysqli_close($myconn);
 header("Location: lenderDashboard.php#createLoan");
 exit();
 ?>

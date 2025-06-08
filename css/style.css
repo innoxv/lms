@@ -90,13 +90,88 @@ body{
 .signin input{
     padding: .5em;
     margin: .2em 0;
-    width: 84%;
+    width: 100%;
+    box-sizing: border-box;
+
 
 }
+/* Sign In checkbox mods */
+/* Password input container */
+.password-input-container {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+/* Hide default checkbox */
+.checkbox-label input[type="checkbox"] {
+    display: none;
+}
+
+/* Position the eye icon inside the input */
+.checkbox-label {
+    position: absolute;
+    right: 0.5em;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
+/* Custom checkbox */
+.custom-checkbox {
+    width: 1em;
+    height: 1em;
+    position: relative;
+    display: inline-block;
+    background-color: lightgray;
+    border-radius: 50%;
+    border: 1px solid light;
+
+}
+
+/* Checked state (show password, open eye) */
+.checkbox-label input[type="checkbox"]:checked + .custom-checkbox::after {
+    content: "👁"; /* Open eye for show password */
+    color: #2C2C2C; 
+    font-size: .8em;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Strikethrough eye when unchecked */
+.checkbox-label input[type="checkbox"]:not(:checked) + .custom-checkbox::after {
+    content: "👁"; /* Same open eye */
+    color: #2C2C2C; 
+    font-size: .8em;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Strikethrough slash for unchecked state */
+.checkbox-label input[type="checkbox"]:not(:checked) + .custom-checkbox::before {
+    content: "";
+    position: absolute;
+    width: 1.2em; /* Length of slash */
+    height: 2px; /* Thickness of slash */
+    background-color: #1D1E20; 
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(50deg); /* Diagonal slash */
+}
+
+/* Hover effect */
+.checkbox-label:hover .custom-checkbox::after {
+    color: #74C0FC;
+}
+
 label{
     color: lightgray;
     font-size: 1em;
-    font-weight: 700;
+    font-weight: 900;
 }
 input{
     padding: .7em;
@@ -113,9 +188,9 @@ input{
 
 }
 input::placeholder{
-    color:lightgray;
+    color:gray;
     font-size: .9em;
-    text-align: end;
+    text-align: start;
 }
 .select{
     padding: .7em 0;
@@ -188,6 +263,9 @@ a{
 .signup-alt > :first-child{
     margin-inline: 1.5em;
 }
+
+
+
 
 /* Landingpage */
 
@@ -592,77 +670,7 @@ color: whitesmoke;
         color: #74C0FC;
     }
 
-/* Sign In checkbox mods */
 
-/* Hide default checkbox */
-.checkbox-label input[type="checkbox"] {
-    display: none;
-  }
-  
-  /* Label container */
-  .checkbox-label {
-    display: inline-flex;
-    align-items: center;
-    cursor: pointer;
-    vertical-align: middle; /* Aligns with password input in table cell */
-  }
-  
-  /* Custom checkbox */
-  .custom-checkbox {
-    width: 1.2em; /* Smaller size to fit next to password input */
-    height: 1.2em;
-    border: 2px solid #333; /* Dark border */
-    border-radius: 4px; /* Rounded corners */
-    position: relative;
-    background: lightgray; 
-    transition: all 0.3s ease;
-    margin: 0; 
-  }
-  
-  /* Checked state (show password, open eye) */
-  .checkbox-label input[type="checkbox"]:checked + .custom-checkbox {
-    background-color: #74C0FC; 
-    border-color: #74C0FC;
-  }
-  
-  /* Open eye icon when checked */
-  .checkbox-label input[type="checkbox"]:checked + .custom-checkbox::after {
-    content: "👁"; /* Open eye for show password */
-    color: #1D1E20; 
-    font-size: .8em; 
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-  
-  /* Strikethrough eye when unchecked */
-  .checkbox-label input[type="checkbox"]:not(:checked) + .custom-checkbox::after {
-    content: "👁"; /* Same open eye */
-    color: #1D1E20; 
-    font-size: .8em;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-  
-  /* Strikethrough slash for unchecked state */
-  .checkbox-label input[type="checkbox"]:not(:checked) + .custom-checkbox::before {
-    content: "";
-    position: absolute;
-    width: 1.2em; /* Length of slash */
-    height: 2px; /* Thickness of slash */
-    background-color: #1D1E20; 
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(50deg); /* Diagonal slash */
-  }
-  
-  /* Hover effect */
-  .checkbox-label:hover .custom-checkbox {
-    border-color: #74C0FC; 
-  }
 
 
 /* Customer DashBoard */
@@ -961,6 +969,7 @@ color: whitesmoke;
     display: flex;
     flex-direction: column;
     color: lightgray;
+
 }
 
 .loan-filter ul li p{
@@ -971,12 +980,23 @@ color: whitesmoke;
 .loan-filter label{
     /* color: whitesmoke; */
     font-weight: unset;
+    cursor: pointer;
+
 
 }
 
 /*  checkboxes */
 input[type="checkbox"] {
     accent-color: #74C0FC;
+    cursor: pointer;
+
+
+}
+/*  radio */
+input[type="radio"] {
+    accent-color: #74C0FC;
+    cursor: pointer;
+
 }
 
 
