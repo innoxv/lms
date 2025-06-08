@@ -225,7 +225,7 @@ $adminProfileResult = mysqli_query($myconn, $adminProfileQuery);
 $adminProfile = mysqli_fetch_assoc($adminProfileResult);
 
 // Close the database connection
-mysqli_close($myconn);
+// mysqli_close($myconn);
 ?>
 
 <!DOCTYPE html>

@@ -20,12 +20,14 @@
                         </tr>
                         <tr>
                             <td><label for="signinPassword">Password</label></td>
-                            <td><input type="password" style="margin-right:0;" id="signinPassword" name="signinPassword" placeholder="your password">
-                                <!-- show password-->
-                                <label class="checkbox-label">
-                                    <input type="checkbox" style="margin:0;" onclick="signinPassword.type = this.checked ? 'text' : 'password'">
-                                    <span class="custom-checkbox"></span>
-                                </label>
+                            <td>
+                                <div class="password-input-container">
+                                    <input type="password" id="signinPassword" name="signinPassword" placeholder="your password">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" onclick="signinPassword.type = this.checked ? 'text' : 'password'">
+                                        <span class="custom-checkbox"></span>
+                                    </label>
+                                </div>
                             </td>
                         </tr>
 

@@ -102,7 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
         $currentRemainingBalance = $totalAmountDue - $totalPaid;
 
         // Validate payment amount
-        if ($amount <= 0 || $amount > $currentRemainingBalance) {
+        // $currentRemainingBalance + 0.01 is to ensure you can pay amount equal to remaining balance
+        if ($amount <= 0 || $amount > $currentRemainingBalance + 0.01) {
             $_SESSION['payment_message'] = "Invalid payment amount. Must be greater than 0 and not exceed remaining balance.";
             $_SESSION['payment_message_type'] = 'error';
         } else {
