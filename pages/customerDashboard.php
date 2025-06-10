@@ -447,9 +447,19 @@ $status = 'active'; // Placeholder for access status
             <div class="display">
                 <!-- Apply for Loan -->
                 <div id="applyLoan" class="margin">
-                    <div>
+                <div class="dash-header">
+                        <div>
                         <h1>Apply for Loan</h1>
                         <p>Find a suitable Lender and fill out the form to apply for a new loan.</p>
+                        </div>
+                        <div class="greeting">
+                            <p>
+                                <code>
+                                    <span><?php echo $message; ?></span>
+                                    <span class="span"><?php echo $_SESSION['user_name']; ?>!</span>
+                                </code>
+                            </p>
+                        </div>
                     </div>
                     <div class="loan-right">
                         <div class="loan-filter">
@@ -709,8 +719,20 @@ $status = 'active'; // Placeholder for access status
 
                 <!-- Loan History -->
                 <div id="loanHistory" class="margin">
-                    <h1>Loan History</h1>
-                    <p>View your loan history.</p>
+                    <div class="dash-header">
+                        <div>
+                        <h1>Loan History</h1>
+                        <p>View your loan history.</p>
+                        </div>
+                        <div class="greeting">
+                            <p>
+                                <code>
+                                    <span><?php echo $message; ?></span>
+                                    <span class="span"><?php echo $_SESSION['user_name']; ?>!</span>
+                                </code>
+                            </p>
+                        </div>
+                    </div>
                     <div class="loan-filter-container">
                         <form method="get" action="#loanHistory">
                             <div class="filter-row">
@@ -880,9 +902,20 @@ $status = 'active'; // Placeholder for access status
 
                 <!-- Payment Tracking -->
                 <div id="paymentTracking" class="margin">
-                    <h1>Payment Tracking</h1>
-                    <p>View and manage your active loan payments.</p>
-                    
+                    <div class="dash-header">
+                        <div>
+                        <h1>Payment Tracking</h1>
+                        <p>View and manage your active loan payments.</p>
+                        </div>
+                        <div class="greeting">
+                            <p>
+                                <code>
+                                    <span><?php echo $message; ?></span>
+                                    <span class="span"><?php echo $_SESSION['user_name']; ?>!</span>
+                                </code>
+                            </p>
+                        </div>
+                    </div>
                     <!-- Messages -->
                     <?php if (isset($_SESSION['payment_message'])): ?>
                         <div class="alert <?= $_SESSION['payment_message_type'] ?? 'info' ?>">
@@ -1057,8 +1090,21 @@ $status = 'active'; // Placeholder for access status
 
                 <!-- Transaction History -->
                 <div id="transactionHistory" class="margin">
-                    <h1>Transaction History</h1>
-                    <p>View all your payment transactions.</p>
+                    <div class="dash-header">
+                        <div>
+                        <h1>Transaction History</h1>
+                        <p>View all your payment transactions.</p>
+                        </div>
+                        <div class="greeting">
+                            <p>
+                                <code>
+                                    <span><?php echo $message; ?></span>
+                                    <span class="span"><?php echo $_SESSION['user_name']; ?>!</span>
+                                </code>
+                            </p>
+                        </div>
+                    </div>
+
                     <div class="transaction-history-container">
                         <?php if (isset($_SESSION['trans_error_message'])): ?>
                             <div class="alert error"><?= htmlspecialchars($_SESSION['trans_error_message']) ?></div>
@@ -1213,8 +1259,21 @@ $status = 'active'; // Placeholder for access status
 
                 <!-- Profile -->
                 <div id="profile" class="margin">
-                    <h1>Profile</h1>
-                    <p>View and update your personal information.</p>
+                    <div class="dash-header">
+                        <div>
+                        <h1>Profile</h1>
+                        <p>View and update your personal information.</p>
+                        </div>
+                        <div class="greeting">
+                            <p>
+                                <code>
+                                    <span><?php echo $message; ?></span>
+                                    <span class="span"><?php echo $_SESSION['user_name']; ?>!</span>
+                                </code>
+                            </p>
+                        </div>
+                    </div>
+
                     <div class="profile-container">
                         <div class="profile-details">
                             <h2>Personal Information</h2>
@@ -1368,8 +1427,21 @@ $status = 'active'; // Placeholder for access status
 
                 <!-- Contact Support -->
                 <div id="contactSupport" class="margin">
-                    <h1>Contact Support</h1>
-                    <p>Reach out to our support team for assistance.</p>
+                    <div class="dash-header">
+                        <div>
+                        <h1>Contact Support</h1>
+                        <p>Reach out to our support team for assistance.</p>
+                        </div>
+                        <div class="greeting">
+                            <p>
+                                <code>
+                                    <span><?php echo $message; ?></span>
+                                    <span class="span"><?php echo $_SESSION['user_name']; ?>!</span>
+                                </code>
+                            </p>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- Dashboard -->
