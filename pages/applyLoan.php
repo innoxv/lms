@@ -46,7 +46,7 @@ $installments = isset($_POST['installments']) ? floatval($_POST['installments'])
 // Handle image upload
 $collateral_image = '';
 if (!empty($_FILES['collateral_image']['name'])) {
-    $target_dir = "../uploads/"; // Absolute path to uploads directory
+    $target_dir = "../uploads/";  // the upload directory
     $target_file = $target_dir . basename($_FILES['collateral_image']['name']);
     $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
     $allowed_types = ['jpg', 'jpeg', 'png', 'gif'];
@@ -54,7 +54,7 @@ if (!empty($_FILES['collateral_image']['name'])) {
     // Check if file is an image
     $check = getimagesize($_FILES['collateral_image']['tmp_name']);
     if ($check === false) {
-        $_SESSION['loan_message'] = "File is not an image";
+        $_SESSION['loan_message'] = "File is not an image.";
         $_SESSION['message_type'] = "error";
         header("Location: customerDashboard.php#applyLoan");
         exit;
@@ -62,7 +62,7 @@ if (!empty($_FILES['collateral_image']['name'])) {
 
     // Check file size (limit to 2MB)
     if ($_FILES['collateral_image']['size'] > 2000000) {
-        $_SESSION['loan_message'] = "File size too large (max 2MB)";
+        $_SESSION['loan_message'] = "File size too large (max 2MB).";
         $_SESSION['message_type'] = "error";
         header("Location: customerDashboard.php#applyLoan");
         exit;
@@ -70,7 +70,7 @@ if (!empty($_FILES['collateral_image']['name'])) {
 
     // Allow only specific file types
     if (!in_array($imageFileType, $allowed_types)) {
-        $_SESSION['loan_message'] = "Only JPG, JPEG, PNG, and GIF files are allowed";
+        $_SESSION['loan_message'] = "Only JPG, JPEG, PNG, and GIF files are allowed.";
         $_SESSION['message_type'] = "error";
         header("Location: customerDashboard.php#applyLoan");
         exit;
@@ -86,7 +86,7 @@ if (!empty($_FILES['collateral_image']['name'])) {
         exit;
     }
 } else {
-    $_SESSION['loan_message'] = "Collateral image is required";
+    $_SESSION['loan_message'] = "Collateral image is required.";
     $_SESSION['message_type'] = "error";
     header("Location: customerDashboard.php#applyLoan");
     exit;
@@ -98,7 +98,7 @@ $customer_result = $myconn->query(
 );
 
 if (!$customer_result || $customer_result->num_rows === 0) {
-    $_SESSION['loan_message'] = "Customer account not found";
+    $_SESSION['loan_message'] = "Customer account not found.";
     $_SESSION['message_type'] = "error";
     header("Location: customerDashboard.php#applyLoan");
     exit;
@@ -115,38 +115,50 @@ $offer_check = $myconn->query(
 );
 
 if (!$offer_check || $offer_check->num_rows === 0) {
-    $_SESSION['loan_message'] = "Invalid loan offer for selected lender";
+    $_SESSION['loan_message'] = "Invalid loan offer for selected lender.";
     $_SESSION['message_type'] = "error";
     header("Location: customerDashboard.php#applyLoan");
     exit;
 }
 
-// Check for existing active loan of same type
+// Check for existing active loan of same type (submitted, pending, or active) 11june1007hrs
 $existing_loan_check = $myconn->query(
-    "SELECT status, loan_type 
+    "SELECT status, loan_id 
     FROM loans
     JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
     WHERE loans.customer_id = $customer_id
-    AND loans.offer_id = $offer_id
-    AND EXISTS (
-        SELECT 1
-        FROM payments
-        WHERE payments.loan_id = loans.loan_id
-        AND payments.customer_id = $customer_id
-        AND payments.payment_date = (
-            SELECT MAX(payment_date)
+        AND loans.offer_id = $offer_id
+        AND loans.status IN ('submitted', 'pending')
+    UNION
+    SELECT status, loan_id 
+    FROM loans
+    JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
+    WHERE loans.customer_id = $customer_id
+        AND loans.offer_id = $offer_id
+        AND loans.status = 'disbursed'
+        AND EXISTS (
+            SELECT 1
             FROM payments
             WHERE payments.loan_id = loans.loan_id
             AND payments.customer_id = $customer_id
+            AND payments.payment_date = (
+                SELECT MAX(payment_date)
+                FROM payments
+                WHERE payments.loan_id = loans.loan_id
+                AND payments.customer_id = $customer_id
+            )
+            AND payments.payment_type != 'full'
         )
-        AND payments.payment_type != 'full'
-    )
     LIMIT 1"
 );
 
 if ($existing_loan_check && $existing_loan_check->num_rows > 0) {
-    $existing_loan = $existing_loan_check->fetch_assoc();
-    $_SESSION['loan_message'] = "Loan is already active, pay first to reapply.";
+    $loan = $existing_loan_check->fetch_assoc();
+    $status = $loan['status'];
+    $message = $status === 'disbursed' 
+        ? "This loan is '$status'. Settle it before reapplying."
+        : "This applicaton is '$status'. Wait for approval before reapplying.";
+    $_SESSION['loan_message'] = $message;
     $_SESSION['message_type'] = "error";
     header("Location: customerDashboard.php#applyLoan");
     exit;
@@ -195,15 +207,27 @@ $insert_query = "INSERT INTO loans (
     offer_id, customer_id, lender_id,
     amount, interest_rate, duration,
     installments, collateral_description, collateral_value, collateral_image,
-    status, created_at
+    status, application_date, due_date, isDue
 ) VALUES (
-    $offer_id, $customer_id, $lender_id,
-    $amount, $interest_rate, $duration,
-    $installments, '$collateral_description', $collateral_value, '$collateral_image',
-    'submitted', NOW()  -- this is to ensure the admin approves the loan for the new status to be pending
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', NOW(), 
+    DATE_ADD(NOW(), INTERVAL 1 MONTH), 0
 )";
+$stmt = $myconn->prepare($insert_query);
+$stmt->bind_param(
+    "iiiddidsss",
+    $offer_id,
+    $customer_id,
+    $lender_id,
+    $amount,
+    $interest_rate,
+    $duration,
+    $installments,
+    $collateral_description,
+    $collateral_value,
+    $collateral_image
+);
 
-if ($myconn->query($insert_query)) {
+if ($stmt->execute()) {
     // ACTIVITY LOGGING 
     $loan_id = $myconn->insert_id;
     $activity_description = "Applied for loan, Loan ID $loan_id";
@@ -219,6 +243,7 @@ if ($myconn->query($insert_query)) {
     $_SESSION['message_type'] = "error";
 }
 
+$stmt->close();
 header("Location: customerDashboard.php#applyLoan");
 exit;
 ?>

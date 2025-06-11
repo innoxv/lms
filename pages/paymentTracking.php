@@ -2,6 +2,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
+ini_set('log_errors', 1);
 session_start();
 
 // Check if user is logged in
@@ -28,6 +29,23 @@ include '../phpconfig/config.php';
 
 // Fetches active loans from fetchActiveLoans.php
 require_once 'fetchActiveLoans.php';
+
+// Update overdue loans
+$overdueQuery = "
+    UPDATE loans
+    SET isDue = 1
+    WHERE customer_id = ?
+    AND status = 'disbursed'
+    AND due_date IS NOT NULL
+    AND due_date < CURDATE()
+    AND EXISTS (
+        SELECT 1 FROM payments
+        WHERE payments.loan_id = loans.loan_id
+        AND payments.remaining_balance > 0
+    )";
+$stmt = $myconn->prepare($overdueQuery);
+$stmt->bind_param("i", $customerId);
+$stmt->execute();
 
 // Handle filters
 $filters = [
@@ -65,7 +83,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
         loans.lender_id,
         loans.amount, 
         loans.interest_rate, 
-        loans.duration
+        loans.duration,
+        loans.installments,
+        loans.due_date,
+        loans.application_date
     FROM loans 
     WHERE loans.loan_id = ? AND loans.status = 'disbursed'";
     $stmt = $myconn->prepare($verifyQuery);
@@ -85,6 +106,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
         $principal = $loanDetails['amount'];
         $interestRate = $loanDetails['interest_rate'] / 100;
         $durationYears = $loanDetails['duration'] / 12;
+        $expectedInstallment = $loanDetails['installments'];
+        $currentDueDate = $loanDetails['due_date'];
+        $applicationDate = $loanDetails['application_date'];
 
         // Calculate total amount due (principal + simple interest)
         $totalAmountDue = $principal + ($principal * $interestRate * $durationYears);
@@ -102,7 +126,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
         $currentRemainingBalance = $totalAmountDue - $totalPaid;
 
         // Validate payment amount
-        // $currentRemainingBalance + 0.01 is to ensure you can pay amount equal to remaining balance
         if ($amount <= 0 || $amount > $currentRemainingBalance + 0.01) {
             $_SESSION['payment_message'] = "Invalid payment amount. Must be greater than 0 and not exceed remaining balance.";
             $_SESSION['payment_message_type'] = 'error';
@@ -131,21 +154,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
             );
 
             if ($stmt->execute()) {
+                // Update due_date and isDue based on payment amount
+                if ($newRemainingBalance <= 0) {
+                    // Fully paid loan: clear due_date and set isDue to 0
+                    $updateLoanQuery = "UPDATE loans 
+                                        SET due_date = NULL, isDue = 0
+                                        WHERE loan_id = ?";
+                    $stmt = $myconn->prepare($updateLoanQuery);
+                    $stmt->bind_param("i", $loanId);
+                    $stmt->execute();
+                } elseif ($amount >= $expectedInstallment) {
+                    // Payment meets or exceeds installment: advance due_date and set isDue to 0
+                    $appDay = date('d', strtotime($applicationDate));
+                    $appMonth = date('m', strtotime($currentDueDate));
+                    $appYear = date('Y', strtotime($currentDueDate));
+                    $nextMonth = date('Y-m-d', strtotime("+1 month", strtotime("$appYear-$appMonth-$appDay")));
+                    $updateLoanQuery = "UPDATE loans 
+                                        SET due_date = ?, isDue = 0
+                                        WHERE loan_id = ? AND status = 'disbursed'";
+                    $stmt = $myconn->prepare($updateLoanQuery);
+                    $stmt->bind_param("si", $nextMonth, $loanId);
+                    $stmt->execute();
+                } else {
+                    // Payment less than installment: set isDue to 1, keep due_date
+                    $updateLoanQuery = "UPDATE loans 
+                                        SET isDue = 1
+                                        WHERE loan_id = ? AND status = 'disbursed'";
+                    $stmt = $myconn->prepare($updateLoanQuery);
+                    $stmt->bind_param("i", $loanId);
+                    $stmt->execute();
+                }
+
                 $_SESSION['payment_message'] = "Payment of KES " . number_format($amount, 2) . " processed successfully!";
                 $_SESSION['payment_message_type'] = 'success';
 
                 // Activity Logging
-                $activity = "Processed payment of $amount for loan ID $loanId";
+                $activity = "Processed payment of KES $amount for loan ID $loanId";
                 $activityQuery = "INSERT INTO activity (user_id, activity, activity_time, activity_type) 
                                  VALUES (?, ?, NOW(), 'payment')";
                 $stmt = $myconn->prepare($activityQuery);
                 $stmt->bind_param("is", $userId, $activity);
                 $stmt->execute();
 
-                // Refresh active loans
+                // Refresh Discordactive loans
                 $_SESSION['active_loans'] = fetchActiveLoans($myconn, $customerId, $filters);
             } else {
-                $_SESSION['payment_message'] = "Error processing payment: " . $myconn->error;
+                error_log("Payment insert error: " . $stmt->error);
+                $_SESSION['payment_message'] = "Error processing payment: " . $stmt->error;
                 $_SESSION['payment_message_type'] = 'error';
             }
         }

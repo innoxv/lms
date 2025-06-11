@@ -1,5 +1,3 @@
-
-<!-- This is for Payment Tracking to fetch Active Loans -->
 <?php
 function fetchActiveLoans($myconn, $customerId, $filters = []) {
     $query = "SELECT 
@@ -8,16 +6,19 @@ function fetchActiveLoans($myconn, $customerId, $filters = []) {
         loans.amount,
         loans.interest_rate,
         loans.duration,
+        loans.installments,
+        loans.due_date,
+        loans.isDue,
         loans.status AS loan_status,
         lenders.name AS lender_name,
-        loans.created_at,
+        loans.application_date,
         COALESCE(SUM(payments.amount), 0) AS amount_paid
     FROM loans
     JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
     JOIN lenders ON loans.lender_id = lenders.lender_id
     LEFT JOIN payments ON loans.loan_id = payments.loan_id
     WHERE loans.customer_id = ?
-    AND loans.status IN ('disbursed', 'disbursed', 'active')";
+    AND loans.status = 'disbursed'";
 
     $params = [$customerId];
     $types = "i";
@@ -44,21 +45,21 @@ function fetchActiveLoans($myconn, $customerId, $filters = []) {
     if (!empty($filters['date_range'])) {
         switch ($filters['date_range']) {
             case 'today':
-                $query .= " AND DATE(loans.created_at) = CURDATE()";
+                $query .= " AND DATE(loans.application_date) = CURDATE()";
                 break;
             case 'week':
-                $query .= " AND YEARWEEK(loans.created_at, 1) = YEARWEEK(CURDATE(), 1)";
+                $query .= " AND YEARWEEK(loans.application_date, 1) = YEARWEEK(CURDATE(), 1)";
                 break;
             case 'month':
-                $query .= " AND MONTH(loans.created_at) = MONTH(CURDATE()) AND YEAR(loans.created_at) = YEAR(CURDATE())";
+                $query .= " AND MONTH(loans.application_date) = MONTH(CURDATE()) AND YEAR(loans.application_date) = YEAR(CURDATE())";
                 break;
             case 'year':
-                $query .= " AND YEAR(loans.created_at) = YEAR(CURDATE())";
+                $query .= " AND YEAR(loans.application_date) = YEAR(CURDATE())";
                 break;
         }
     }
 
-    $query .= " GROUP BY loans.loan_id ORDER BY loans.created_at DESC";
+    $query .= " GROUP BY loans.loan_id ORDER BY loans.application_date DESC";
 
     $stmt = $myconn->prepare($query);
     if (!$stmt) {
@@ -97,11 +98,14 @@ function fetchActiveLoans($myconn, $customerId, $filters = []) {
                 'interest_rate' => $row['interest_rate'],
                 'loan_status' => $row['loan_status'],
                 'lender_name' => $row['lender_name'],
-                'created_at' => $row['created_at'],
+                'application_date' => $row['application_date'],
                 'amount_paid' => $amountPaid,
                 'remaining_balance' => $remainingBalance,
                 'total_amount_due' => $totalAmountDue,
-                'payment_status' => $paymentStatus
+                'payment_status' => $paymentStatus,
+                'installments' => $row['installments'],
+                'due_date' => $row['due_date'],
+                'isDue' => $row['isDue']
             ];
         }
     }

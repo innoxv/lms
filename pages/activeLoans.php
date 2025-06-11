@@ -31,7 +31,7 @@ $activeLoansQuery = "
         loans.collateral_value,
         loans.collateral_description,
         loans.status,
-        loans.created_at,
+        loans.application_date,
         customers.name,
         loan_offers.loan_type,
         latest_payment.remaining_balance
@@ -67,16 +67,16 @@ if (!empty($activeLoanTypeFilter)) {
 if (!empty($activeDateRange)) {
     switch ($activeDateRange) {
         case 'today':
-            $activeLoansQuery .= " AND DATE(loans.created_at) = CURDATE()";
+            $activeLoansQuery .= " AND DATE(loans.application_date) = CURDATE()";
             break;
         case 'week':
-            $activeLoansQuery .= " AND YEARWEEK(loans.created_at, 1) = YEARWEEK(CURDATE(), 1)";
+            $activeLoansQuery .= " AND YEARWEEK(loans.application_date, 1) = YEARWEEK(CURDATE(), 1)";
             break;
         case 'month':
-            $activeLoansQuery .= " AND MONTH(loans.created_at) = MONTH(CURDATE()) AND YEAR(loans.created_at) = YEAR(CURDATE())";
+            $activeLoansQuery .= " AND MONTH(loans.application_date) = MONTH(CURDATE()) AND YEAR(loans.application_date) = YEAR(CURDATE())";
             break;
         case 'year':
-            $activeLoansQuery .= " AND YEAR(loans.created_at) = YEAR(CURDATE())";
+            $activeLoansQuery .= " AND YEAR(loans.application_date) = YEAR(CURDATE())";
             break;
     }
 }
@@ -108,7 +108,7 @@ if (!empty($activeCollateralRange)) {
     }
 }
 
-$activeLoansQuery .= " ORDER BY loans.created_at DESC";
+$activeLoansQuery .= " ORDER BY loans.application_date DESC";
 
 // Execute query
 $activeLoansResult = mysqli_query($myconn, $activeLoansQuery);
