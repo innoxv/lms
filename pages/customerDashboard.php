@@ -68,7 +68,7 @@ $statusFilter = isset($_GET['status']) && in_array($_GET['status'], ['disbursed'
     loans.collateral_value,
     loans.collateral_description,
     loans.status AS loan_status,
-    loans.created_at,
+    loans.application_date,
     loan_offers.loan_type,
     lenders.name AS lender_name
 FROM loans
@@ -99,16 +99,16 @@ if (isset($_GET['loan_type']) && $_GET['loan_type']) {
 if (isset($_GET['date_range']) && $_GET['date_range']) {
     switch ($_GET['date_range']) {
         case 'today':
-            $loansQuery .= " AND DATE(loans.created_at) = CURDATE()";
+            $loansQuery .= " AND DATE(loans.application_date) = CURDATE()";
             break;
         case 'week':
-            $loansQuery .= " AND YEARWEEK(loans.created_at, 1) = YEARWEEK(CURDATE(), 1)";
+            $loansQuery .= " AND YEARWEEK(loans.application_date, 1) = YEARWEEK(CURDATE(), 1)";
             break;
         case 'month':
-            $loansQuery .= " AND MONTH(loans.created_at) = MONTH(CURDATE()) AND YEAR(loans.created_at) = YEAR(CURDATE())";
+            $loansQuery .= " AND MONTH(loans.application_date) = MONTH(CURDATE()) AND YEAR(loans.application_date) = YEAR(CURDATE())";
             break;
         case 'year':
-            $loansQuery .= " AND YEAR(loans.created_at) = YEAR(CURDATE())";
+            $loansQuery .= " AND YEAR(loans.application_date) = YEAR(CURDATE())";
             break;
     }
 }
@@ -143,7 +143,7 @@ if (isset($_GET['interest_rate']) && $_GET['interest_rate']) {
 
 
 // Add sorting
-$loansQuery .= " ORDER BY loans.created_at DESC";
+$loansQuery .= " ORDER BY loans.application_date DESC";
 
 // Prepare and execute
 $stmt = $myconn->prepare($loansQuery);
@@ -180,7 +180,7 @@ if (isset($_GET['loan_id'])) {
         loans.*,
         loan_offers.loan_type,
         lenders.name AS lender_name,
-        DATE_FORMAT(loans.created_at, '%Y-%m-%d') as created_date
+        DATE_FORMAT(loans.application_date, '%Y-%m-%d') as created_date
     FROM loans
     JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
     JOIN lenders ON loans.lender_id = lenders.lender_id
@@ -289,21 +289,22 @@ $outstandingBalance = (float)$balanceResult->fetch_row()[0] ?? 0;
 
 // Next Payment Date
 $dateQuery = "
-    SELECT MIN(DATE_ADD(latest_payment.payment_date, INTERVAL 1 MONTH))
+    SELECT MIN(due_date)
     FROM loans
-    JOIN (
-        SELECT loan_id, payment_date, remaining_balance
+    WHERE customer_id = ?
+    AND status = 'disbursed'
+    AND due_date IS NOT NULL
+    AND EXISTS (
+        SELECT 1
         FROM payments
-        WHERE (loan_id, payment_date) IN (
-            SELECT loan_id, MAX(payment_date)
+        WHERE payments.loan_id = loans.loan_id
+        AND payments.remaining_balance > 0
+        AND payments.payment_date = (
+            SELECT MAX(payment_date)
             FROM payments
-            GROUP BY loan_id
+            WHERE payments.loan_id = loans.loan_id
         )
-    ) latest_payment ON loans.loan_id = latest_payment.loan_id
-    WHERE loans.customer_id = ?
-    AND loans.status = 'disbursed'
-    AND latest_payment.remaining_balance > 0";
-
+    )";
 $stmt = $myconn->prepare($dateQuery);
 $stmt->bind_param("i", $customer_id);
 $stmt->execute();
@@ -822,7 +823,7 @@ $status = 'active'; // Placeholder for access status
                                     <?= htmlspecialchars($loan['loan_status'] ?? '') ?>
                                 </span>
                             </td>
-                            <td><?= date('j M Y', strtotime($loan['created_at'] ?? 'now')) ?></td>
+                            <td><?= date('j M Y', strtotime($loan['application_date'] ?? 'now')) ?></td>
                             <td>
                                 <button class="view-btn" 
                                         data-loan-id="<?= htmlspecialchars($loan['loan_id'] ?? '') ?>"
@@ -835,7 +836,7 @@ $status = 'active'; // Placeholder for access status
                                         data-collateral-value="<?= htmlspecialchars($loan['collateral_value'] ?? '0') ?>"
                                         data-collateral-description="<?= htmlspecialchars($loan['collateral_description'] ?? 'Not specified') ?>"
                                         data-status="<?= htmlspecialchars($loan['loan_status'] ?? '') ?>"
-                                        data-created-at="<?= htmlspecialchars($loan['created_at'] ?? '') ?>">
+                                        data-created-at="<?= htmlspecialchars($loan['application_date'] ?? '') ?>">
                                     View
                                 </button>
                             </td>
@@ -986,9 +987,10 @@ $status = 'active'; // Placeholder for access status
                                             <th>Loan ID</th>
                                             <th>Type</th>
                                             <th>Lender</th>
-                                            <th>Loan Amount</th>
                                             <th>Amount Due</th>
-                                            <th>Interest</th>
+                                            <th>Installments</th>
+                                            <th>Due Date</th>
+                                            <th>Is Due</th>
                                             <th>Paid</th>
                                             <th>Balance</th>
                                             <th>Status</th>
@@ -1005,9 +1007,14 @@ $status = 'active'; // Placeholder for access status
                                                 <td><?= htmlspecialchars($loan['loan_id']) ?></td>
                                                 <td><?= htmlspecialchars($loan['loan_type']) ?></td>
                                                 <td><?= htmlspecialchars($loan['lender_name']) ?></td>
-                                                <td><?= number_format($loan['amount']) ?></td>
+
                                                 <td><?= number_format($loan['total_amount_due']) ?></td>
-                                                <td><?= htmlspecialchars($loan['interest_rate']) ?>%</td>
+                                                <td><?= number_format($loan['installments']) ?></td>
+                                                
+                                                <td><?= $loan['due_date'] ? date('j M Y', strtotime($loan['due_date'])) : 'N/A' ?></td>
+                                                <td><?= $loan['isDue'] ? 'Yes' : 'No' ?></td>
+
+
                                                 <td><?= number_format($loan['amount_paid'] ?? 0) ?></td>
                                                 <td><?= number_format($loan['remaining_balance'] ?? 0) ?></td>
                                                 <td>
@@ -1022,6 +1029,8 @@ $status = 'active'; // Placeholder for access status
                                                         data-amount-due="<?= $loan['total_amount_due'] ?>"
                                                         data-amount-paid="<?= $loan['amount_paid'] ?? 0 ?>"
                                                         data-remaining-balance="<?= $loan['remaining_balance'] ?? 0 ?>"
+                                                        data-installments="<?= $loan['installments'] ?? 0 ?>"
+
                                                         onclick="showPaymentPopup(this)"
                                                         <?= ($loan['payment_status'] === 'fully_paid') ? 'disabled' : '' ?>> <!-- disables button if status is fully paid -->
                                                         Pay
@@ -1059,6 +1068,10 @@ $status = 'active'; // Placeholder for access status
                             <div class="form-group">
                                 <label for="payment_balance">Balance:</label>
                                 <input style="border: none;" type="text" id="payment_balance" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="payment_installments">Installments:</label>
+                                <input style="border: none;" type="text" id="payment_installments" readonly>
                             </div>
 
                             <!-- Error Message -->
@@ -1613,12 +1626,16 @@ function showPaymentPopup(button) {
     const amountDue = parseFloat(button.getAttribute('data-amount-due')) || 0;
     const amountPaid = parseFloat(button.getAttribute('data-amount-paid')) || 0;
     const remainingBalance = parseFloat(button.getAttribute('data-remaining-balance')) || 0;
+    const installments = parseFloat(button.getAttribute('data-installments')) || 0;
+
     
     document.getElementById('payment_loan_id').value = loanId;
     document.getElementById('payment_loan_amount').value = formatCurrency(loanAmount);
     document.getElementById('payment_amount_due').value = formatCurrency(amountDue);
     document.getElementById('payment_amount_paid').value = formatCurrency(amountPaid);
     document.getElementById('payment_balance').value = formatCurrency(remainingBalance);
+    document.getElementById('payment_installments').value = formatCurrency(installments);
+
     
     // Reset form
     document.getElementById('payment_amount').value = '';
@@ -2125,7 +2142,7 @@ function calculateInstallments() {
         const denominator = Math.pow(1 + monthlyRate, duration) - 1;
         const monthlyInstallment = numerator / denominator;
         
-        document.getElementById('installments').value = numberWithCommas(monthlyInstallment.toFixed(2));
+        document.getElementById('installments').value = monthlyInstallment.toFixed(2);
     } else {
         document.getElementById('installments').value = '';
     }

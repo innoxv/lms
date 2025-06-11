@@ -41,7 +41,7 @@ $query = "SELECT
             loans.collateral_value,
             loans.collateral_description,
             loans.status,
-            loans.created_at,
+            loans.application_date,
             loan_offers.loan_type,
             lenders.name AS lender_name
           FROM loans
@@ -86,7 +86,7 @@ $loan_details = [
     'collateral_value' => number_format($loan['collateral_value']),
     'collateral_description' => htmlspecialchars($loan['collateral_description']),
     'status' => $loan['status'],
-    'created_date' => date('j M Y', strtotime($loan['created_at']))
+    'created_date' => date('j M Y', strtotime($loan['application_date']))
 ];
 
 // Store in session for display

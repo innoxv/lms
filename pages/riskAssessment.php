@@ -25,7 +25,7 @@ include '../phpconfig/config.php';
 function fetchAllLoans($conn) {
     $query = "SELECT loans.loan_id, loans.customer_id, loans.amount, loans.duration, 
                      loans.collateral_value, loans.collateral_description, loans.collateral_image, 
-                     loans.status, loans.created_at, loan_offers.loan_type, customers.name AS customer_name
+                     loans.status, loans.application_date, loan_offers.loan_type, customers.name AS customer_name
               FROM loans
               JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
               JOIN customers ON loans.customer_id = customers.customer_id

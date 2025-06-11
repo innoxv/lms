@@ -40,7 +40,7 @@ if ($loanId) {
 
 // All loans with optional status filter
 $query = "SELECT loans.loan_id, loan_offers.loan_type, lenders.name AS lender_name,
-          loans.amount, loans.interest_rate, loans.status, loans.created_at
+          loans.amount, loans.interest_rate, loans.status, loans.application_date
           FROM loans
           JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
           JOIN lenders ON loans.lender_id = lenders.lender_id
@@ -53,7 +53,7 @@ if (!empty($statusFilter) && in_array($statusFilter, $validStatuses)) {
     $query .= " AND loans.status = ?";
 }
 
-$query .= " ORDER BY loans.created_at DESC";
+$query .= " ORDER BY loans.application_date DESC";
 
 $stmt = $myconn->prepare($query);
 if (!empty($statusFilter)) {

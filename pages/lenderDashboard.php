@@ -192,7 +192,7 @@ $loanRequestsQuery = "SELECT
     loans.collateral_value,
     loans.collateral_description,
     loans.status,
-    loans.created_at,
+    loans.application_date,
     customers.name,
     loan_offers.loan_type
 FROM loans
@@ -215,16 +215,16 @@ if (!empty($loanTypeFilter)) {
 if (isset($_GET['date_range']) && $_GET['date_range']) {
     switch ($_GET['date_range']) {
         case 'today':
-            $loanRequestsQuery .= " AND DATE(loans.created_at) = CURDATE()";
+            $loanRequestsQuery .= " AND DATE(loans.application_date) = CURDATE()";
             break;
         case 'week':
-            $loanRequestsQuery .= " AND YEARWEEK(loans.created_at, 1) = YEARWEEK(CURDATE(), 1)";
+            $loanRequestsQuery .= " AND YEARWEEK(loans.application_date, 1) = YEARWEEK(CURDATE(), 1)";
             break;
         case 'month':
-            $loanRequestsQuery .= " AND MONTH(loans.created_at) = MONTH(CURDATE()) AND YEAR(loans.created_at) = YEAR(CURDATE())";
+            $loanRequestsQuery .= " AND MONTH(loans.application_date) = MONTH(CURDATE()) AND YEAR(loans.application_date) = YEAR(CURDATE())";
             break;
         case 'year':
-            $loanRequestsQuery .= " AND YEAR(loans.created_at) = YEAR(CURDATE())";
+            $loanRequestsQuery .= " AND YEAR(loans.application_date) = YEAR(CURDATE())";
             break;
     }
 }
@@ -255,7 +255,7 @@ if (isset($_GET['collateral_range']) && $_GET['collateral_range']) {
         $loanRequestsQuery .= " AND loans.collateral_value <= $maxCollateral";
     }
 }
- $loanRequestsQuery .= " ORDER BY loans.created_at DESC";
+ $loanRequestsQuery .= " ORDER BY loans.application_date DESC";
 
 
 // Execute the query
@@ -620,7 +620,7 @@ mysqli_close($myconn);
                                                 <?php echo htmlspecialchars($request['status']); ?>
                                             </span>
                                         </td>
-                                        <td style="text-align: center"><?php echo date('j M Y', strtotime($request['created_at'])); ?></td>
+                                        <td style="text-align: center"><?php echo date('j M Y', strtotime($request['application_date'])); ?></td>
                                         <td class="action-buttons">
                                              <!-- View Details Button -->
                                               <!-- View Button -->
@@ -634,7 +634,7 @@ mysqli_close($myconn);
                                                     data-collateral-value="<?= htmlspecialchars($request['collateral_value']) ?>"
                                                     data-collateral-desc="<?= htmlspecialchars($request['collateral_description']) ?>"
                                                     data-status="<?= htmlspecialchars($request['status']) ?>"
-                                                    data-created-at="<?= htmlspecialchars($request['created_at']) ?>">
+                                                    data-created-at="<?= htmlspecialchars($request['application_date']) ?>">
                                                 View
                                             </button>
 
@@ -809,7 +809,7 @@ mysqli_close($myconn);
                                             <td><?php echo htmlspecialchars($loan['duration']); ?></td>
                                             <td><?php echo htmlspecialchars($loan['collateral_value']); ?></td>
                                             <td><?php echo number_format($loan['remaining_balance'], 2); ?></td>
-                                            <td><?php echo date('j M Y', strtotime($loan['created_at'])); ?></td>
+                                            <td><?php echo date('j M Y', strtotime($loan['application_date'])); ?></td>
                                             <td class="action-buttons">
                                                 <button class="btn-view-active" 
                                                         data-loan-id="<?= htmlspecialchars($loan['loan_id']) ?>"
@@ -821,7 +821,7 @@ mysqli_close($myconn);
                                                         data-collateral-value="<?= htmlspecialchars($loan['collateral_value']) ?>"
                                                         data-collateral-desc="<?= htmlspecialchars($loan['collateral_description']) ?>"
                                                         data-remaining-balance="<?= htmlspecialchars($loan['remaining_balance']) ?>"
-                                                        data-created-at="<?= htmlspecialchars($loan['created_at']) ?>">
+                                                        data-created-at="<?= htmlspecialchars($loan['application_date']) ?>">
                                                     View
                                                 </button>
                                             </td>
