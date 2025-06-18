@@ -1146,6 +1146,52 @@ li p{
     animation: fadeIn 0.3s ease-in-out;
 }
 
+
+/* Search Bar  */
+.search-container {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+#lenderSearch {
+    width: 80%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.suggestion-item {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.suggestion-item:hover {
+    background: #f0f0f0;
+}
+
+.suggestion-type {
+    font-weight: bold;
+    color: #333;
+}
+
+.suggestion-lender {
+    color: #666;
+}
+
 iframe {
     border: none;
     outline: none;

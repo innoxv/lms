@@ -38,7 +38,8 @@ if (isset($_GET['reset_filters']) && $_GET['reset_filters'] === 'true') {
 // Initialize filters
 $filters = [
     'loan_types' => [],
-    'interest_ranges' => []
+    'interest_ranges' => [],
+    'lender_name' => ''
 ];
 
 // Process loan type filter
@@ -46,6 +47,11 @@ if (isset($_GET['loan_type']) && is_array($_GET['loan_type'])) {
     $filters['loan_types'] = array_map(function($type) use ($myconn) {
         return $myconn->real_escape_string($type);
     }, $_GET['loan_type']);
+}
+
+// Process lender name filter
+if (isset($_GET['lender_name']) && !empty($_GET['lender_name'])) {
+    $filters['lender_name'] = $myconn->real_escape_string($_GET['lender_name']);
 }
 
 // Process amount filters 
@@ -88,6 +94,11 @@ if (!empty($amountConditions)) {
 if (!empty($filters['loan_types'])) {
     $placeholders = implode(',', array_fill(0, count($filters['loan_types']), '?'));
     $whereConditions[] = "loan_offers.loan_type IN ($placeholders)";
+}
+
+// Add lender name condition if specified
+if (!empty($filters['lender_name'])) {
+    $whereConditions[] = "lenders.name = ?";
 }
 
 // Add interest rate conditions if specified
@@ -147,6 +158,12 @@ if (!empty($filters['loan_types'])) {
     $params = array_merge($params, $filters['loan_types']);
 }
 
+// Add lender name to parameters if it exists
+if (!empty($filters['lender_name'])) {
+    $paramTypes .= 's';
+    $params[] = $filters['lender_name'];
+}
+
 // Bind parameters if they exist
 if (!empty($params)) {
     $stmt->bind_param($paramTypes, ...$params);
@@ -183,7 +200,7 @@ if (!empty($lenders)) {
 
 // Store filter state only if filters were actually applied
 if (!empty($_GET['loan_type']) || isset($_GET['min_amount']) || 
-    isset($_GET['max_amount']) || !empty($_GET['interest_range'])) {
+    isset($_GET['max_amount']) || !empty($_GET['interest_range']) || !empty($_GET['lender_name'])) {
     $_SESSION['current_filters'] = $filters;
     $_SESSION['filters_applied'] = true;
 }
