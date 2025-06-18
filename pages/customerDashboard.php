@@ -451,7 +451,9 @@ $status = 'active'; // Placeholder for access status
                 <div class="dash-header">
                         <div>
                         <h1>Apply for Loan</h1>
-                        <p>Find a suitable Lender and fill out the form to apply for a new loan.</p>
+                        <div>
+                        <p> Find a suitable Lender and fill out the form to apply for a new loan.   </p>
+                        </div>
                         </div>
                         <div class="greeting">
                             <p>
@@ -460,6 +462,11 @@ $status = 'active'; // Placeholder for access status
                                     <span class="span"><?php echo $_SESSION['user_name']; ?>!</span>
                                 </code>
                             </p>
+                            <!-- last JS script and searchSuggestions.php-->
+                            <div class="search-container">
+                                <input type="text" id="lenderSearch" placeholder="Search loan types or lenders..." autocomplete="off">
+                                <div id="suggestions" class="suggestions"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="loan-right">
@@ -2164,7 +2171,88 @@ function handleMessages() {
 }
 </script>
 
-     
+     <!-- Search  -->
+     <script>
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('lenderSearch');
+    const suggestionsDiv = document.getElementById('suggestions');
+    const form = document.getElementById('loanFilterForm');
+
+    let debounceTimer;
+    searchInput.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            const query = searchInput.value.trim();
+            if (query.length >= 2) {
+                fetchSuggestions(query);
+            } else {
+                suggestionsDiv.style.display = 'none';
+                suggestionsDiv.innerHTML = '';
+            }
+        }, 300);
+    });
+
+    function fetchSuggestions(query) {
+        fetch(`searchSuggestions.php?query=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                suggestionsDiv.innerHTML = '';
+                if (data.loan_types.length > 0 || data.lenders.length > 0) {
+                    // Add loan type suggestions
+                    data.loan_types.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item suggestion-type';
+                        div.textContent = item;
+                        div.addEventListener('click', () => {
+                            const checkbox = document.querySelector(`input[name="loan_type[]"][value="${item}"]`);
+                            if (checkbox) {
+                                checkbox.checked = true;
+                                form.submit();
+                            }
+                            suggestionsDiv.style.display = 'none';
+                            searchInput.value = '';
+                        });
+                        suggestionsDiv.appendChild(div);
+                    });
+
+                    // Add lender suggestions
+                    data.lenders.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item suggestion-lender';
+                        div.textContent = item;
+                        div.addEventListener('click', () => {
+                            // Add hidden input for lender filter
+                            const hiddenInput = document.createElement('input');
+                            hiddenInput.type = 'hidden';
+                            hiddenInput.name = 'lender_name';
+                            hiddenInput.value = item;
+                            form.appendChild(hiddenInput);
+                            form.submit();
+                            suggestionsDiv.style.display = 'none';
+                            searchInput.value = '';
+                        });
+                        suggestionsDiv.appendChild(div);
+                    });
+
+                    suggestionsDiv.style.display = 'block';
+                } else {
+                    suggestionsDiv.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching suggestions:', error);
+                suggestionsDiv.style.display = 'none';
+            });
+    }
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+            suggestionsDiv.style.display = 'none';
+        }
+    });
+});
+</script>
 
 </body>
 </html>
