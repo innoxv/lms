@@ -31,6 +31,7 @@ if (isset($_GET['reset_filters']) && $_GET['reset_filters'] === 'true') {
     unset($_SESSION['filtered_lenders']);
     unset($_SESSION['current_filters']);
     unset($_SESSION['filters_applied']);
+    unset($_SESSION['search_query']); // Clear search query
     header("Location: customerDashboard.php#applyLoan");
     exit;
 }
@@ -41,6 +42,14 @@ $filters = [
     'interest_ranges' => [],
     'lender_name' => ''
 ];
+
+// Process search query
+if (isset($_GET['search_query']) && !empty($_GET['search_query'])) {
+    $_SESSION['search_query'] = $_GET['search_query'];
+} else if (!isset($_GET['reset_filters'])) {
+    // Preserve search query unless resetting
+    $_SESSION['search_query'] = $_SESSION['search_query'] ?? '';
+}
 
 // Process loan type filter
 if (isset($_GET['loan_type']) && is_array($_GET['loan_type'])) {

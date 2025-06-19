@@ -1,28 +1,21 @@
 <?php
-// Start the session
+// Start the session to access user session data
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check authentication
-if (!isset($_SESSION['user_id'])) {
-    header('HTTP/1.1 401 Unauthorized');
-    exit;
-}
-
-// Database config file
+// Include database configuration file to establish connection
 include '../phpconfig/config.php';
 
-if ($myconn->connect_error) {
-    header('HTTP/1.1 500 Internal Server Error');
-    exit;
-}
-
+// Get the search query from GET parameters, trim whitespace, default to empty string
 $query = isset($_GET['query']) ? trim($_GET['query']) : '';
+
+// Initialize results array to store loan types and lenders
 $results = ['loan_types' => [], 'lenders' => []];
 
-if (strlen($query) >= 2) {
-    // List of available loan types
+// Process query only if it’s at least 1 character long
+if (strlen($query) >= 1) {
+    // Define static list of available loan types
     $loan_types = [
         'Personal Loan',
         'Business Loan',
@@ -36,30 +29,34 @@ if (strlen($query) >= 2) {
         'Agricultural Loan'
     ];
 
-    // Filter loan types based on query
+    // Filter loan types that match the query (case-insensitive)
     foreach ($loan_types as $type) {
         if (stripos($type, $query) !== false) {
-            $results['loan_types'][] = $type;
+            $results['loan_types'][] = $type; // Add matching loan type to results
         }
     }
 
-    // Fetch lenders from database
+    // Prepared SQL query to fetch lender names matching the query
     $sql = "SELECT DISTINCT name FROM lenders WHERE name LIKE ?";
-    $stmt = $myconn->prepare($sql);
+    $stmt = $myconn->prepare($sql); // Prepared statement to prevent SQL injection
     if ($stmt) {
+        // Create search term with wildcards for partial matching
         $search_term = "%" . $myconn->real_escape_string($query) . "%";
-        $stmt->bind_param('s', $search_term);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $stmt->bind_param('s', $search_term); // Bind search term as string
+        $stmt->execute(); // Execute the query
+        $result = $stmt->get_result(); // Get query results
+        // Fetch each matching lender name and add to results
         while ($row = $result->fetch_assoc()) {
             $results['lenders'][] = $row['name'];
         }
-        $stmt->close();
+        $stmt->close(); // Close the statement 
     }
 }
 
-// Return JSON response
+// Set response header to indicate JSON output
 header('Content-Type: application/json');
+// Encode results array as JSON and output
 echo json_encode($results);
+// Close database connection to free resources
 $myconn->close();
 ?>
