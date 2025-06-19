@@ -12,7 +12,16 @@ function fetchActiveLoans($myconn, $customerId, $filters = []) {
         loans.status AS loan_status,
         lenders.name AS lender_name,
         loans.application_date,
-        COALESCE(SUM(payments.amount), 0) AS amount_paid
+        COALESCE(SUM(payments.amount), 0) AS amount_paid,
+        COALESCE(
+            (SELECT installment_balance 
+             FROM payments 
+             WHERE payments.loan_id = loans.loan_id 
+             AND installment_balance IS NOT NULL 
+             ORDER BY payment_date DESC 
+             LIMIT 1),
+            loans.installments
+        ) AS installment_balance
     FROM loans
     JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
     JOIN lenders ON loans.lender_id = lenders.lender_id
@@ -105,7 +114,8 @@ function fetchActiveLoans($myconn, $customerId, $filters = []) {
                 'payment_status' => $paymentStatus,
                 'installments' => $row['installments'],
                 'due_date' => $row['due_date'],
-                'isDue' => $row['isDue']
+                'isDue' => $row['isDue'],
+                'installment_balance' => $row['installment_balance']
             ];
         }
     }

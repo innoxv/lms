@@ -1043,7 +1043,8 @@ $status = 'active'; // Placeholder for access status
                                                         data-amount-paid="<?= $loan['amount_paid'] ?? 0 ?>"
                                                         data-remaining-balance="<?= $loan['remaining_balance'] ?? 0 ?>"
                                                         data-installments="<?= $loan['installments'] ?? 0 ?>"
-
+                                                        data-installment-balance="<?= $loan['installment_balance'] ?? 0 ?>"
+                                                        
                                                         onclick="showPaymentPopup(this)"
                                                         <?= ($loan['payment_status'] === 'fully_paid') ? 'disabled' : '' ?>> <!-- disables button if status is fully paid -->
                                                         Pay
@@ -1083,10 +1084,13 @@ $status = 'active'; // Placeholder for access status
                                 <input style="border: none;" type="text" id="payment_balance" readonly>
                             </div>
                             <div class="form-group">
-                                <label for="payment_installments">Installments:</label>
+                                <label for="payment_installments">Monthly Installments:</label>
                                 <input style="border: none;" type="text" id="payment_installments" readonly>
                             </div>
-
+                            <div class="form-group">
+                                <label for="payment_installment_balance">Installment Balance:</label>
+                                <input style="border: none;" type="text" id="payment_installment_balance" readonly>
+                            </div>
                             <!-- Error Message -->
                             <div id="payment_error" style="color: tomato;font-weight:700"></div>
 
@@ -1640,6 +1644,8 @@ function showPaymentPopup(button) {
     const amountPaid = parseFloat(button.getAttribute('data-amount-paid')) || 0;
     const remainingBalance = parseFloat(button.getAttribute('data-remaining-balance')) || 0;
     const installments = parseFloat(button.getAttribute('data-installments')) || 0;
+    const installmentBalance = parseFloat(button.getAttribute('data-installment-balance')) || 0;
+
 
     
     document.getElementById('payment_loan_id').value = loanId;
@@ -1648,6 +1654,7 @@ function showPaymentPopup(button) {
     document.getElementById('payment_amount_paid').value = formatCurrency(amountPaid);
     document.getElementById('payment_balance').value = formatCurrency(remainingBalance);
     document.getElementById('payment_installments').value = formatCurrency(installments);
+    document.getElementById('payment_installment_balance').value = formatCurrency(installmentBalance);
 
     
     // Reset form
