@@ -98,7 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
         $_SESSION['payment_message'] = "Invalid or undisbursed loan selected for payment";
         $_SESSION['payment_message_type'] = 'error';
     } else {
-        // Reset result cursor and fetch loan details
         $result->data_seek(0);
         $loanDetails = $result->fetch_assoc();
 
@@ -110,10 +109,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
         $currentDueDate = $loanDetails['due_date'];
         $applicationDate = $loanDetails['application_date'];
 
-        // Calculate total amount due (principal + simple interest)
+        // Calculate total amount due
         $totalAmountDue = $principal + ($principal * $interestRate * $durationYears);
 
-        // Fetch sum of all previous payments for this loan
+        // Fetch sum of all previous payments
         $paymentSumQuery = "SELECT COALESCE(SUM(amount), 0) AS total_paid 
                            FROM payments 
                            WHERE loan_id = ?";
@@ -136,35 +135,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
             // Determine payment type
             $paymentType = ($newRemainingBalance <= 0) ? 'full' : 'partial';
 
+            // Fetch total amount paid for the current installment period
+            $lastPaymentQuery = "SELECT COALESCE(SUM(amount), 0) AS installment_paid 
+                               FROM payments 
+                               WHERE loan_id = ? 
+                               AND payment_date <= NOW()
+                               AND installment_balance IS NOT NULL
+                               ORDER BY payment_date DESC 
+                               LIMIT 1";
+            $stmt = $myconn->prepare($lastPaymentQuery);
+            $stmt->bind_param("i", $loanId);
+            $stmt->execute();
+            $lastInstallmentPaid = $stmt->get_result()->fetch_assoc()['installment_paid'];
+            $totalInstallmentPaid = $lastInstallmentPaid + $amount;
+
+            // Calculate installment balance
+            $installmentBalance = ($totalInstallmentPaid >= $expectedInstallment) ? NULL : max(0, $expectedInstallment - $totalInstallmentPaid);
+
             // Insert new payment record
             $insertQuery = "INSERT INTO payments (
                 loan_id, customer_id, lender_id, amount, 
-                payment_method, payment_type, remaining_balance
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                payment_method, payment_type, remaining_balance, installment_balance
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $myconn->prepare($insertQuery);
             $stmt->bind_param(
-                "iiidssd",
+                "iiidssdd",
                 $loanId,
                 $customerId,
                 $lenderId,
                 $amount,
                 $paymentMethod,
                 $paymentType,
-                $newRemainingBalance
+                $newRemainingBalance,
+                $installmentBalance
             );
 
             if ($stmt->execute()) {
-                // Update due_date and isDue based on payment amount
-                if ($newRemainingBalance <= 0) {
-                    // Fully paid loan: clear due_date and set isDue to 0
-                    $updateLoanQuery = "UPDATE loans 
-                                        SET due_date = NULL, isDue = 0
-                                        WHERE loan_id = ?";
-                    $stmt = $myconn->prepare($updateLoanQuery);
-                    $stmt->bind_param("i", $loanId);
-                    $stmt->execute();
-                } elseif ($amount >= $expectedInstallment) {
-                    // Payment meets or exceeds installment: advance due_date and set isDue to 0
+                // Update due_date and isDue if installment is fully paid
+                if ($totalInstallmentPaid >= $expectedInstallment) {
                     $appDay = date('d', strtotime($applicationDate));
                     $appMonth = date('m', strtotime($currentDueDate));
                     $appYear = date('Y', strtotime($currentDueDate));
@@ -176,12 +184,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
                     $stmt->bind_param("si", $nextMonth, $loanId);
                     $stmt->execute();
                 } else {
-                    // Payment less than installment: set isDue to 1, keep due_date
+                    // Check if due date is reached for partial payment
+                    $isDue = (strtotime($currentDueDate) <= time()) ? 1 : 0;
                     $updateLoanQuery = "UPDATE loans 
-                                        SET isDue = 1
+                                        SET isDue = ?
                                         WHERE loan_id = ? AND status = 'disbursed'";
                     $stmt = $myconn->prepare($updateLoanQuery);
-                    $stmt->bind_param("i", $loanId);
+                    $stmt->bind_param("ii", $isDue, $loanId);
                     $stmt->execute();
                 }
 
@@ -196,7 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
                 $stmt->bind_param("is", $userId, $activity);
                 $stmt->execute();
 
-                // Refresh Discordactive loans
+                // Refresh active loans
                 $_SESSION['active_loans'] = fetchActiveLoans($myconn, $customerId, $filters);
             } else {
                 error_log("Payment insert error: " . $stmt->error);
