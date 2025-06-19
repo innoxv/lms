@@ -1,50 +1,86 @@
 <!DOCTYPE html>
-<html lang="en" > <!--centers page -->
+<html lang="en"> 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
-<body class="centered-page">
-        <div class="container">
+<body class="centered-page"> <!--centers page -->
+    <div class="container">
         <label class="header-label"><a href="./landingpage.html">LMS</a></label>
-            <div class="content" id="signin">
-                <form action="signin.php" method="post" onsubmit="return validateForm2()">
-                    <div style="margin-bottom:2%;"><label style="font-size: 1.5em;">Welcome Back!</label></div>
-                    <div id="error" style="color: tomato;font-weight:700"></div>
-                    <table class="signin">
-                        <tr>  
-                            <td><label for="signinEmail">Email</label></td>
-                            <td><input type="text" id="signinEmail" name="signinEmail" placeholder="you@example.com" autofocus></td>
-                        </tr>
-                        <tr>
-                            <td><label for="signinPassword">Password</label></td>
-                            <td>
-                                <div class="password-input-container">
-                                    <input type="password" id="signinPassword" name="signinPassword" placeholder="your password">
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" onclick="signinPassword.type = this.checked ? 'text' : 'password'">
-                                        <span class="custom-checkbox"></span>
-                                    </label>
-                                </div>
-                            </td>
-                        </tr>
-
-                        <tr class="signin-submit-action">
-                            <td></td>
-                            <td><button style="width: 100%;" type="submit" name="submit">LOG IN</button></td>
-                        </tr>
-
-                        
-                    </table>
-                    <div class="alt">don't have an account yet?<button type="button"><a href="./signup.html">SIGN UP</a></button></div>
-
-                </form>
-            </div>
+        <div class="content" id="signin">
+            <form action="signin.php" method="post" onsubmit="return validateForm2()">
+                <div style="margin-bottom:2%;"><label style="font-size: 1.5em;">Welcome Back!</label></div>
+                <div id="error" style="color: tomato; font-weight: 900; font-size:1.1em; margin-bottom:.2em;"></div>
+                <table class="signin">
+                    <tr>  
+                        <td><label for="signinEmail">Email</label></td>
+                        <td><input type="text" id="signinEmail" name="signinEmail" placeholder="you@example.com" autofocus></td>
+                    </tr>
+                    <tr>
+                        <td><label for="signinPassword">Password</label></td>
+                        <td>
+                            <div class="password-input-container">
+                                <input type="password" id="signinPassword" name="signinPassword" placeholder="your password">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" onclick="signinPassword.type = this.checked ? 'text' : 'password'">
+                                    <span class="custom-checkbox"></span>
+                                </label>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="signin-submit-action">
+                        <td></td>
+                        <td><button style="width: 100%;" type="submit" name="submit">LOG IN</button></td>
+                    </tr>
+                </table>
+                <div class="alt">don't have an account yet? <button type="button"><a href="./signup.html">SIGN UP</a></button></div>
+            </form>
         </div>
+    </div>
+
+    <script src="../js/validinput.js"></script>
     
-        <script src="../js/validinput.js"></script>
-        
+    <!-- Log In errors AJAX functionality -->
+    <script>
+        // Initialize page and check for login errors
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get URL query parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            // Check if error flag is present in URL
+            if (urlParams.has('error')) {
+                // Make AJAX request to fetch session error messages
+                fetch('signin.php?action=get_error')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Get the error div element
+                        const errorDiv = document.getElementById('error');
+                        // Check if an error message exists in the response
+                        if (data.login_error) {
+                            // Display error message with alert styling
+                            errorDiv.textContent = data.login_error;
+                            errorDiv.className = `${data.login_error_type || 'error'}`;
+                            // Fade out error message after 3 seconds
+                            setTimeout(() => {
+                                errorDiv.style.opacity = '0';
+                                // Clear error div and reset styles after fade-out
+                                setTimeout(() => {
+                                    errorDiv.textContent = '';
+                                    errorDiv.style.opacity = '';
+                                    errorDiv.className = '';
+                                    // Remove error query parameter from URL
+                                    window.history.replaceState({}, document.title, 'signin.html');
+                                });
+                            }, 2000);  // 2000ms fadeout 
+                        }
+                    })
+                    .catch(error => {
+                        // Log any errors during AJAX request
+                        console.error('Error fetching session messages:', error);
+                    });
+            }
+        });
+    </script>
 </body>
 </html>
