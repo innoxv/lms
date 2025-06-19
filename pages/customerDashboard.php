@@ -462,13 +462,19 @@ $status = 'active'; // Placeholder for access status
                                     <span class="span"><?php echo $_SESSION['user_name']; ?>!</span>
                                 </code>
                             </p>
+                            <!-- Search Functionality -->
                             <!-- last JS script and searchSuggestions.php-->
                             <div class="search-container">
-                                <input type="text" id="lenderSearch" placeholder="Search loan types or lenders..." autocomplete="off">
+                                <div style="display:flex; gap:1px;">
+                                    <input type="text" id="lenderSearch" placeholder="Search loan types or lenders..." autocomplete="off" value="<?= htmlspecialchars($_SESSION['search_query'] ?? '') ?>">
+                                    <button type="button" class="res x" style="outline:1px solid tomato;"><a href="fetchLenders.php?reset_filters=true">X</a></button>
+                                </div>          
                                 <div id="suggestions" class="suggestions"></div>
+                                
                             </div>
                         </div>
                     </div>
+                    <!-- Filters -->
                     <div class="loan-right">
                         <div class="loan-filter">
                             <p style="color: whitesmoke; font-weight: 900; line-height: 1;">Filters</p>
@@ -567,7 +573,7 @@ $status = 'active'; // Placeholder for access status
                                 </div>
                             </form>
                         </div>
-
+                        <!-- Lenders Display functionality -->
                         <div class="loan-lenders" id="lendersContainer">
                             <?php if (isset($_SESSION['filters_applied']) && $_SESSION['filters_applied']): ?>
                                 <?php if (!empty($_SESSION['filtered_lenders'])): ?>
@@ -2171,81 +2177,133 @@ function handleMessages() {
 }
 </script>
 
-     <!-- Search  -->
-     <script>
+<!-- Search Functionality -->
+<script>
+// Wait for the DOM to be fully loaded before executing
 document.addEventListener('DOMContentLoaded', () => {
-    const searchInput = document.getElementById('lenderSearch');
-    const suggestionsDiv = document.getElementById('suggestions');
-    const form = document.getElementById('loanFilterForm');
+    // Get references to DOM elements
+    const searchInput = document.getElementById('lenderSearch'); // Search input field
+    const suggestionsDiv = document.getElementById('suggestions'); // Container for suggestions
+    const form = document.getElementById('loanFilterForm'); // Filter form
 
+    // Variable to store debounce timer
     let debounceTimer;
+
+    // Add event listener for input changes in the search field
     searchInput.addEventListener('input', () => {
+        // Clear any existing debounce timer to prevent multiple rapid calls
         clearTimeout(debounceTimer);
+        // Set a new debounce timer to delay the search by 300ms
         debounceTimer = setTimeout(() => {
+            // Get and trim the search query
             const query = searchInput.value.trim();
-            if (query.length >= 2) {
+            // Check if query is at least 1 characters long
+            if (query.length >= 1) {
+                // Trigger the fetchSuggestions function to get matching results
                 fetchSuggestions(query);
             } else {
+                // Hide and clear suggestions if query is too short
                 suggestionsDiv.style.display = 'none';
                 suggestionsDiv.innerHTML = '';
             }
-        }, 300);
+        }, 100); // 100ms delay to debounce input
     });
 
+    // Function to fetch suggestions from the server
     function fetchSuggestions(query) {
+        // Make an AJAX request to searchSuggestions.php with the encoded query
         fetch(`searchSuggestions.php?query=${encodeURIComponent(query)}`)
-            .then(response => response.json())
+            .then(response => response.json()) // Parse JSON response
             .then(data => {
+                // Clear existing suggestions
                 suggestionsDiv.innerHTML = '';
+                // Check if there are any loan types or lenders in the response
                 if (data.loan_types.length > 0 || data.lenders.length > 0) {
                     // Add loan type suggestions
                     data.loan_types.forEach(item => {
+                        // Create a div for each loan type suggestion
                         const div = document.createElement('div');
-                        div.className = 'suggestion-item suggestion-type';
-                        div.textContent = item;
+                        div.className = 'suggestion-item suggestion-type'; // Apply styling classes
+                        div.textContent = item; // Set suggestion text
+                        // Add click event listener for selecting the suggestion
                         div.addEventListener('click', () => {
+                            // Set search input value to selected loan type
+                            searchInput.value = item;
+                            // Find and check the corresponding checkbox
                             const checkbox = document.querySelector(`input[name="loan_type[]"][value="${item}"]`);
                             if (checkbox) {
                                 checkbox.checked = true;
+                                // Add or update hidden input to store search query
+                                let hiddenInput = form.querySelector('input[name="search_query"]');
+                                if (!hiddenInput) {
+                                    hiddenInput = document.createElement('input');
+                                    hiddenInput.type = 'hidden';
+                                    hiddenInput.name = 'search_query';
+                                    form.appendChild(hiddenInput);
+                                }
+                                hiddenInput.value = item;
+                                // Submit the form to apply the filter
                                 form.submit();
                             }
+                            // Hide suggestions after selection
                             suggestionsDiv.style.display = 'none';
-                            searchInput.value = '';
                         });
+                        // Append suggestion to the suggestions container
                         suggestionsDiv.appendChild(div);
                     });
 
                     // Add lender suggestions
                     data.lenders.forEach(item => {
+                        // Create a div for each lender suggestion
                         const div = document.createElement('div');
-                        div.className = 'suggestion-item suggestion-lender';
-                        div.textContent = item;
+                        div.className = 'suggestion-item suggestion-lender'; // Apply styling classes
+                        div.textContent = item; // Set suggestion text
+                        // Add click event listener for selecting the suggestion
                         div.addEventListener('click', () => {
-                            // Add hidden input for lender filter
-                            const hiddenInput = document.createElement('input');
-                            hiddenInput.type = 'hidden';
-                            hiddenInput.name = 'lender_name';
+                            // Set search input value to selected lender
+                            searchInput.value = item;
+                            // Add or update hidden input for lender filter
+                            let lenderInput = form.querySelector('input[name="lender_name"]');
+                            if (!lenderInput) {
+                                lenderInput = document.createElement('input');
+                                lenderInput.type = 'hidden';
+                                lenderInput.name = 'lender_name';
+                                form.appendChild(lenderInput);
+                            }
+                            lenderInput.value = item;
+                            // Add or update hidden input to store search query
+                            let hiddenInput = form.querySelector('input[name="search_query"]');
+                            if (!hiddenInput) {
+                                hiddenInput = document.createElement('input');
+                                hiddenInput.type = 'hidden';
+                                hiddenInput.name = 'search_query';
+                                form.appendChild(hiddenInput);
+                            }
                             hiddenInput.value = item;
-                            form.appendChild(hiddenInput);
+                            // Submit the form to apply the filter
                             form.submit();
+                            // Hide suggestions after selection
                             suggestionsDiv.style.display = 'none';
-                            searchInput.value = '';
                         });
+                        // Append suggestion to the suggestions container
                         suggestionsDiv.appendChild(div);
                     });
 
+                    // Show the suggestions dropdown
                     suggestionsDiv.style.display = 'block';
                 } else {
+                    // Hide suggestions if no results are found
                     suggestionsDiv.style.display = 'none';
                 }
             })
             .catch(error => {
+                // Log any errors and hide suggestions
                 console.error('Error fetching suggestions:', error);
                 suggestionsDiv.style.display = 'none';
             });
     }
 
-    // Hide suggestions when clicking outside
+    // Hide suggestions when clicking outside the search input or suggestions
     document.addEventListener('click', (e) => {
         if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
             suggestionsDiv.style.display = 'none';

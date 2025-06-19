@@ -1137,7 +1137,6 @@ li p{
     width: 85%;
     border-radius: .2em;
     padding: .2em;
-
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(15%, 1fr));
     grid-auto-rows: 30%; 
@@ -1150,14 +1149,17 @@ li p{
 /* Search Bar  */
 .search-container {
     position: relative;
-    margin-bottom: 20px;
+
 }
 
 #lenderSearch {
     width: 80%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: .3em ;
+    outline: 1px solid #ccc;
+    border: none;
+    border-radius: .5em 0 0 .5em;
+    margin: 0;
+    color: lightgray;
 }
 
 .suggestions {
@@ -1165,18 +1167,21 @@ li p{
     top: 100%;
     left: 0;
     right: 0;
-    background: white;
+    background: lightgrey;
     border: 1px solid #ccc;
     border-radius: 4px;
     max-height: 200px;
     overflow-y: auto;
     z-index: 1000;
     display: none;
+    width: 83%;
+    margin-top: .2em;
 }
 
 .suggestion-item {
     padding: 8px;
     cursor: pointer;
+
 }
 
 .suggestion-item:hover {
@@ -1190,6 +1195,16 @@ li p{
 
 .suggestion-lender {
     color: #666;
+}
+.x a{
+    color: tomato;
+}
+.x:hover{
+    background: tomato;
+    color: whitesmoke;
+}
+.x:hover > a{
+    color: #1D1E20;
 }
 
 iframe {
