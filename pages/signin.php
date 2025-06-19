@@ -10,6 +10,27 @@ session_start();
 // Database config file
 include '../phpconfig/config.php';
 
+// Handle AJAX request to retrieve session error messages
+if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['action']) && $_GET['action'] == 'get_error') {
+    // Set JSON content type for AJAX response
+    header('Content-Type: application/json');
+    // Initialize response array for error messages
+    $response = [
+        'login_error' => null,
+        'login_error_type' => null
+    ];
+    // Check for login error in session
+    if (isset($_SESSION['login_error'])) {
+        $response['login_error'] = $_SESSION['login_error'];
+        $response['login_error_type'] = $_SESSION['login_error_type'] ?? 'error';
+        // Clear session messages to prevent repeated display
+        unset($_SESSION['login_error']);
+        unset($_SESSION['login_error_type']);
+    }
+    // Output JSON response and exit
+    echo json_encode($response);
+    exit();
+}
 
 // Check if form was submitted using POST method
 // $_SERVER["REQUEST_METHOD"] checks the HTTP request method
@@ -17,7 +38,7 @@ include '../phpconfig/config.php';
 // $_SESSION is a global variable array containing session variables available to the current script
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Get email and password from form submission
-    // $_POST is a  global variable that gets data from client server 
+    // $_POST is a global variable that gets data from client server 
     $email = $_POST['signinEmail'];
     $password = $_POST['signinPassword'];
 
@@ -44,7 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $user = $result->fetch_assoc(); //fetch_assoc() is a PHP function that fetches one row of data from the result set and returns it as an array.
             
             // Verify submitted password against hashed password in database
-            if (password_verify($password, $user['password'])) {    // password_verify is a  PHP function that verifies that a password matches a hash
+            if (password_verify($password, $user['password'])) {    // password_verify is a PHP function that verifies that a password matches a hash
                 // Password is correct - set session variables:
                 $_SESSION['user_id'] = $user['user_id'];  // Store user ID in session
                 $_SESSION['email'] = $user['email'];  // Store email in session
@@ -80,19 +101,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $logStmt->execute();
                 $logStmt->close();
                 
-                echo "<script>alert('Invalid email or password.'); window.location.href = 'signin.html';</script>";
+                // Store error message in session for AJAX retrieval
+                $_SESSION['login_error'] = "Invalid Email or Password!";
+                $_SESSION['login_error_type'] = "error";
+                header("Location: signin.html?error=1");
                 exit();
             }
-        } else {
-            // No user found with this email (don't log to prevent filling logs with spam attempts)
-            echo "<script>alert('Invalid email or password.'); window.location.href = 'signin.html';</script>";
-            exit();
-        }
-    } else {
-        // Either email or password was empty
-        echo "<script>alert('Email and password are required.'); window.location.href = 'signin.html';</script>";
-        exit();
-    }
+        }}
 }
 
 // Close the database connection when done
