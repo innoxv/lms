@@ -53,13 +53,12 @@ $_SESSION['customer_id'] = $customerProfile['customer_id'];
 $customer_id = $_SESSION['customer_id'];
 
 // LOAN DATA FETCHING
-
 // Status filter
 $statusFilter = isset($_GET['status']) && in_array($_GET['status'], ['disbursed', 'pending', 'rejected']) 
     ? $_GET['status'] 
     : '';
 
-    $loansQuery = "SELECT 
+$loansQuery = "SELECT 
     loans.loan_id,
     loans.amount,
     loans.interest_rate,
@@ -79,7 +78,6 @@ WHERE loans.customer_id = ?";
 // Add filters dynamically
 $params = [$customer_id];
 $types = "i"; // Start with customer_id as integer
-
 
 // Status filter
 if ($statusFilter) {
@@ -140,7 +138,6 @@ if (isset($_GET['interest_rate']) && $_GET['interest_rate']) {
         $types .= "d";
     }
 }
-
 
 // Add sorting
 $loansQuery .= " ORDER BY loans.application_date DESC";
@@ -209,7 +206,8 @@ $filters = $_SESSION['payment_filters'] ?? [
     'payment_status' => '',
     'loan_type' => '',
     'amount_range' => '',
-    'date_range' => ''
+    'date_range' => '',
+    'due_status' => ''
 ];
 // Always fetch fresh data with current filters
 $_SESSION['active_loans'] = fetchActiveLoans($myconn, $customer_id, $filters);
@@ -398,7 +396,8 @@ $filters = $_SESSION['payment_filters'] ?? [
     'payment_status' => '',
     'loan_type' => '',
     'amount_range' => '',
-    'date_range' => ''
+    'date_range' => '',
+    'due_status' => ''
 ];
 $status = 'active'; // Placeholder for access status
 ?>
@@ -466,7 +465,7 @@ $status = 'active'; // Placeholder for access status
                             <!-- last JS script and searchSuggestions.php-->
                             <div class="search-container">
                                 <div style="display:flex; gap:1px;">
-                                    <input type="text" id="lenderSearch" placeholder="Search loan types or lenders..." autocomplete="off" value="<?= htmlspecialchars($_SESSION['search_query'] ?? '') ?>">
+                                    <input type="text" id="lenderSearch" placeholder="Search lenders or loan types..." autocomplete="off" value="<?= htmlspecialchars($_SESSION['search_query'] ?? '') ?>">
                                     <button type="button" class="res x" style="outline:1px solid tomato;"><a href="fetchLenders.php?reset_filters=true">X</a></button>
                                 </div>          
                                 <div id="suggestions" class="suggestions"></div>
@@ -954,6 +953,14 @@ $status = 'active'; // Placeholder for access status
                                     </select>
                                 </div>
                                 <div class="filter-group">
+                                    <label for="due_status">Due Status:</label>
+                                    <select name="due_status" id="due_status" onchange="this.form.submit()">
+                                        <option value="">All</option>
+                                        <option value="due" <?= ($filters['due_status'] === 'due') ? 'selected' : '' ?>>Due</option>
+                                        <option value="not_due" <?= ($filters['due_status'] === 'not_due') ? 'selected' : '' ?>>Not Due</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
                                     <label for="loan_type">Loan Type:</label>
                                     <select name="loan_type" id="loan_type" onchange="this.form.submit()"> 
                                         <option value="">All Types</option>
@@ -985,6 +992,7 @@ $status = 'active'; // Placeholder for access status
                                         <option value="year" <?= ($filters['date_range'] === 'year') ? 'selected' : '' ?>>This Year</option>
                                     </select>
                                 </div>
+
                                 <div class="filter-actions">
                                     <a href="paymentTracking.php?reset=true"><button type="button" class="reset-btn">Reset</button></a>
                                 </div>
@@ -2186,7 +2194,7 @@ function handleMessages() {
 
 <!-- Search Functionality -->
 <script>
-// Wait for the DOM to be fully loaded before executing
+    // Wait for the DOM to be fully loaded before executing
 document.addEventListener('DOMContentLoaded', () => {
     // Get references to DOM elements
     const searchInput = document.getElementById('lenderSearch'); // Search input field
@@ -2226,40 +2234,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 suggestionsDiv.innerHTML = '';
                 // Check if there are any loan types or lenders in the response
                 if (data.loan_types.length > 0 || data.lenders.length > 0) {
-                    // Add loan type suggestions
-                    data.loan_types.forEach(item => {
-                        // Create a div for each loan type suggestion
-                        const div = document.createElement('div');
-                        div.className = 'suggestion-item suggestion-type'; // Apply styling classes
-                        div.textContent = item; // Set suggestion text
-                        // Add click event listener for selecting the suggestion
-                        div.addEventListener('click', () => {
-                            // Set search input value to selected loan type
-                            searchInput.value = item;
-                            // Find and check the corresponding checkbox
-                            const checkbox = document.querySelector(`input[name="loan_type[]"][value="${item}"]`);
-                            if (checkbox) {
-                                checkbox.checked = true;
-                                // Add or update hidden input to store search query
-                                let hiddenInput = form.querySelector('input[name="search_query"]');
-                                if (!hiddenInput) {
-                                    hiddenInput = document.createElement('input');
-                                    hiddenInput.type = 'hidden';
-                                    hiddenInput.name = 'search_query';
-                                    form.appendChild(hiddenInput);
-                                }
-                                hiddenInput.value = item;
-                                // Submit the form to apply the filter
-                                form.submit();
-                            }
-                            // Hide suggestions after selection
-                            suggestionsDiv.style.display = 'none';
-                        });
-                        // Append suggestion to the suggestions container
-                        suggestionsDiv.appendChild(div);
-                    });
-
-                    // Add lender suggestions
+                    // Add lender suggestions first
                     data.lenders.forEach(item => {
                         // Create a div for each lender suggestion
                         const div = document.createElement('div');
@@ -2296,6 +2271,39 @@ document.addEventListener('DOMContentLoaded', () => {
                         suggestionsDiv.appendChild(div);
                     });
 
+                    // Add loan type suggestions after lenders
+                    data.loan_types.forEach(item => {
+                        // Create a div for each loan type suggestion
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item suggestion-type'; // Apply styling classes
+                        div.textContent = item; // Set suggestion text
+                        // Add click event listener for selecting the suggestion
+                        div.addEventListener('click', () => {
+                            // Set search input value to selected loan type
+                            searchInput.value = item;
+                            // Find and check the corresponding checkbox
+                            const checkbox = document.querySelector(`input[name="loan_type[]"][value="${item}"]`);
+                            if (checkbox) {
+                                checkbox.checked = true;
+                                // Add or update hidden input to store search query
+                                let hiddenInput = form.querySelector('input[name="search_query"]');
+                                if (!hiddenInput) {
+                                    hiddenInput = document.createElement('input');
+                                    hiddenInput.type = 'hidden';
+                                    hiddenInput.name = 'search_query';
+                                    form.appendChild(hiddenInput);
+                                }
+                                hiddenInput.value = item;
+                                // Submit the form to apply the filter
+                                form.submit();
+                            }
+                            // Hide suggestions after selection
+                            suggestionsDiv.style.display = 'none';
+                        });
+                        // Append suggestion to the suggestions container
+                        suggestionsDiv.appendChild(div);
+                    });
+
                     // Show the suggestions dropdown
                     suggestionsDiv.style.display = 'block';
                 } else {
@@ -2318,6 +2326,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
-
 </body>
 </html>

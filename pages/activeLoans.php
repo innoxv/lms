@@ -16,12 +16,17 @@ include '../phpconfig/config.php';
 // Get filter parameters
 $activeStatusFilter = $_GET['active_status'] ?? '';
 $activeLoanTypeFilter = $_GET['active_loan_type'] ?? '';
+$activeDueStatusFilter = $_GET['active_due_status'] ?? ''; 
 $activeDateRange = $_GET['active_date_range'] ?? '';
 $activeAmountRange = $_GET['active_amount_range'] ?? '';
 $activeDurationRange = $_GET['active_duration_range'] ?? '';
 $activeCollateralRange = $_GET['active_collateral_range'] ?? '';
 
-// Active loans query
+// Initialize query parameters
+$params = [$lender_id];
+$types = "i";
+
+// Active loans query without table aliases
 $activeLoansQuery = "
     SELECT 
         loans.loan_id,
@@ -32,6 +37,8 @@ $activeLoansQuery = "
         loans.collateral_description,
         loans.status,
         loans.application_date,
+        loans.due_date,
+        loans.isDue,
         customers.name,
         loan_offers.loan_type,
         latest_payment.remaining_balance
@@ -47,23 +54,30 @@ $activeLoansQuery = "
             GROUP BY loan_id
         )
     ) latest_payment ON loans.loan_id = latest_payment.loan_id
-    WHERE loans.lender_id = '$lender_id'
+    WHERE loans.lender_id = ?
     AND loans.status = 'disbursed'
     AND latest_payment.remaining_balance > 0
     AND latest_payment.payment_type != 'full'";
 
 // Apply filters
-// Status filter
 if (!empty($activeStatusFilter) && in_array($activeStatusFilter, ['disbursed'])) {
-    $activeLoansQuery .= " AND loans.status = '$activeStatusFilter'";
+    $activeLoansQuery .= " AND loans.status = ?";
+    $params[] = $activeStatusFilter;
+    $types .= "s";
 }
 
-// Loan type filter
 if (!empty($activeLoanTypeFilter)) {
-    $activeLoansQuery .= " AND loan_offers.loan_type = '$activeLoanTypeFilter'";
+    $activeLoansQuery .= " AND loan_offers.loan_type = ?";
+    $params[] = $activeLoanTypeFilter;
+    $types .= "s";
 }
 
-// Date range filter
+if (!empty($activeDueStatusFilter)) {
+    $activeLoansQuery .= " AND loans.isDue = ?";
+    $params[] = ($activeDueStatusFilter === 'due') ? 1 : 0;
+    $types .= "i";
+}
+
 if (!empty($activeDateRange)) {
     switch ($activeDateRange) {
         case 'today':
@@ -81,41 +95,60 @@ if (!empty($activeDateRange)) {
     }
 }
 
-// Amount range filter
 if (!empty($activeAmountRange)) {
     list($minAmount, $maxAmount) = explode('-', str_replace('+', '-', $activeAmountRange));
-    $activeLoansQuery .= " AND loans.amount >= $minAmount";
+    $activeLoansQuery .= " AND loans.amount >= ?";
+    $params[] = $minAmount;
+    $types .= "d";
     if (is_numeric($maxAmount)) {
-        $activeLoansQuery .= " AND loans.amount <= $maxAmount";
+        $activeLoansQuery .= " AND loans.amount <= ?";
+        $params[] = $maxAmount;
+        $types .= "d";
     }
 }
 
-// Duration filter
 if (!empty($activeDurationRange)) {
     list($minDuration, $maxDuration) = explode('-', str_replace('+', '-', $activeDurationRange));
-    $activeLoansQuery .= " AND loans.duration >= $minDuration";
+    $activeLoansQuery .= " AND loans.duration >= ?";
+    $params[] = $minDuration;
+    $types .= "i";
     if (is_numeric($maxDuration)) {
-        $activeLoansQuery .= " AND loans.duration <= $maxDuration";
+        $activeLoansQuery .= " AND loans.duration <= ?";
+        $params[] = $maxDuration;
+        $types .= "i";
     }
 }
 
-// Collateral filter
 if (!empty($activeCollateralRange)) {
     list($minCollateral, $maxCollateral) = explode('-', str_replace('+', '-', $activeCollateralRange));
-    $activeLoansQuery .= " AND loans.collateral_value >= $minCollateral";
+    $activeLoansQuery .= " AND loans.collateral_value >= ?";
+    $params[] = $minCollateral;
+    $types .= "d";
     if (is_numeric($maxCollateral)) {
-        $activeLoansQuery .= " AND loans.collateral_value <= $maxCollateral";
+        $activeLoansQuery .= " AND loans.collateral_value <= ?";
+        $params[] = $maxCollateral;
+        $types .= "d";
     }
 }
 
 $activeLoansQuery .= " ORDER BY loans.application_date DESC";
 
-// Execute query
-$activeLoansResult = mysqli_query($myconn, $activeLoansQuery);
-if (!$activeLoansResult) {
-    die("Active loans query failed: " . mysqli_error($myconn));
+// Prepare and execute query
+$stmt = $myconn->prepare($activeLoansQuery);
+if (!$stmt) {
+    die("Prepare failed: " . $myconn->error);
 }
-$activeLoanData = mysqli_fetch_all($activeLoansResult, MYSQLI_ASSOC);
+
+if (count($params) > 1) {
+    $stmt->bind_param($types, ...$params);
+} else {
+    $stmt->bind_param($types, $lender_id);
+}
+
+$stmt->execute();
+$activeLoansResult = $stmt->get_result();
+$activeLoanData = $activeLoansResult->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 
 // Define all loan types
 $allLoanTypes = [
@@ -130,6 +163,7 @@ return [
     'filters' => [
         'status' => $activeStatusFilter,
         'loan_type' => $activeLoanTypeFilter,
+        'due_status' => $activeDueStatusFilter,
         'date_range' => $activeDateRange,
         'amount_range' => $activeAmountRange,
         'duration_range' => $activeDurationRange,
@@ -137,6 +171,4 @@ return [
     ],
     'allLoanTypes' => $allLoanTypes
 ];
-
-// mysqli_close($myconn);
 ?>

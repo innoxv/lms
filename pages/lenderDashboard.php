@@ -735,6 +735,14 @@ mysqli_close($myconn);
                                     </select>
                                 </div>
                                 <div class="filter-group">
+                                    <label for="active_due_status">Due Status:</label>
+                                    <select name="active_due_status" id="due_status" onchange="this.form.submit()">
+                                        <option value="">All</option>
+                                        <option value="due" <?php echo (isset($activeFilters['due_status']) && $activeFilters['due_status'] === 'due') ? 'selected' : ''; ?>>Due</option>
+                                        <option value="not_due" <?php echo (isset($activeFilters['due_status']) && $activeFilters['due_status'] === 'not_due') ? 'selected' : ''; ?>>Not Due</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
                                     <label for="active_date_range">Date Range:</label>
                                     <select name="active_date_range" id="active_date_range" onchange="this.form.submit()">
                                         <option value="">All Time</option>
@@ -794,6 +802,9 @@ mysqli_close($myconn);
                                     <th>Collateral Value</th>
                                     <th>Balance</th>
                                     <th>Application Date</th>
+                                    <th>Due Date</th>
+                                    <th>Is Due</th>
+
                                     <th style="text-align: right">Actions</th>
                                 </tr>
                             </thead>
@@ -810,6 +821,9 @@ mysqli_close($myconn);
                                             <td><?php echo htmlspecialchars($loan['collateral_value']); ?></td>
                                             <td><?php echo number_format($loan['remaining_balance'], 2); ?></td>
                                             <td><?php echo date('j M Y', strtotime($loan['application_date'])); ?></td>
+                                            <td><?php echo date('j M Y', strtotime($loan['due_date'])); ?></td>
+                                            <td><?php echo htmlspecialchars($loan['isDue']) == 1 ? 'Yes' : 'No'; ?></td>
+
                                             <td class="action-buttons">
                                                 <button class="btn-view-active" 
                                                         data-loan-id="<?= htmlspecialchars($loan['loan_id']) ?>"

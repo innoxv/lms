@@ -38,7 +38,7 @@ function fetchActiveLoans($myconn, $customerId, $filters = []) {
         $params[] = $filters['loan_type'];
         $types .= "s";
     }
-
+    // Amount Range Filter
     if (!empty($filters['amount_range'])) {
         list($minAmount, $maxAmount) = explode('-', str_replace('+', '-', $filters['amount_range']));
         $query .= " AND loans.amount >= ?";
@@ -50,7 +50,7 @@ function fetchActiveLoans($myconn, $customerId, $filters = []) {
             $types .= "d";
         }
     }
-
+    // Date Range Filter
     if (!empty($filters['date_range'])) {
         switch ($filters['date_range']) {
             case 'today':
@@ -66,6 +66,13 @@ function fetchActiveLoans($myconn, $customerId, $filters = []) {
                 $query .= " AND YEAR(loans.application_date) = YEAR(CURDATE())";
                 break;
         }
+    }
+
+    // Due Status Filter 
+    if ($filters['due_status']) {
+        $query .= " AND loans.isDue = ?";
+        $params[] = ($filters['due_status'] === 'due') ? 1 : 0;
+        $types .= "i";
     }
 
     $query .= " GROUP BY loans.loan_id ORDER BY loans.application_date DESC";
