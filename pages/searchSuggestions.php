@@ -10,12 +10,31 @@ include '../phpconfig/config.php';
 // Get the search query from GET parameters, trim whitespace, default to empty string
 $query = isset($_GET['query']) ? trim($_GET['query']) : '';
 
-// Initialize results array to store loan types and lenders
-$results = ['loan_types' => [], 'lenders' => []];
+// Initialize results array to store lenders and loan types
+$results = ['lenders' => [], 'loan_types' => []];
 
 // Process query only if it’s at least 1 character long
 if (strlen($query) >= 1) {
-    // Define static list of available loan types
+
+
+    // Prepared SQL query to fetch lender names matching the query
+    $sql = "SELECT DISTINCT name FROM lenders WHERE name LIKE ?";
+    $stmt = $myconn->prepare($sql); // Prepared statement to prevent SQL injection
+    if ($stmt) {
+        // Create search term with wildcards for partial matching
+        $search_term = "%" . $myconn->real_escape_string($query) . "%";
+        $stmt->bind_param('s', $search_term); // Bind search term as string
+        $stmt->execute(); // Execute the query
+        $result = $stmt->get_result(); // Get query results
+        // Fetch each matching lender name and add to results
+        while ($row = $result->fetch_assoc()) {
+            $results['lenders'][] = $row['name'];
+        }
+        $stmt->close(); // Close the statement 
+    }
+
+
+        // Define static list of available loan types
     $loan_types = [
         'Personal Loan',
         'Business Loan',
@@ -34,22 +53,6 @@ if (strlen($query) >= 1) {
         if (stripos($type, $query) !== false) {
             $results['loan_types'][] = $type; // Add matching loan type to results
         }
-    }
-
-    // Prepared SQL query to fetch lender names matching the query
-    $sql = "SELECT DISTINCT name FROM lenders WHERE name LIKE ?";
-    $stmt = $myconn->prepare($sql); // Prepared statement to prevent SQL injection
-    if ($stmt) {
-        // Create search term with wildcards for partial matching
-        $search_term = "%" . $myconn->real_escape_string($query) . "%";
-        $stmt->bind_param('s', $search_term); // Bind search term as string
-        $stmt->execute(); // Execute the query
-        $result = $stmt->get_result(); // Get query results
-        // Fetch each matching lender name and add to results
-        while ($row = $result->fetch_assoc()) {
-            $results['lenders'][] = $row['name'];
-        }
-        $stmt->close(); // Close the statement 
     }
 }
 

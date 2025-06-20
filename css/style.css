@@ -546,8 +546,8 @@ img{
     .team-container{
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
-        justify-content: space-between;
+        gap: 1em;
+        /* justify-content: space-around; */
 
     }
     .team{
@@ -1190,11 +1190,13 @@ li p{
 
 .suggestion-type {
     font-weight: bold;
-    color: #333;
+    color: #666;
+
 }
 
 .suggestion-lender {
-    color: #666;
+    color: #333;
+
 }
 .x a{
     color: tomato;
@@ -2143,7 +2145,7 @@ margin: .2em 0;
 
 
 }
-.filter-group #loan_type, .filter-group #amount_range, .filter-group #interest_rate,
+.filter-group #loan_type, .filter-group #amount_range, .filter-group #due_status, .filter-group #interest_rate,
 .filter-group #date_range, .filter-group #duration_range, .filter-group #collateral_range,
 .filter-group #balance_range, .filter-group #trans_payment_method, .filter-group #trans_amount_range, 
 .filter-group #trans_date_range, #active_date_range, #active_duration_range, #active_amount_range,

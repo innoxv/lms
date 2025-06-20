@@ -52,7 +52,8 @@ $filters = [
     'payment_status' => $_GET['payment_status'] ?? '',
     'loan_type' => $_GET['loan_type'] ?? '',
     'amount_range' => $_GET['amount_range'] ?? '',
-    'date_range' => $_GET['date_range'] ?? ''
+    'date_range' => $_GET['date_range'] ?? '',
+    'due_status' => $_GET['due_status'] ?? ''
 ];
 
 // Reset filters if requested
@@ -63,7 +64,8 @@ if (isset($_GET['reset']) && $_GET['reset'] === 'true') {
         'payment_status' => '',
         'loan_type' => '',
         'amount_range' => '',
-        'date_range' => ''
+        'date_range' => '',
+        'due_status' => ''
     ];
 }
 
