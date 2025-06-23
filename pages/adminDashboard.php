@@ -146,6 +146,7 @@ if ($usersResult && mysqli_num_rows($usersResult) > 0) {
 // Fetch activity logs 
 // Get activity type filter
 $activityFilter = isset($_GET['activity_type']) ? $_GET['activity_type'] : '';
+$dateFilter = isset($_GET['date_range']) ? $_GET['date_range'] : '';
 
 // Activity log query
 $activityQuery = "SELECT 
@@ -158,9 +159,41 @@ $activityQuery = "SELECT
 FROM activity
 JOIN users ON activity.user_id = users.user_id";
 
-// Add activity type filter if specified
+// Build WHERE conditions
+$whereConditions = [];
+
+// Activity type filter
 if (!empty($activityFilter)) {
-    $activityQuery .= " WHERE activity.activity_type = '$activityFilter'";
+    $whereConditions[] = "activity.activity_type = '$activityFilter'";
+}
+
+// Date range filter
+if (!empty($dateFilter)) {
+    switch ($dateFilter) {
+        case 'today':
+            $today = date('Y-m-d');
+            $whereConditions[] = "DATE(activity_time) = '$today'";
+            break;
+        case 'week':
+            $weekStart = date('Y-m-d', strtotime('monday this week'));
+            $weekEnd = date('Y-m-d', strtotime('sunday this week'));
+            $whereConditions[] = "DATE(activity_time) BETWEEN '$weekStart' AND '$weekEnd'";
+            break;
+        case 'month':
+            $monthStart = date('Y-m-01');
+            $monthEnd = date('Y-m-t');
+            $whereConditions[] = "DATE(activity_time) BETWEEN '$monthStart' AND '$monthEnd'";
+            break;
+        case 'year':
+            $year = date('Y');
+            $whereConditions[] = "YEAR(activity_time) = '$year'";
+            break;
+    }
+}
+
+// Combine WHERE conditions if any exist
+if (!empty($whereConditions)) {
+    $activityQuery .= " WHERE " . implode(' AND ', $whereConditions);
 }
 
 $activityQuery .= " ORDER BY activity.activity_time DESC";
@@ -617,9 +650,11 @@ $adminProfile = mysqli_fetch_assoc($adminProfileResult);
                     <p>View user activity logs.</p>
                     
                     <!-- Activity Type Filter -->
-                    <div class="activity-filter">
+                    <div class="user-filter">
                         <form method="get" action="#activityLogs">
-                            <label for="activity_type">Filter:</label>
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                <label for="activity_type">Filter:</label>
                             <select name="activity_type" id="activity_type" onchange="this.form.submit()">
                                 <option value="">All Activities</option>
                                 
@@ -650,7 +685,21 @@ $adminProfile = mysqli_fetch_assoc($adminProfileResult);
                                     <option value="user unblock" <?= $activityFilter==='user unblock'?'selected':'' ?>>User Unblock</option>
                                 </optgroup>
                             </select>
-                            <a href="adminDashboard.php#activityLogs"><button type="button" class="reset">Reset</button></a>
+                                </div>
+                                <div class="filter-group">
+                                <label for="date_range">Date Range:</label>
+                                    <select name="date_range" id="date_range" onchange="this.form.submit()">
+                                        <option value="">All Time</option>
+                                        <option value="today" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'today' ? 'selected' : '' ?>>Today</option>
+                                        <option value="week" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'week' ? 'selected' : '' ?>>This Week</option>
+                                        <option value="month" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'month' ? 'selected' : '' ?>>This Month</option>
+                                        <option value="year" <?= isset($_GET['date_range']) && $_GET['date_range'] === 'year' ? 'selected' : '' ?>>This Year</option>
+                                    </select>
+                                </div>
+                                <a href="adminDashboard.php#activityLogs"><button type="button" class="reset">Reset</button></a>
+                            </div>
+                            
+                            
                         </form>
                     </div>
     
