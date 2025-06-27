@@ -55,6 +55,7 @@ if (isset($_POST['submit'])) {  // isset is a PHP function that determines if a 
             );
 
             // Store user data in the session
+            // $_SESSION is a global variable array to store session variables available to the current script
             $_SESSION['user_id'] = $userId;
             $_SESSION['email'] = $email;
             $_SESSION['role'] = $role;

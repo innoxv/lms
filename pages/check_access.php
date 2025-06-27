@@ -1,11 +1,11 @@
 <?php
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    session_start(); // creates a session object
 }
 
 // Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id'])) { 
     header("Location: signin.html");
     exit();
 }

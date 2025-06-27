@@ -1,8 +1,5 @@
 <?php
-// Enable error reporting for debugging (currently commented out)
-ini_set('display_errors', 1);  // Shows runtime errors
-ini_set('display_startup_errors', 1);  // Shows startup errors
-error_reporting(E_ALL);  // Reports all PHP errors
+
 
 // Function to start or resume the session to store user data across pages
 session_start();
@@ -20,7 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['action']) && $_GET['acti
         'login_error_type' => null
     ];
     // Check for login error in session
-    if (isset($_SESSION['login_error'])) {
+    if (isset($_SESSION['login_error'])) { // $_SESSION is a global variable array to store session variables available to the current script
         $response['login_error'] = $_SESSION['login_error'];
         $response['login_error_type'] = $_SESSION['login_error_type'] ?? 'error';
         // Clear session messages to prevent repeated display
