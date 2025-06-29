@@ -1,119 +1,115 @@
 <?php
-// Start the session
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+// Starts the session if it has not been started already
+if (session_status() === PHP_SESSION_NONE) { // Checks if the session is not already active
+    session_start(); // Starts a new session
 }
 
-// Check authentication
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['loan_message'] = "Unauthorized access";
-    $_SESSION['message_type'] = "error";
-    header("Location: /lms/pages/signin.html");
-    exit;
+// Ensures the user is authenticated before proceeding
+if (!isset($_SESSION['user_id'])) { // Checks if user ID is set in session
+    $_SESSION['loan_message'] = "Unauthorized access"; // Sets an error message for unauthorized access
+    $_SESSION['message_type'] = "error"; // Indicates the error type
+    header("Location: /lms/pages/signin.html"); // Redirects to the sign-in page
+    exit(); // Exits the script to prevent further execution
 }
 
-// Database config file
-include '../phpconfig/config.php';
+// Includes the database configuration file
+include '../phpconfig/config.php'; // Provides access to database connection settings
 
-if ($myconn->connect_error) {
-    $_SESSION['loan_message'] = "Database connection failed";
-    $_SESSION['message_type'] = "error";
-    header("Location: /lms/pages/customerDashboard.php#applyLoan");
-    exit;
+// Verifies the database connection
+if ($myconn->connect_error) { // Checks if there is a connection error
+    $_SESSION['loan_message'] = "Database connection failed"; // Sets a failure message
+    $_SESSION['message_type'] = "error"; // Indicates the error type
+    header("Location: /lms/pages/customerDashboard.php#applyLoan"); // Redirects to the dashboard
+    exit(); // Exits the script
 }
 
-// Handle reset request
-if (isset($_GET['reset_filters']) && $_GET['reset_filters'] === 'true') {
-    unset($_SESSION['filtered_lenders']);
-    unset($_SESSION['current_filters']);
-    unset($_SESSION['filters_applied']);
-    unset($_SESSION['search_query']); // Clear search query
-    header("Location: customerDashboard.php#applyLoan");
-    exit;
+// Handles a request to reset filters
+if (isset($_GET['reset_filters']) && $_GET['reset_filters'] === 'true') { // Checks if reset_filters is set to 'true'
+    unset($_SESSION['filtered_lenders']); // Clears filtered lenders from the session
+    unset($_SESSION['current_filters']); // Clears current filters from the session
+    unset($_SESSION['filters_applied']); // Clears the applied filters flag
+    unset($_SESSION['search_query']); // Clears the search query
+    header("Location: customerDashboard.php#applyLoan"); // Redirects back to the dashboard
+    exit(); // Exits the script
 }
 
-// Initialize filters
+// Initializes an array to store filters
 $filters = [
-    'loan_types' => [],
-    'interest_ranges' => [],
-    'lender_name' => ''
+    'loan_types' => [], // Stores loan types
+    'interest_ranges' => [], // Stores interest rate ranges
+    'lender_name' => '' // Stores lender name filter
 ];
 
-// Process search query
-if (isset($_GET['search_query']) && !empty($_GET['search_query'])) {
-    $_SESSION['search_query'] = $_GET['search_query'];
-} else if (!isset($_GET['reset_filters'])) {
-    // Preserve search query unless resetting
-    $_SESSION['search_query'] = $_SESSION['search_query'] ?? '';
+// Processes the search query if provided
+if (isset($_GET['search_query']) && !empty($_GET['search_query'])) { // Checks if a search query is provided
+    $_SESSION['search_query'] = $_GET['search_query']; // Stores the search query in the session
+} else if (!isset($_GET['reset_filters'])) { // Preserves the search query if reset filters is not requested
+    $_SESSION['search_query'] = $_SESSION['search_query'] ?? ''; // Keeps the existing search query
 }
 
-// Process loan type filter
-if (isset($_GET['loan_type']) && is_array($_GET['loan_type'])) {
-    $filters['loan_types'] = array_map(function($type) use ($myconn) {
-        return $myconn->real_escape_string($type);
+// Processes the loan type filter
+if (isset($_GET['loan_type']) && is_array($_GET['loan_type'])) { // Checks if loan type filter is provided as an array
+    $filters['loan_types'] = array_map(function($type) use ($myconn) { // Escapes each loan type
+        return $myconn->real_escape_string($type); // Escapes special characters for SQL
     }, $_GET['loan_type']);
 }
 
-// Process lender name filter
-if (isset($_GET['lender_name']) && !empty($_GET['lender_name'])) {
-    $filters['lender_name'] = $myconn->real_escape_string($_GET['lender_name']);
+// Processes the lender name filter
+if (isset($_GET['lender_name']) && !empty($_GET['lender_name'])) { // Checks if a lender name is provided
+    $filters['lender_name'] = $myconn->real_escape_string($_GET['lender_name']); // Escapes special characters
 }
 
-// Process amount filters 
-$amountConditions = [];
-if (isset($_GET['min_amount']) && is_numeric($_GET['min_amount'])) {
-    $filters['min_amount'] = max(0, (int)$_GET['min_amount']);
-    $amountConditions[] = "loan_offers.max_amount >= ?";
+// Processes the amount range filters
+$amountConditions = []; // Initializes an array for amount-related conditions
+if (isset($_GET['min_amount']) && is_numeric($_GET['min_amount'])) { // Checks if a minimum amount is specified
+    $filters['min_amount'] = max(0, (int)$_GET['min_amount']); // Ensures minimum amount is not negative
+    $amountConditions[] = "loan_offers.max_amount >= ?"; // Adds a condition for the minimum amount
 }
 
-if (isset($_GET['max_amount']) && is_numeric($_GET['max_amount'])) {
-    $filters['max_amount'] = (int)$_GET['max_amount'];
-    $amountConditions[] = "loan_offers.max_amount <= ?";
+if (isset($_GET['max_amount']) && is_numeric($_GET['max_amount'])) { // Checks if a maximum amount is specified
+    $filters['max_amount'] = (int)$_GET['max_amount']; // Sets the maximum amount
+    $amountConditions[] = "loan_offers.max_amount <= ?"; // Adds a condition for the maximum amount
 }
 
-// Process interest rate filter
-if (isset($_GET['interest_range']) && is_array($_GET['interest_range'])) {
-    $filters['interest_ranges'] = array_filter($_GET['interest_range'], function($range) {
-        return in_array($range, ['0-5', '5-10', '10+']);
+// Processes the interest rate filter
+if (isset($_GET['interest_range']) && is_array($_GET['interest_range'])) { // Checks if interest range is provided as an array
+    $filters['interest_ranges'] = array_filter($_GET['interest_range'], function($range) { // Filters valid ranges
+        return in_array($range, ['0-5', '5-10', '10+']); // Accepts only predefined ranges
     });
 }
 
-// Build base query
+// Builds the base query for fetching loan offers
 $query = "SELECT 
             loan_offers.*, 
             lenders.name AS lender_name
           FROM loan_offers
-          JOIN lenders ON loan_offers.lender_id = lenders.lender_id";
+          JOIN lenders ON loan_offers.lender_id = lenders.lender_id"; // Joins lenders with loan offers
 
-// Add WHERE conditions only if we have any filters
-$whereConditions = [];
-$params = [];
-$paramTypes = '';
+// Adds conditions to the query based on filters
+$whereConditions = []; // Initializes an array for WHERE clause conditions
+$params = []; // Initializes an array for parameters
+$paramTypes = ''; // Initializes a string for parameter types
 
-// Add amount conditions if they exist
+// Adds conditions for the amount range filter
 if (!empty($amountConditions)) {
-    $whereConditions = array_merge($whereConditions, $amountConditions);
+    $whereConditions = array_merge($whereConditions, $amountConditions); // Adds amount conditions
 }
 
-// Add loan type condition if specified
-if (!empty($filters['loan_types'])) {
-    $placeholders = implode(',', array_fill(0, count($filters['loan_types']), '?'));
-    $whereConditions[] = "loan_offers.loan_type IN ($placeholders)";
+// Adds conditions for the loan type filter
+if (!empty($filters['loan_types'])) { // Checks if loan types are provided
+    $placeholders = implode(',', array_fill(0, count($filters['loan_types']), '?')); // Creates placeholders for loan types
+    $whereConditions[] = "loan_offers.loan_type IN ($placeholders)"; // Adds the condition
 }
 
-// Add lender name condition if specified
-if (!empty($filters['lender_name'])) {
-    $whereConditions[] = "lenders.name = ?";
+// Adds conditions for the lender name filter
+if (!empty($filters['lender_name'])) { // Checks if a lender name is provided
+    $whereConditions[] = "lenders.name = ?"; // Adds the condition
 }
 
-// Add interest rate conditions if specified
-if (!empty($filters['interest_ranges'])) {
-    $conditions = [];
-    foreach ($filters['interest_ranges'] as $range) {
+// Adds conditions for the interest rate filter
+if (!empty($filters['interest_ranges'])) { // Checks if interest ranges are provided
+    $conditions = []; // Initializes an array for interest rate conditions
+    foreach ($filters['interest_ranges'] as $range) { // Iterates through each range
         switch ($range) {
             case '0-5': 
                 $conditions[] = "loan_offers.interest_rate BETWEEN 0 AND 5"; 
@@ -126,98 +122,100 @@ if (!empty($filters['interest_ranges'])) {
                 break;
         }
     }
-    $whereConditions[] = "(" . implode(' OR ', $conditions) . ")";
+    $whereConditions[] = "(" . implode(' OR ', $conditions) . ")"; // Adds the conditions with OR
 }
 
-// Combine all conditions
+// Combines all conditions into a WHERE clause
 if (!empty($whereConditions)) {
-    $query .= " WHERE " . implode(' AND ', $whereConditions);
+    $query .= " WHERE " . implode(' AND ', $whereConditions); // Adds conditions to the query
 }
 
-// Add sorting
-$query .= " ORDER BY loan_offers.offer_id DESC";
+// Sorts the results
+$query .= " ORDER BY loan_offers.offer_id DESC"; // Orders results by offer ID in descending order
 
-// Prepare statement
-$stmt = $myconn->prepare($query);
-if (!$stmt) {
-    $_SESSION['loan_message'] = "Failed to prepare query: " . $myconn->error;
-    $_SESSION['message_type'] = "error";
-    header("Location: customerDashboard.php#applyLoan");
-    exit();
+// Prepares the query for execution
+$stmt = $myconn->prepare($query); // Prepares the query
+if (!$stmt) { // Checks if query preparation failed
+    $_SESSION['loan_message'] = "Failed to prepare query: " . $myconn->error; // Sets an error message
+    $_SESSION['message_type'] = "error"; // Indicates the error type
+    header("Location: customerDashboard.php#applyLoan"); // Redirects to the dashboard
+    exit(); // Exits the script
 }
 
-// Bind parameters
-$params = [];
-$paramTypes = '';
+// Binds parameters to the prepared statement
+$params = []; // Resets the parameters array
+$paramTypes = ''; // Resets the parameter types string
 
-// Add amount parameters if they exist
+// Adds parameters for amount range filters
 if (isset($filters['min_amount'])) {
-    $params[] = $filters['min_amount'];
-    $paramTypes .= 'i';
+    $params[] = $filters['min_amount']; // Adds the minimum amount
+    $paramTypes .= 'i'; // Adds the parameter type
 }
 
 if (isset($filters['max_amount'])) {
-    $params[] = $filters['max_amount'];
-    $paramTypes .= 'i';
+    $params[] = $filters['max_amount']; // Adds the maximum amount
+    $paramTypes .= 'i'; // Adds the parameter type
 }
 
-// Add loan types to parameters if they exist
+// Adds parameters for loan types
 if (!empty($filters['loan_types'])) {
-    $paramTypes .= str_repeat('s', count($filters['loan_types']));
-    $params = array_merge($params, $filters['loan_types']);
+    $paramTypes .= str_repeat('s', count($filters['loan_types'])); // Appends types for each loan type
+    $params = array_merge($params, $filters['loan_types']); // Merges loan types into parameters
 }
 
-// Add lender name to parameters if it exists
+// Adds the lender name parameter
 if (!empty($filters['lender_name'])) {
-    $paramTypes .= 's';
-    $params[] = $filters['lender_name'];
+    $paramTypes .= 's'; // Adds the type for the lender name
+    $params[] = $filters['lender_name']; // Adds the lender name
 }
 
-// Bind parameters if they exist
+// Binds the parameters to the prepared statement
 if (!empty($params)) {
-    $stmt->bind_param($paramTypes, ...$params);
+    $stmt->bind_param($paramTypes, ...$params); // Binds parameters using the types string
 }
 
-// Execute query
-if (!$stmt->execute()) {
-    $_SESSION['loan_message'] = "Failed to execute query: " . $stmt->error;
-    $_SESSION['message_type'] = "error";
-    header("Location: customerDashboard.php#applyLoan");
-    exit();
+// Executes the query
+if (!$stmt->execute()) { // Checks if query execution failed
+    $_SESSION['loan_message'] = "Failed to execute query: " . $stmt->error; // Sets an error message
+    $_SESSION['message_type'] = "error"; // Indicates the error type
+    header("Location: customerDashboard.php#applyLoan"); // Redirects to the dashboard
+    exit(); // Exits the script
 }
 
-// Get results
-$result = $stmt->get_result();
-$lenders = $result->fetch_all(MYSQLI_ASSOC);
+// Fetches the results
+$result = $stmt->get_result(); // Gets the result set
+$lenders = $result->fetch_all(MYSQLI_ASSOC); // Fetches all rows as an associative array
 
-// Clear previous filtered lenders
-unset($_SESSION['filtered_lenders']);
+// Clears previously filtered lenders from the session
+unset($_SESSION['filtered_lenders']); // Removes old filtered lenders
 
-if (!empty($lenders)) {
-    $_SESSION['filtered_lenders'] = array_map(function($lender) {
+// Processes and stores the fetched lenders
+if (!empty($lenders)) { // Checks if there are any lenders
+    $_SESSION['filtered_lenders'] = array_map(function($lender) { // Maps lenders into a structured format
         return [
-            'offer_id' => (int)$lender['offer_id'],
-            'lender_id' => (int)$lender['lender_id'],
-            'name' => htmlspecialchars($lender['lender_name']),
-            'type' => htmlspecialchars($lender['loan_type']),
-            'rate' => $lender['interest_rate'],
-            'duration' => (int)$lender['max_duration'],
-            'amount' => (int)$lender['max_amount']
+            'offer_id' => (int)$lender['offer_id'], // Offer ID
+            'lender_id' => (int)$lender['lender_id'], // Lender ID
+            'name' => htmlspecialchars($lender['lender_name']), // Escaped lender name
+            'type' => htmlspecialchars($lender['loan_type']), // Escaped loan type
+            'rate' => $lender['interest_rate'], // Interest rate
+            'duration' => (int)$lender['max_duration'], // Maximum duration
+            'amount' => (int)$lender['max_amount'] // Maximum amount
         ];
     }, $lenders);
 }
 
-// Store filter state only if filters were actually applied
+// Stores the filter state in the session if filters are applied
 if (!empty($_GET['loan_type']) || isset($_GET['min_amount']) || 
     isset($_GET['max_amount']) || !empty($_GET['interest_range']) || !empty($_GET['lender_name'])) {
-    $_SESSION['current_filters'] = $filters;
-    $_SESSION['filters_applied'] = true;
+    $_SESSION['current_filters'] = $filters; // Saves current filters
+    $_SESSION['filters_applied'] = true; // Flags that filters are applied
 }
 
-$stmt->close();
-$myconn->close();
+// Closes the statement and connection
+$stmt->close(); // Frees the prepared statement
+$myconn->close(); // Closes the database connection
 
-// Redirect back to loan application page
-header("Location: customerDashboard.php#applyLoan");
-exit();
+// Redirects back to the loan application page
+header("Location: customerDashboard.php#applyLoan"); // Redirects to the dashboard
+exit(); // Exits the script
 ?>

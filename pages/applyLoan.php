@@ -50,7 +50,7 @@ $installments = isset($_POST['installments']) ? floatval($_POST['installments'])
 // Handles collateral image upload
 $collateral_image = ''; // Initializes collateral_image as an empty string
 if (!empty($_FILES['collateral_image']['name'])) { // Checks if a file name exists in the uploaded files
-    $target_dir = "../Uploads/"; // Defines the directory where the file will be stored
+    $target_dir = "../uploads/"; // Defines the directory where the file will be stored
     $target_file = $target_dir . basename($_FILES['collateral_image']['name']); // Constructs the full path for the uploaded file
     $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION)); // Gets the file extension in lowercase
     $allowed_types = ['jpg', 'jpeg', 'png', 'gif']; // Defines an array of allowed file extensions

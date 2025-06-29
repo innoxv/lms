@@ -1,34 +1,31 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+// Includes the database configuration file to establish the $myconn connection
+include '../phpconfig/config.php'; // Imports database connection settings from config.php
 
-// Database config file
-include '../phpconfig/config.php';
-
-// Session handling
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
+// Initiates or resumes a session to manage user state
+if (session_status() == PHP_SESSION_NONE) { // session_status() checks if a session is active; PHP_SESSION_NONE indicates no active session
+    session_start(); // Starts a new session or resumes an existing one
 }
 
-// Authentication check
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['customer_id'])) {
-    $_SESSION['loan_message'] = "Please login to view loan details";
-    header("Location: /lms/pages/signin.html");
-    exit;
+// Validates that the user is logged in and has a customer ID
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['customer_id'])) { // isset() checks if user_id and customer_id are set in the session
+    $_SESSION['loan_message'] = "Please login to view loan details"; // Sets an error message in the session
+    header("Location: /lms/pages/signin.html"); // Redirects to the sign-in page
+    exit; // Terminates script execution after redirection
 }
 
-// Validate loan ID
-if (!isset($_GET['loan_id']) || !is_numeric($_GET['loan_id'])) {
-    $_SESSION['loan_message'] = "Invalid loan ID";
-    header("Location: /lms/pages/customerDashboard.php#loanHistory");
-    exit;
+// Validates the loan ID from the GET request
+if (!isset($_GET['loan_id']) || !is_numeric($_GET['loan_id'])) { // Checks if loan_id is set and numeric
+    $_SESSION['loan_message'] = "Invalid loan ID"; // Sets an error message for invalid or missing loan ID
+    header("Location: /lms/pages/customerDashboard.php#loanHistory"); // Redirects to the loanHistory section of customerDashboard.php
+    exit; // Terminates script execution after redirection
 }
 
-$loan_id = (int)$_GET['loan_id'];
-$customer_id = (int)$_SESSION['customer_id'];
+// Sanitizes input data to ensure correct types
+$loan_id = (int)$_GET['loan_id']; // Converts loan_id to integer
+$customer_id = (int)$_SESSION['customer_id']; // Converts customer_id from session to integer
 
-// Fetch loan details without table aliases
+// Builds the SQL query to fetch loan details
 $query = "SELECT 
             loans.loan_id,
             loans.offer_id,
@@ -47,52 +44,61 @@ $query = "SELECT
           FROM loans
           JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
           JOIN lenders ON loans.lender_id = lenders.lender_id
-          WHERE loans.loan_id = ? AND loans.customer_id = ?";
+          WHERE loans.loan_id = ? AND loans.customer_id = ?"; // Query joins tables and filters by loan_id and customer_id
 
-$stmt = $myconn->prepare($query);
-if (!$stmt) {
-    $_SESSION['loan_message'] = "Database error";
-    header("Location: /lms/pages/customerDashboard.php#loanHistory");
-    exit;
+// Prepares the SQL query for secure execution
+$stmt = $myconn->prepare($query); // prepare() creates a prepared statement
+if (!$stmt) { // Checks if statement preparation failed
+    $_SESSION['loan_message'] = "Database error"; // Sets a generic error message
+    header("Location: /lms/pages/customerDashboard.php#loanHistory"); // Redirects to the loanHistory section
+    exit; // Terminates script execution after redirection
 }
 
-$stmt->bind_param("ii", $loan_id, $customer_id);
+// Binds parameters to the prepared statement
+$stmt->bind_param("ii", $loan_id, $customer_id); // bind_param() binds loan_id and customer_id as integers
 
-if (!$stmt->execute()) {
-    $_SESSION['loan_message'] = "Error fetching loan details";
-    header("Location: /lms/pages/customerDashboard.php#loanHistory");
-    exit;
+// Executes the query and checks for failure
+if (!$stmt->execute()) { // Checks if the statement execution failed
+    $_SESSION['loan_message'] = "Error fetching loan details"; // Sets error message for query failure
+    header("Location: /lms/pages/customerDashboard.php#loanHistory"); // Redirects to the loanHistory section
+    exit; // Terminates script execution after redirection
 }
 
-$result = $stmt->get_result();
+// Fetches the query results
+$result = $stmt->get_result(); // Gets the result set
 
-if ($result->num_rows === 0) {
-    $_SESSION['loan_message'] = "Loan not found or access denied";
-    header("Location: /lms/pages/customerDashboard.php#loanHistory");
-    exit;
+// Checks if the loan exists and the customer has access
+if ($result->num_rows === 0) { // num_rows returns the number of rows in the result set
+    $_SESSION['loan_message'] = "Loan not found or access denied"; // Sets error message for invalid loan or permissions
+    header("Location: /lms/pages/customerDashboard.php#loanHistory"); // Redirects to the loanHistory section
+    exit; // Terminates script execution after redirection
 }
 
-$loan = $result->fetch_assoc();
+// Fetches loan data
+$loan = $result->fetch_assoc(); // fetch_assoc() fetches the result row as an associative array
 
-// Format display values
+// Formats loan details for display
 $loan_details = [
-    'loan_id' => $loan['loan_id'],
-    'loan_type' => htmlspecialchars($loan['loan_type']),
-    'lender_name' => htmlspecialchars($loan['lender_name']),
-    'amount' => number_format($loan['amount']),
-    'interest_rate' => $loan['interest_rate'],
-    'duration' => $loan['duration'],
-    'installments' => number_format($loan['installments'], 2),
-    'collateral_value' => number_format($loan['collateral_value']),
-    'collateral_description' => htmlspecialchars($loan['collateral_description']),
-    'status' => $loan['status'],
-    'created_date' => date('j M Y', strtotime($loan['application_date']))
+    'loan_id' => $loan['loan_id'], // Stores loan ID
+    'loan_type' => htmlspecialchars($loan['loan_type']), // Escapes loan type for safe display
+    'lender_name' => htmlspecialchars($loan['lender_name']), // Escapes lender name for safe display
+    'amount' => number_format($loan['amount']), // Formats amount with thousands separators
+    'interest_rate' => $loan['interest_rate'], // Stores interest rate as is
+    'duration' => $loan['duration'], // Stores duration in months
+    'installments' => number_format($loan['installments'], 2), // Formats installments to 2 decimal places
+    'collateral_value' => number_format($loan['collateral_value']), // Formats collateral value with thousands separators
+    'collateral_description' => htmlspecialchars($loan['collateral_description']), // Escapes collateral description for safe display
+    'status' => $loan['status'], // Stores loan status
+    'created_date' => date('j M Y', strtotime($loan['application_date'])) // Formats application date as day, month, year
 ];
 
-// Store in session for display
-$_SESSION['loan_details'] = $loan_details;
+// Stores loan details in session for display on the dashboard
+$_SESSION['loan_details'] = $loan_details; // Assigns formatted loan details to session variable
 
-// Redirect back
-header("Location: /lms/pages/customerDashboard.php#loanHistory");
-exit;
+// Closes the prepared statement
+$stmt->close(); // Frees resources associated with the statement
+
+// Redirects to the loanHistory section of the customer dashboard
+header("Location: /lms/pages/customerDashboard.php#loanHistory"); // Sends HTTP header to redirect
+exit; // Terminates script execution after redirection
 ?>

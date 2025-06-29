@@ -1,36 +1,34 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-ini_set('log_errors', 1);
-session_start();
+// Initiates or resumes a session to manage user state
+session_start(); // Starts a new session or resumes an existing one
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['payment_message'] = "Please log in to access payment tracking.";
-    $_SESSION['payment_message_type'] = 'error';
-    header("Location: signin.html");
-    exit();
+// Validates that the user is logged in
+if (!isset($_SESSION['user_id'])) { // isset() checks if user_id is set in the session
+    $_SESSION['payment_message'] = "Please log in to access payment tracking."; // Sets error message in session
+    $_SESSION['payment_message_type'] = 'error'; // Sets message type to error
+    header("Location: signin.html"); // Redirects to the sign-in page
+    exit(); // Terminates script execution after redirection
 }
 
-$userId = $_SESSION['user_id'];
-$customerId = $_SESSION['customer_id'] ?? null;
+// Retrieves user and customer IDs from session
+$userId = $_SESSION['user_id']; // Stores user_id from session
+$customerId = $_SESSION['customer_id'] ?? null; // Gets customer_id, defaults to null if not set
 
-// Check if customer profile exists
-if (!$customerId) {
-    $_SESSION['payment_message'] = "Customer profile not found. Please log in again.";
-    $_SESSION['payment_message_type'] = 'error';
-    header("Location: customerDashboard.php#paymentTracking");
-    exit();
+// Checks if customer profile exists
+if (!$customerId) { // Checks if customer_id is null
+    $_SESSION['payment_message'] = "Customer profile not found. Please log in again."; // Sets error message in session
+    $_SESSION['payment_message_type'] = 'error'; // Sets message type to error
+    header("Location: customerDashboard.php#paymentTracking"); // Redirects to paymentTracking section
+    exit(); // Terminates script execution after redirection
 }
 
-// Database config file
-include '../phpconfig/config.php';
+// Includes the database configuration file to establish the $myconn connection
+include '../phpconfig/config.php'; // Imports database connection settings from config.php
 
-// Fetches active loans from fetchActiveLoans.php
-require_once 'fetchActiveLoans.php';
+// Includes the fetchActiveLoans.php file to use the fetchActiveLoans function
+require_once 'fetchActiveLoans.php'; // Imports function to fetch active loans
 
-// Update overdue loans
+// Updates overdue loans to set isDue flag
 $overdueQuery = "
     UPDATE loans
     SET isDue = 1
@@ -42,44 +40,44 @@ $overdueQuery = "
         SELECT 1 FROM payments
         WHERE payments.loan_id = loans.loan_id
         AND payments.remaining_balance > 0
-    )";
-$stmt = $myconn->prepare($overdueQuery);
-$stmt->bind_param("i", $customerId);
-$stmt->execute();
+    )"; // Query to mark loans as overdue based on due date and remaining balance
+$stmt = $myconn->prepare($overdueQuery); // Prepares the query
+$stmt->bind_param("i", $customerId); // Binds customer_id as integer
+$stmt->execute(); // Executes the query to update overdue loans
 
-// Handle filters
+// Handles filters from GET request
 $filters = [
-    'payment_status' => $_GET['payment_status'] ?? '',
-    'loan_type' => $_GET['loan_type'] ?? '',
-    'amount_range' => $_GET['amount_range'] ?? '',
-    'date_range' => $_GET['date_range'] ?? '',
-    'due_status' => $_GET['due_status'] ?? ''
+    'payment_status' => $_GET['payment_status'] ?? '', // Gets payment_status filter, defaults to empty
+    'loan_type' => $_GET['loan_type'] ?? '', // Gets loan_type filter, defaults to empty
+    'amount_range' => $_GET['amount_range'] ?? '', // Gets amount_range filter, defaults to empty
+    'date_range' => $_GET['date_range'] ?? '', // Gets date_range filter, defaults to empty
+    'due_status' => $_GET['due_status'] ?? '' // Gets due_status filter, defaults to empty
 ];
 
-// Reset filters if requested
-if (isset($_GET['reset']) && $_GET['reset'] === 'true') {
-    unset($_SESSION['active_loans']);
-    unset($_SESSION['payment_filters']);
+// Resets filters if requested
+if (isset($_GET['reset']) && $_GET['reset'] === 'true') { // Checks if reset flag is set to true
+    unset($_SESSION['active_loans']); // Removes active_loans from session
+    unset($_SESSION['payment_filters']); // Removes payment_filters from session
     $filters = [
-        'payment_status' => '',
-        'loan_type' => '',
-        'amount_range' => '',
-        'date_range' => '',
-        'due_status' => ''
+        'payment_status' => '', // Resets payment_status filter
+        'loan_type' => '', // Resets loan_type filter
+        'amount_range' => '', // Resets amount_range filter
+        'date_range' => '', // Resets date_range filter
+        'due_status' => '' // Resets due_status filter
     ];
 }
 
-// Fetch active loans
-$_SESSION['active_loans'] = fetchActiveLoans($myconn, $customerId, $filters);
-$_SESSION['payment_filters'] = $filters;
+// Fetches active loans and stores them in session
+$_SESSION['active_loans'] = fetchActiveLoans($myconn, $customerId, $filters); // Calls fetchActiveLoans() with filters
+$_SESSION['payment_filters'] = $filters; // Stores applied filters in session
 
-// Handle payment submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
-    $loanId = intval($_POST['loan_id']);
-    $amount = floatval($_POST['amount']);
-    $paymentMethod = $myconn->real_escape_string($_POST['payment_method']);
+// Handles payment submission via POST request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) { // Checks for POST request and payment_submit
+    $loanId = intval($_POST['loan_id']); // Converts loan_id to integer
+    $amount = floatval($_POST['amount']); // Converts payment amount to float
+    $paymentMethod = $myconn->real_escape_string($_POST['payment_method']); // Escapes payment method for SQL safety
 
-    // Verify loan exists and belongs to the customer
+    // Verifies that the loan exists and belongs to the customer
     $verifyQuery = "SELECT 
         loans.customer_id, 
         loans.lender_id,
@@ -90,76 +88,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
         loans.due_date,
         loans.application_date
     FROM loans 
-    WHERE loans.loan_id = ? AND loans.status = 'disbursed'";
-    $stmt = $myconn->prepare($verifyQuery);
-    $stmt->bind_param("i", $loanId);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    WHERE loans.loan_id = ? AND loans.status = 'disbursed'"; // Query to verify loan details
+    $stmt = $myconn->prepare($verifyQuery); // Prepares the query
+    $stmt->bind_param("i", $loanId); // Binds loan_id as integer
+    $stmt->execute(); // Executes the query
+    $result = $stmt->get_result(); // Gets the result set
 
-    if ($result->num_rows === 0 || $result->fetch_assoc()['customer_id'] != $customerId) {
-        $_SESSION['payment_message'] = "Invalid or undisbursed loan selected for payment";
-        $_SESSION['payment_message_type'] = 'error';
+    // Checks if loan is valid and belongs to the customer
+    if ($result->num_rows === 0 || $result->fetch_assoc()['customer_id'] != $customerId) { // Verifies loan and ownership
+        $_SESSION['payment_message'] = "Invalid or undisbursed loan selected for payment"; // Sets error message
+        $_SESSION['payment_message_type'] = 'error'; // Sets message type to error
     } else {
-        $result->data_seek(0);
-        $loanDetails = $result->fetch_assoc();
+        $result->data_seek(0); // Resets result pointer to start
+        $loanDetails = $result->fetch_assoc(); // Fetches loan details
 
-        $lenderId = $loanDetails['lender_id'];
-        $principal = $loanDetails['amount'];
-        $interestRate = $loanDetails['interest_rate'] / 100;
-        $durationYears = $loanDetails['duration'] / 12;
-        $expectedInstallment = $loanDetails['installments'];
-        $currentDueDate = $loanDetails['due_date'];
-        $applicationDate = $loanDetails['application_date'];
+        // Extracts loan details for calculations
+        $lenderId = $loanDetails['lender_id']; // Stores lender_id
+        $principal = $loanDetails['amount']; // Stores loan principal
+        $interestRate = $loanDetails['interest_rate'] / 100; // Converts interest rate to decimal
+        $durationYears = $loanDetails['duration'] / 12; // Converts duration to years
+        $expectedInstallment = $loanDetails['installments']; // Stores expected installment amount
+        $currentDueDate = $loanDetails['due_date']; // Stores current due date
+        $applicationDate = $loanDetails['application_date']; // Stores application date
 
-        // Calculate total amount due
-        $totalAmountDue = $principal + ($principal * $interestRate * $durationYears);
+        // Calculates total amount due with simple interest
+        $totalAmountDue = $principal + ($principal * $interestRate * $durationYears); // Computes total with interest
 
-        // Fetch sum of all previous payments
+        // Fetches sum of previous payments
         $paymentSumQuery = "SELECT COALESCE(SUM(amount), 0) AS total_paid 
                            FROM payments 
-                           WHERE loan_id = ?";
-        $stmt = $myconn->prepare($paymentSumQuery);
-        $stmt->bind_param("i", $loanId);
-        $stmt->execute();
-        $totalPaid = $stmt->get_result()->fetch_assoc()['total_paid'];
+                           WHERE loan_id = ?"; // Query to sum payments for the loan
+        $stmt = $myconn->prepare($paymentSumQuery); // Prepares the query
+        $stmt->bind_param("i", $loanId); // Binds loan_id as integer
+        $stmt->execute(); // Executes the query
+        $totalPaid = $stmt->get_result()->fetch_assoc()['total_paid']; // Gets total paid amount
 
-        // Calculate current remaining balance
-        $currentRemainingBalance = $totalAmountDue - $totalPaid;
+        // Calculates current remaining balance
+        $currentRemainingBalance = $totalAmountDue - $totalPaid; // Computes remaining balance
 
-        // Validate payment amount
-        if ($amount <= 0 || $amount > $currentRemainingBalance + 0.01) {
-            $_SESSION['payment_message'] = "Invalid payment amount. Must be greater than 0 and not exceed remaining balance.";
-            $_SESSION['payment_message_type'] = 'error';
+        // Validates payment amount
+        if ($amount <= 0 || $amount > $currentRemainingBalance + 0.01) { // Checks if amount is valid
+            $_SESSION['payment_message'] = "Invalid payment amount. Must be greater than 0 and not exceed remaining balance."; // Sets error message
+            $_SESSION['payment_message_type'] = 'error'; // Sets message type to error
         } else {
-            // Calculate new remaining balance
-            $newRemainingBalance = $currentRemainingBalance - $amount;
+            // Calculates new remaining balance
+            $newRemainingBalance = $currentRemainingBalance - $amount; // Subtracts payment amount
 
-            // Determine payment type
-            $paymentType = ($newRemainingBalance <= 0) ? 'full' : 'partial';
+            // Determines payment type
+            $paymentType = ($newRemainingBalance <= 0) ? 'full' : 'partial'; // Sets full or partial based on balance
 
-            // Fetch total amount paid for the current installment period
+            // Fetches total amount paid for the current installment period
             $lastPaymentQuery = "SELECT COALESCE(SUM(amount), 0) AS installment_paid 
                                FROM payments 
                                WHERE loan_id = ? 
                                AND payment_date <= NOW()
                                AND installment_balance IS NOT NULL
                                ORDER BY payment_date DESC 
-                               LIMIT 1";
-            $stmt = $myconn->prepare($lastPaymentQuery);
-            $stmt->bind_param("i", $loanId);
-            $stmt->execute();
-            $lastInstallmentPaid = $stmt->get_result()->fetch_assoc()['installment_paid'];
-            $totalInstallmentPaid = $lastInstallmentPaid + $amount;
+                               LIMIT 1"; // Query to get latest installment payment
+            $stmt = $myconn->prepare($lastPaymentQuery); // Prepares the query
+            $stmt->bind_param("i", $loanId); // Binds loan_id as integer
+            $stmt->execute(); // Executes the query
+            $lastInstallmentPaid = $stmt->get_result()->fetch_assoc()['installment_paid']; // Gets last installment paid
+            $totalInstallmentPaid = $lastInstallmentPaid + $amount; // Adds new payment to total
 
-            // Calculate installment balance
-            $installmentBalance = ($totalInstallmentPaid >= $expectedInstallment) ? NULL : max(0, $expectedInstallment - $totalInstallmentPaid);
+            // Calculates installment balance
+            $installmentBalance = ($totalInstallmentPaid >= $expectedInstallment) ? NULL : max(0, $expectedInstallment - $totalInstallmentPaid); // Computes new installment balance
 
-            // Insert new payment record
+            // Inserts new payment record
             $insertQuery = "INSERT INTO payments (
                 loan_id, customer_id, lender_id, amount, 
                 payment_method, payment_type, remaining_balance, installment_balance
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            $stmt = $myconn->prepare($insertQuery);
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"; // Query to insert payment
+            $stmt = $myconn->prepare($insertQuery); // Prepares the query
             $stmt->bind_param(
                 "iiidssdd",
                 $loanId,
@@ -170,55 +170,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) {
                 $paymentType,
                 $newRemainingBalance,
                 $installmentBalance
-            );
+            ); // Binds parameters with appropriate types
 
-            if ($stmt->execute()) {
-                // Update due_date and isDue if installment is fully paid
-                if ($totalInstallmentPaid >= $expectedInstallment) {
-                    $appDay = date('d', strtotime($applicationDate));
-                    $appMonth = date('m', strtotime($currentDueDate));
-                    $appYear = date('Y', strtotime($currentDueDate));
-                    $nextMonth = date('Y-m-d', strtotime("+1 month", strtotime("$appYear-$appMonth-$appDay")));
+            // Executes payment insertion and handles success or failure
+            if ($stmt->execute()) { // Checks if payment insertion was successful
+                // Updates due_date and isDue if installment is fully paid
+                if ($totalInstallmentPaid >= $expectedInstallment) { // Checks if installment is paid
+                    $appDay = date('d', strtotime($applicationDate)); // Gets day of application
+                    $appMonth = date('m', strtotime($currentDueDate)); // Gets current due month
+                    $appYear = date('Y', strtotime($currentDueDate)); // Gets current due year
+                    $nextMonth = date('Y-m-d', strtotime("+1 month", strtotime("$appYear-$appMonth-$appDay"))); // Calculates next due date
                     $updateLoanQuery = "UPDATE loans 
                                         SET due_date = ?, isDue = 0
-                                        WHERE loan_id = ? AND status = 'disbursed'";
-                    $stmt = $myconn->prepare($updateLoanQuery);
-                    $stmt->bind_param("si", $nextMonth, $loanId);
-                    $stmt->execute();
+                                        WHERE loan_id = ? AND status = 'disbursed'"; // Query to update loan
+                    $stmt = $myconn->prepare($updateLoanQuery); // Prepares the query
+                    $stmt->bind_param("si", $nextMonth, $loanId); // Binds next due date and loan_id
+                    $stmt->execute(); // Executes the query
                 } else {
-                    // Check if due date is reached for partial payment
-                    $isDue = (strtotime($currentDueDate) <= time()) ? 1 : 0;
+                    // Checks if due date is reached for partial payment
+                    $isDue = (strtotime($currentDueDate) <= time()) ? 1 : 0; // Sets isDue based on current time
                     $updateLoanQuery = "UPDATE loans 
                                         SET isDue = ?
-                                        WHERE loan_id = ? AND status = 'disbursed'";
-                    $stmt = $myconn->prepare($updateLoanQuery);
-                    $stmt->bind_param("ii", $isDue, $loanId);
-                    $stmt->execute();
+                                        WHERE loan_id = ? AND status = 'disbursed'"; // Query to update isDue
+                    $stmt = $myconn->prepare($updateLoanQuery); // Prepares the query
+                    $stmt->bind_param("ii", $isDue, $loanId); // Binds isDue and loan_id
+                    $stmt->execute(); // Executes the query
                 }
 
-                $_SESSION['payment_message'] = "Payment of KES " . number_format($amount, 2) . " processed successfully!";
-                $_SESSION['payment_message_type'] = 'success';
+                // Sets success message
+                $_SESSION['payment_message'] = "Payment of KES " . number_format($amount, 2) . " processed successfully!"; // Formats success message
+                $_SESSION['payment_message_type'] = 'success'; // Sets message type to success
 
-                // Activity Logging
-                $activity = "Processed payment of KES $amount for loan ID $loanId";
+                // Logs payment activity
+                $activity = "Processed payment of KES $amount for loan ID $loanId"; // Creates activity description
                 $activityQuery = "INSERT INTO activity (user_id, activity, activity_time, activity_type) 
-                                 VALUES (?, ?, NOW(), 'payment')";
-                $stmt = $myconn->prepare($activityQuery);
-                $stmt->bind_param("is", $userId, $activity);
-                $stmt->execute();
+                                 VALUES (?, ?, NOW(), 'payment')"; // Query to log activity
+                $stmt = $myconn->prepare($activityQuery); // Prepares the query
+                $stmt->bind_param("is", $userId, $activity); // Binds user_id and activity
+                $stmt->execute(); // Executes the query
 
-                // Refresh active loans
-                $_SESSION['active_loans'] = fetchActiveLoans($myconn, $customerId, $filters);
+                // Refreshes active loans
+                $_SESSION['active_loans'] = fetchActiveLoans($myconn, $customerId, $filters); // Refreshes loan data
             } else {
-                error_log("Payment insert error: " . $stmt->error);
-                $_SESSION['payment_message'] = "Error processing payment: " . $stmt->error;
-                $_SESSION['payment_message_type'] = 'error';
+                error_log("Payment insert error: " . $stmt->error); // Logs error to server log
+                $_SESSION['payment_message'] = "Error processing payment: " . $stmt->error; // Sets error message
+                $_SESSION['payment_message_type'] = 'error'; // Sets message type to error
             }
         }
     }
 }
 
-mysqli_close($myconn);
-header("Location: customerDashboard.php#paymentTracking");
-exit();
+// Closes the database connection
+mysqli_close($myconn); // Terminates the database connection
+header("Location: customerDashboard.php#paymentTracking"); // Redirects to paymentTracking section
+exit(); // Terminates script execution after redirection
 ?>
