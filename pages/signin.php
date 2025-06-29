@@ -1,112 +1,114 @@
 <?php
+// Initiates or resumes a session to manage user state across pages
+session_start(); // Starts a new session or resumes an existing one using session_start()
 
+// Includes the database configuration file to establish the $myconn connection
+include '../phpconfig/config.php'; // Imports database connection settings from config.php
 
-// Function to start or resume the session to store user data across pages
-session_start();
-
-// Database config file
-include '../phpconfig/config.php';
-
-// Handle AJAX request to retrieve session error messages
-if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['action']) && $_GET['action'] == 'get_error') {
-    // Set JSON content type for AJAX response
-    header('Content-Type: application/json');
-    // Initialize response array for error messages
+// Handles AJAX request to retrieve session error messages
+if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['action']) && $_GET['action'] == 'get_error') { // Checks if request is GET and action is get_error
+    // Sets response header to indicate JSON output
+    header('Content-Type: application/json'); // Specifies JSON content type for AJAX response
+    // Initializes response array for error messages
     $response = [
-        'login_error' => null,
-        'login_error_type' => null
+        'login_error' => null, // Placeholder for login error message
+        'login_error_type' => null // Placeholder for error type
     ];
-    // Check for login error in session
-    if (isset($_SESSION['login_error'])) { // $_SESSION is a global variable array to store session variables available to the current script
-        $response['login_error'] = $_SESSION['login_error'];
-        $response['login_error_type'] = $_SESSION['login_error_type'] ?? 'error';
-        // Clear session messages to prevent repeated display
-        unset($_SESSION['login_error']);
-        unset($_SESSION['login_error_type']);
+    // Checks for login error in session
+    if (isset($_SESSION['login_error'])) { // isset() checks if login_error is set in $_SESSION global array
+        $response['login_error'] = $_SESSION['login_error']; // Assigns session error message to response
+        $response['login_error_type'] = $_SESSION['login_error_type'] ?? 'error'; // Assigns error type, defaults to 'error'
+        // Clears session messages to prevent repeated display
+        unset($_SESSION['login_error']); // Removes login_error from session
+        unset($_SESSION['login_error_type']); // Removes login_error_type from session
     }
-    // Output JSON response and exit
-    echo json_encode($response);
-    exit();
+    // Outputs JSON-encoded response and terminates script
+    echo json_encode($response); // json_encode() converts array to JSON string
+    exit(); // Terminates script execution after response
 }
 
-// Check if form was submitted using POST method
-// $_SERVER["REQUEST_METHOD"] checks the HTTP request method
-// "POST" means data was sent via form submission
-// $_SESSION is a global variable array containing session variables available to the current script
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get email and password from form submission
-    // $_POST is a global variable that gets data from client server 
-    $email = $_POST['signinEmail'];
-    $password = $_POST['signinPassword'];
+// Handles form submission via POST method
+if ($_SERVER["REQUEST_METHOD"] == "POST") { // Checks if request method is POST using $_SERVER global
+    // Retrieves email and password from form submission
+    $email = $_POST['signinEmail']; // Gets email from $_POST global array
+    $password = $_POST['signinPassword']; // Gets password from $_POST global array
 
-    // Validate that both fields are not empty (Validation is done by Javascript - validinput.js )
-    if (!empty($email) && !empty($password)) {
-        // Prepare SQL statement to prevent SQL injection
-        // The ? is a placeholder for parameterized queries
-        // This selects user data where email matches the provided value
-        $stmt = $myconn->prepare("SELECT user_id, email, password, role, user_name FROM users WHERE email = ?");
-        
-        // Bind the email variable to the ? placeholder
-        // "s" indicates the parameter is a string
-        $stmt->bind_param("s", $email); //bind_param() is a PHP function that binds variables to a prepared statement as parameters
-        
-        // Execute the prepared statement
-        $stmt->execute();   // execute() is a PHP function that executes previously prepared statements
-        
-        // Get the result set from the executed statement
-        $result = $stmt->get_result(); // get_result() is a PHP function that gets a result set from a prepared statement as a mysqli_result object
+    // Validates that both fields are not empty (JavaScript validation is handled in validinput.js)
+    if (!empty($email) && !empty($password)) { // empty() checks if email and password are not empty
+        // Prepares SQL statement to prevent SQL injection
+        $stmt = $myconn->prepare("SELECT user_id, email, password, role, user_name FROM users WHERE email = ?"); // Prepares query with placeholder
+        // Binds the email variable to the placeholder
+        $stmt->bind_param("s", $email); // bind_param() binds email as string ('s') to the query
+        // Executes the prepared statement
+        $stmt->execute(); // execute() runs the prepared query
+        // Gets the result set from the executed statement
+        $result = $stmt->get_result(); // get_result() retrieves query results as a mysqli_result object
 
-        // Check if any rows were returned (user exists)
-        if ($result->num_rows > 0) {
-            // Fetch user data as an associative array
-            $user = $result->fetch_assoc(); //fetch_assoc() is a PHP function that fetches one row of data from the result set and returns it as an array.
+        // Checks if any rows were returned (user exists)
+        if ($result->num_rows > 0) { // num_rows property checks if results were found
+            // Fetches user data as an associative array
+            $user = $result->fetch_assoc(); // fetch_assoc() retrieves one row as an associative array
             
-            // Verify submitted password against hashed password in database
-            if (password_verify($password, $user['password'])) {    // password_verify is a PHP function that verifies that a password matches a hash
-                // Password is correct - set session variables:
-                $_SESSION['user_id'] = $user['user_id'];  // Store user ID in session
-                $_SESSION['email'] = $user['email'];  // Store email in session
-                $_SESSION['role'] = $user['role'];  // Store user role (Admin/Customer/Lender)
-                $_SESSION['user_name'] = $user['user_name'];  // Store user's full name
+            // Verifies submitted password against hashed password in database
+            if (password_verify($password, $user['password'])) { // password_verify() checks if password matches hash
+                // Password is correct, sets session variables
+                $_SESSION['user_id'] = $user['user_id']; // Stores user ID in session
+                $_SESSION['email'] = $user['email']; // Stores email in session
+                $_SESSION['role'] = $user['role']; // Stores role (Admin/Customer/Lender) in session
+                $_SESSION['user_name'] = $user['user_name']; // Stores user's full name in session
 
-                // Log successful login to activity table
+                // Logs successful login to activity table
                 $logStmt = $myconn->prepare("INSERT INTO activity (user_id, activity, activity_time, activity_type) 
-                                            VALUES (?, ?, NOW(), 'login')");
-                $activity = "User logged in";
-                $logStmt->bind_param("is", $user['user_id'], $activity);
-                $logStmt->execute();
-                $logStmt->close();
+                                            VALUES (?, ?, NOW(), 'login')"); // Prepares query to log login
+                $activity = "User logged in"; // Defines activity description
+                $logStmt->bind_param("is", $user['user_id'], $activity); // Binds user_id (integer) and activity (string)
+                $logStmt->execute(); // Executes the activity log query
+                $logStmt->close(); // Closes the prepared statement
 
-                // Redirect based on user role
-                if ($user['role'] == 'Admin') {
-                    header("Location: adminDashboard.php");
-                } elseif ($user['role'] == 'Customer') {
-                    header("Location: customerDashboard.php");
-                } elseif ($user['role'] == 'Lender') {
-                    header("Location: lenderDashboard.php");
+                // Redirects based on user role
+                if ($user['role'] == 'Admin') { // Checks if role is Admin
+                    header("Location: adminDashboard.php"); // Redirects to admin dashboard
+                } elseif ($user['role'] == 'Customer') { // Checks if role is Customer
+                    header("Location: customerDashboard.php"); // Redirects to customer dashboard
+                } elseif ($user['role'] == 'Lender') { // Checks if role is Lender
+                    header("Location: lenderDashboard.php"); // Redirects to lender dashboard
                 } else {
-                    // Fallback for unknown roles
-                    header("Location: alert.html");
+                    // Handles unknown roles
+                    header("Location: alert.html"); // Redirects to generic alert page
                 }
-                exit();  // Terminate script after redirect
+                exit(); // Terminates script execution after redirection
             } else {
-                // Password verification failed - log failed attempt for existing user
+                // Password verification failed, logs attempt
                 $logStmt = $myconn->prepare("INSERT INTO activity (user_id, activity, activity_time, activity_type) 
-                                           VALUES (?, ?, NOW(), 'failed login')");
-                $activity = "Failed login attempt - incorrect password";
-                $logStmt->bind_param("is", $user['user_id'], $activity);
-                $logStmt->execute();
-                $logStmt->close();
+                                           VALUES (?, ?, NOW(), 'failed login')"); // Prepares query to log failed login
+                $activity = "Failed login attempt - incorrect password"; // Defines activity description
+                $logStmt->bind_param("is", $user['user_id'], $activity); // Binds user_id (integer) and activity (string)
+                $logStmt->execute(); // Executes the activity log query
+                $logStmt->close(); // Closes the prepared statement
                 
-                // Store error message in session for AJAX retrieval
-                $_SESSION['login_error'] = "Invalid Email or Password!";
-                $_SESSION['login_error_type'] = "error";
-                header("Location: signin.html?error=1");
-                exit();
+                // Stores error message for AJAX retrieval
+                $_SESSION['login_error'] = "Invalid Email or Password!"; // Sets error message in session
+                $_SESSION['login_error_type'] = "error"; // Sets error type in session
+                header("Location: signin.html?error=1"); // Redirects to signin page with error flag
+                exit(); // Terminates script execution after redirection
             }
-        }}
+        } else {
+            // No user found with the provided email
+            $_SESSION['login_error'] = "Invalid Email or Password!"; // Sets error message in session
+            $_SESSION['login_error_type'] = "error"; // Sets error type in session
+            header("Location: signin.html?error=1"); // Redirects to signin page with error flag
+            $stmt->close(); // Closes the prepared statement
+            exit(); // Terminates script execution after redirection
+        }
+    } else {
+        // Form fields are empty
+        $_SESSION['login_error'] = "Email and password are required!"; // Sets error message in session
+        $_SESSION['login_error_type'] = "error"; // Sets error type in session
+        header("Location: signin.html?error=1"); // Redirects to signin page with error flag
+        exit(); // Terminates script execution after redirection
+    }
 }
 
-// Close the database connection when done
-mysqli_close($myconn);  // mysqli_close is a PHP function that closes a previously opened database connection.
+// Closes the database connection
+mysqli_close($myconn); // mysqli_close() terminates the database connection
 ?>

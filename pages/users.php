@@ -1,126 +1,121 @@
 <?php
-// Enable error reporting for debugging
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// Initiates or resumes a session to manage user state
+session_start(); // Starts a new session or resumes an existing one
 
-// Start the session
-session_start();
+// Includes the database configuration file to establish the $myconn connection
+include '../phpconfig/config.php'; // Imports database connection settings from config.php
 
-// Database config file
-include '../phpconfig/config.php';
+// Checks if form was submitted via POST request
+if (isset($_POST['submit'])) { // isset() checks if submit button was clicked
+    // Fetches common form fields
+    $role = $_POST['role']; // Gets user role
+    $firstName = $_POST['firstName']; // Gets first name
+    $secondName = $_POST['secondName']; // Gets second name
+    $email = $_POST['email']; // Gets email
+    $phone = $_POST['phone']; // Gets phone number
+    $password = $_POST['password']; // Gets password
 
-// checks if form was submitted (POST request exists) and the specific submit button was clicked
-if (isset($_POST['submit'])) {  // isset is a PHP function that determines if a variable is considered set
-    // Fetch common fields
-    $role = $_POST['role'];
-    $firstName = $_POST['firstName'];
-    $secondName = $_POST['secondName'];
-    $email = $_POST['email'];
-    $phone = $_POST['phone'];
-    $password = $_POST['password'];
+    // Combines first and second names
+    $userName = $firstName . " " . $secondName; // Concatenates names with a space
 
-    // Combine first and second names
-    $userName = $firstName . " " . $secondName;
+    // Hashes the password for secure storage
+    $hashedPassword = password_hash($password, PASSWORD_BCRYPT); // password_hash() creates a secure hash using BCRYPT
 
-    // Hash the password
-    $hashedPassword = password_hash($password, PASSWORD_BCRYPT); // password_hash() is a PHP function that creates a password hash with PASSWORD_BCRYPT algorithm
+    // Checks if the email already exists in the users table
+    $checkEmailQuery = "SELECT email FROM users WHERE email = '$email'"; // Query to check for existing email
+    $result = mysqli_query($myconn, $checkEmailQuery); // Executes the query
 
-    // Check if the email already exists in users table (including admins)
-    $checkEmailQuery = "SELECT email FROM users WHERE email = '$email'";
-    $result = mysqli_query($myconn, $checkEmailQuery); //mysqli_query() is a PHP function that performs a query on the database
-
-    if (mysqli_num_rows($result) > 0) { //mysqli_num_rows() is a PHP function that returns the number of rows in the result set
-        // Email already exists, show an error message
+    if (mysqli_num_rows($result) > 0) { // Checks if email already exists
+        // Displays error message and exits
         echo "<script>alert('Email already exists. Please use a different email.'); </script>";
         exit();
     }
 
-    // Email does not exist, proceed with registration
-    $status = "Active"; // Set status to "Active" by default
-    $registrationDate = date('Y-m-d H:i:s'); // Current timestamp
+    // Sets default status and registration date
+    $status = "Active"; // Sets default status to Active
+    $registrationDate = date('Y-m-d H:i:s'); // Gets current timestamp in YYYY-MM-DD HH:MM:SS format
 
-    // Insert into users table
+    // Inserts user into the users table
     $insertUserQuery = "INSERT INTO users (user_name, email, phone, password, role) 
-                        VALUES ('$userName', '$email', '$phone', '$hashedPassword', '$role')";
-    if (mysqli_query($myconn, $insertUserQuery)) {
-        // Get the ID of the newly inserted user
-        $userId = mysqli_insert_id($myconn);    //mysqli_insert_id() is a PHP function that returns the value generated for an AUTO_INCREMENT column by the last query
+                        VALUES ('$userName', '$email', '$phone', '$hashedPassword', '$role')"; // Query to insert user
+    if (mysqli_query($myconn, $insertUserQuery)) { // Executes the query
+        // Gets the ID of the newly inserted user
+        $userId = mysqli_insert_id($myconn); // mysqli_insert_id() returns the last auto-incremented ID
 
-        // Log the registration activity
-        $activity = "New $role registration";
+        // Logs the registration activity
+        $activity = "New $role registration"; // Creates activity description
         mysqli_query($myconn, 
             "INSERT INTO activity (user_id, activity, activity_time, activity_type)
             VALUES ($userId, '$activity', NOW(), 'account registration')"
-        );
+        ); // Logs activity
 
-        // Store user data in the session if registering self
-        if (!isset($_SESSION['user_id'])) {
-            $_SESSION['user_id'] = $userId;
-            $_SESSION['email'] = $email;
-            $_SESSION['role'] = $role;
-            $_SESSION['user_name'] = $userName;
+        // Stores user data in session if registering self
+        if (!isset($_SESSION['user_id'])) { // Checks if user is not already logged in
+            $_SESSION['user_id'] = $userId; // Stores user_id in session
+            $_SESSION['email'] = $email; // Stores email in session
+            $_SESSION['role'] = $role; // Stores role in session
+            $_SESSION['user_name'] = $userName; // Stores user name in session
         }
 
-        $address = $_POST['address'];
+        $address = $_POST['address']; // Gets address from form
 
-        if ($role === 'Customer') {
-            // Fetch Customer-specific fields
-            $dob = $_POST['dob']; // Date in DD-MM-YYYY format
-            $nationalId = $_POST['nationalId'];
-            $bankAccount = $_POST['accountNumber'];
+        if ($role === 'Customer') { // Checks if role is Customer
+            // Fetches customer-specific fields
+            $dob = $_POST['dob']; // Gets date of birth in DD-MM-YYYY format
+            $nationalId = $_POST['nationalId']; // Gets national ID
+            $bankAccount = $_POST['accountNumber']; // Gets bank account number
 
-            // Convert date from DD-MM-YYYY to YYYY-MM-DD
-            $dateObj = DateTime::createFromFormat('d-m-Y', $dob);   //DateTime::createFromFormat() is a static function that parses a time string according to a specified format
-            if (!$dateObj) {
-                // Rollback user insertion
-                mysqli_query($myconn, "DELETE FROM users WHERE user_id = '$userId'");
+            // Converts date of birth to database format
+            $dateObj = DateTime::createFromFormat('d-m-Y', $dob); // Parses date using specified format
+            if (!$dateObj) { // Checks if date parsing failed
+                // Rolls back user insertion
+                mysqli_query($myconn, "DELETE FROM users WHERE user_id = '$userId'"); // Deletes user record
                 echo "<script>alert('Invalid date of birth. Please use the format DD-MM-YYYY.'); window.location.href = 'signup.html';</script>";
-                exit();
+                exit(); // Terminates script execution
             }
-            $dobFormatted = $dateObj->format('Y-m-d'); // Convert to YYYY-MM-DD
+            $dobFormatted = $dateObj->format('Y-m-d'); // Converts to YYYY-MM-DD format
 
-            // Insert into customers table
+            // Inserts into customers table
             $sql = "INSERT INTO customers (user_id, name, email, phone, password, dob, national_id, address, status, registration_date, bank_account) 
-                    VALUES ('$userId', '$userName', '$email', '$phone', '$hashedPassword', '$dobFormatted', '$nationalId', '$address', '$status', '$registrationDate', '$bankAccount')";
-        } elseif ($role === 'Lender') {
-            // Insert into lenders table
+                    VALUES ('$userId', '$userName', '$email', '$phone', '$hashedPassword', '$dobFormatted', '$nationalId', '$address', '$status', '$registrationDate', '$bankAccount')"; // Query to insert customer
+        } elseif ($role === 'Lender') { // Checks if role is Lender
+            // Inserts into lenders table
             $sql = "INSERT INTO lenders (user_id, name, email, phone, password, address, status, registration_date, total_loans, average_interest_rate) 
-                    VALUES ('$userId', '$userName', '$email', '$phone', '$hashedPassword', '$address', '$status', '$registrationDate', 0, 0)";
+                    VALUES ('$userId', '$userName', '$email', '$phone', '$hashedPassword', '$address', '$status', '$registrationDate', 0, 0)"; // Query to insert lender
         } else {
-            // For Admin, we only insert into users table (no duplicate)
-            $sql = true; // Skip additional inserts for admin
+            // Skips additional inserts for Admin role
+            $sql = true; // Indicates no further insertion needed
         }
 
-        // Execute the query if needed
-        if ($sql === true || mysqli_query($myconn, $sql)) {
-            // Log successful registration
-            $activity = "Registered $role: $email";
-            $user_id = $_SESSION['user_id'] ?? $userId;
+        // Executes the role-specific query if needed
+        if ($sql === true || mysqli_query($myconn, $sql)) { // Checks if query is true or executed successfully
+            // Logs successful registration
+            $activity = "Registered $role: $email"; // Creates activity description
+            $user_id = $_SESSION['user_id'] ?? $userId; // Uses current or new user_id
 
             mysqli_query($myconn, 
                 "INSERT INTO activity (user_id, activity, activity_time, activity_type)
                 VALUES ($user_id, '$activity', NOW(), 'user registration')"
-            );
+            ); // Logs activity
 
-            // Redirect based on role
-            if (!isset($_SESSION['user_id'])) {
+            // Redirects based on role
+            if (!isset($_SESSION['user_id'])) { // Checks if registering self
                 if ($role === 'Customer') {
-                    header("Location: customerDashboard.php");
+                    header("Location: customerDashboard.php"); // Redirects to customer dashboard
                 } elseif ($role === 'Lender') {
-                    header("Location: lenderDashboard.php");
+                    header("Location: lenderDashboard.php"); // Redirects to lender dashboard
                 } else {
-                    header("Location: adminDashboard.php");
+                    header("Location: adminDashboard.php"); // Redirects to admin dashboard
                 }
-                exit();
+                exit(); // Terminates script execution after redirection
             } else {
-                // If admin is creating user, redirect back to user management
-                header("Location: adminDashboard.php");
-                exit();
+                // Redirects to admin dashboard for user management
+                header("Location: adminDashboard.php"); // Redirects to admin dashboard
+                exit(); // Terminates script execution after redirection
             }
         } else {
-            // Rollback user insertion if role-specific insertion fails
-            mysqli_query($myconn, "DELETE FROM users WHERE user_id = '$userId'");
+            // Rolls back user insertion on failure
+            mysqli_query($myconn, "DELETE FROM users WHERE user_id = '$userId'"); // Deletes user record
             echo "<script>alert('Unable to register user. Error: " . mysqli_error($myconn) . "'); window.location.href = 'signup.html';</script>";
         }
     } else {
@@ -128,6 +123,6 @@ if (isset($_POST['submit'])) {  // isset is a PHP function that determines if a 
     }
 }
 
-// Close the database connection
-mysqli_close($myconn);
+// Closes the database connection
+mysqli_close($myconn); // Terminates the database connection
 ?>

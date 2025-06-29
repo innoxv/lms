@@ -1,131 +1,140 @@
 <?php
-session_start();
+// Initiates or resumes a session to manage user state
+session_start(); // Starts a new session or resumes an existing one
 
-// Database config file
-include '../phpconfig/config.php';
+// Includes the database configuration file to establish the $myconn connection
+include '../phpconfig/config.php'; // Imports database connection settings from config.php
 
-// Check if lender is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['lender_id'])) {
-    $_SESSION['loan_message'] = "Please log in to disburse loans.";
-    $_SESSION['message_type'] = 'error';
-    header("Location: signin.html");
-    exit();
+// Validates that the user is logged in and has a lender ID
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['lender_id'])) { // isset() checks if user_id and lender_id are set in the session
+    $_SESSION['loan_message'] = "Please log in to disburse loans."; // Sets an error message in the session
+    $_SESSION['message_type'] = 'error'; // Sets the message type to error
+    header("Location: signin.html"); // Redirects to the sign-in page
+    exit(); // Terminates script execution after redirection
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['loan_id'])) {
-    $_SESSION['loan_message'] = "Invalid request.";
-    $_SESSION['message_type'] = 'error';
-    header("Location: lenderDashboard.php#loanRequests");
-    exit();
+// Validates that the request is a POST request and includes a loan ID
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['loan_id'])) { // Checks if REQUEST_METHOD is not POST or loan_id is not set
+    $_SESSION['loan_message'] = "Invalid request."; // Sets an error message for invalid request
+    $_SESSION['message_type'] = 'error'; // Sets the message type to error
+    header("Location: lenderDashboard.php#loanRequests"); // Redirects to the loanRequests section of lenderDashboard.php
+    exit(); // Terminates script execution after redirection
 }
 
-$loanId = (int)$_POST['loan_id'];
-$lenderId = (int)$_SESSION['lender_id'];
-$userId = (int)$_SESSION['user_id'];
+// Sanitizes input data to ensure correct types
+$loanId = (int)$_POST['loan_id']; // Converts loan_id to integer
+$lenderId = (int)$_SESSION['lender_id']; // Converts lender_id from session to integer
+$userId = (int)$_SESSION['user_id']; // Converts user_id from session to integer
 
-// Begin transaction for atomicity
-$myconn->begin_transaction();
+// Begins a database transaction to ensure atomicity
+$myconn->begin_transaction(); // begin_transaction() starts a transaction for consistent database operations
 
-// Verify loan exists and belongs to lender
+// Verifies that the loan exists, belongs to the lender, and is in pending status
 $verifyQuery = "SELECT customer_id, amount, interest_rate, duration 
                 FROM loans 
-                WHERE loan_id = ? AND lender_id = ? AND status = 'pending'";
-$stmt = $myconn->prepare($verifyQuery);
-if (!$stmt) {
-    $myconn->rollback();
-    $_SESSION['loan_message'] = "Query preparation failed: " . $myconn->error;
-    $_SESSION['message_type'] = 'error';
-    error_log("Verify query preparation failed for Loan ID $loanId: " . $myconn->error);
-    $myconn->close();
-    header("Location: lenderDashboard.php#loanRequests");
-    exit();
+                WHERE loan_id = ? AND lender_id = ? AND status = 'pending'"; // SQL query with placeholders for prepared statement
+$stmt = $myconn->prepare($verifyQuery); // prepare() creates a prepared statement for secure execution
+if (!$stmt) { // Checks if statement preparation failed
+    $myconn->rollback(); // rollback() cancels the transaction
+    $_SESSION['loan_message'] = "Query preparation failed: " . $myconn->error; // Sets error message with database error
+    $_SESSION['message_type'] = 'error'; // Sets the message type to error
+    error_log("Verify query preparation failed for Loan ID $loanId: " . $myconn->error); // Logs error to server log using error_log()
+    $myconn->close(); // Closes the database connection
+    header("Location: lenderDashboard.php#loanRequests"); // Redirects to the loanRequests section
+    exit(); // Terminates script execution after redirection
 }
 
-$stmt->bind_param("ii", $loanId, $lenderId);
-$stmt->execute();
-$result = $stmt->get_result();
+// Binds parameters to the verification query
+$stmt->bind_param("ii", $loanId, $lenderId); // bind_param() binds loanId and lenderId as integers
+$stmt->execute(); // Executes the prepared statement
+$result = $stmt->get_result(); // Gets the result set
 
-if ($result->num_rows === 0) {
-    $myconn->rollback();
-    $_SESSION['loan_message'] = "Loan not found or not eligible for approval.";
-    $_SESSION['message_type'] = 'error';
-    $myconn->close();
-    header("Location: lenderDashboard.php#loanRequests");
-    exit();
+// Checks if the loan exists and is eligible for approval
+if ($result->num_rows === 0) { // num_rows returns the number of rows in the result set
+    $myconn->rollback(); // Cancels the transaction
+    $_SESSION['loan_message'] = "Loan not found or not eligible for approval."; // Sets error message for invalid or ineligible loan
+    $_SESSION['message_type'] = 'error'; // Sets the message type to error
+    $myconn->close(); // Closes the database connection
+    header("Location: lenderDashboard.php#loanRequests"); // Redirects to the loanRequests section
+    exit(); // Terminates script execution after redirection
 }
 
-$loanData = $result->fetch_assoc();
-$customerId = $loanData['customer_id'];
-$principal = floatval($loanData['amount']);
-$interestRate = floatval($loanData['interest_rate']) / 100; // Convert percentage to decimal
-$durationMonths = floatval($loanData['duration']); // Duration in months
-$durationYears = $durationMonths / 12; // Convert months to years
+// Fetches loan data for further processing
+$loanData = $result->fetch_assoc(); // fetch_assoc() fetches the result row as an associative array
+$customerId = $loanData['customer_id']; // Stores the customer ID
+$principal = floatval($loanData['amount']); // Converts amount to float
+$interestRate = floatval($loanData['interest_rate']) / 100; // Converts interest rate percentage to decimal
+$durationMonths = floatval($loanData['duration']); // Converts duration to float (months)
+$durationYears = $durationMonths / 12; // Converts duration from months to years
 
-// Validate loan data
-if ($principal <= 0 || $durationMonths <= 0) {
-    $myconn->rollback();
-    $_SESSION['loan_message'] = "Invalid loan: Amount and duration must be positive.";
-    $_SESSION['message_type'] = 'error';
-    error_log("Invalid loan data for Loan ID $loanId: principal=$principal, duration=$durationMonths");
-    $myconn->close();
-    header("Location: lenderDashboard.php#loanRequests");
-    exit();
+// Validates loan data to ensure positive values
+if ($principal <= 0 || $durationMonths <= 0) { // Checks if principal or duration is non-positive
+    $myconn->rollback(); // Cancels the transaction
+    $_SESSION['loan_message'] = "Invalid loan: Amount and duration must be positive."; // Sets error message for invalid data
+    $_SESSION['message_type'] = 'error'; // Sets the message type to error
+    error_log("Invalid loan data for Loan ID $loanId: principal=$principal, duration=$durationMonths"); // Logs error to server log
+    $myconn->close(); // Closes the database connection
+    header("Location: lenderDashboard.php#loanRequests"); // Redirects to the loanRequests section
+    exit(); // Terminates script execution after redirection
 }
 
-// Calculate total amount due with simple interest
-$totalAmountDue = $principal;
-if ($interestRate >= 0) {
-    $totalAmountDue = $principal + ($principal * $interestRate * $durationYears);
+// Calculates total amount due using simple interest
+$totalAmountDue = $principal; // Initializes total amount due as principal
+if ($interestRate >= 0) { // Checks if interest rate is non-negative
+    $totalAmountDue = $principal + ($principal * $interestRate * $durationYears); // Calculates total with simple interest
 } else {
-    error_log("Invalid interest rate for Loan ID $loanId: interest_rate=$interestRate");
+    error_log("Invalid interest rate for Loan ID $loanId: interest_rate=$interestRate"); // Logs warning for invalid interest rate
 }
 
-// Update loan status to disbursed
+// Updates loan status to 'disbursed'
 $updateQuery = "UPDATE loans SET status = 'disbursed' 
-                WHERE loan_id = ? AND lender_id = ? AND status = 'pending'";
-$stmt = $myconn->prepare($updateQuery);
-if (!$stmt) {
-    $myconn->rollback();
-    $_SESSION['loan_message'] = "Update query preparation failed: " . $myconn->error;
-    $_SESSION['message_type'] = 'error';
-    error_log("Update query preparation failed for Loan ID $loanId: " . $myconn->error);
-    $myconn->close();
-    header("Location: lenderDashboard.php#loanRequests");
-    exit();
+                WHERE loan_id = ? AND lender_id = ? AND status = 'pending'"; // SQL query to update loan status
+$stmt = $myconn->prepare($updateQuery); // Prepares the update query
+if (!$stmt) { // Checks if statement preparation failed
+    $myconn->rollback(); // Cancels the transaction
+    $_SESSION['loan_message'] = "Update query preparation failed: " . $myconn->error; // Sets error message with database error
+    $_SESSION['message_type'] = 'error'; // Sets the message type to error
+    error_log("Update query preparation failed for Loan ID $loanId: " . $myconn->error); // Logs error to server log
+    $myconn->close(); // Closes the database connection
+    header("Location: lenderDashboard.php#loanRequests"); // Redirects to the loanRequests section
+    exit(); // Terminates script execution after redirection
 }
 
-$stmt->bind_param("ii", $loanId, $lenderId);
-if (!$stmt->execute()) {
-    $myconn->rollback();
-    $_SESSION['loan_message'] = "Failed to update loan status: " . $myconn->error;
-    $_SESSION['message_type'] = 'error';
-    error_log("Failed to update loan status for Loan ID $loanId: " . $myconn->error);
-    $myconn->close();
-    header("Location: lenderDashboard.php#loanRequests");
-    exit();
+// Binds parameters to the update query
+$stmt->bind_param("ii", $loanId, $lenderId); // Binds loanId and lenderId as integers
+if (!$stmt->execute()) { // Executes the statement and checks for failure
+    $myconn->rollback(); // Cancels the transaction
+    $_SESSION['loan_message'] = "Failed to update loan status: " . $myconn->error; // Sets error message with database error
+    $_SESSION['message_type'] = 'error'; // Sets the message type to error
+    error_log("Failed to update loan status for Loan ID $loanId: " . $myconn->error); // Logs error to server log
+    $myconn->close(); // Closes the database connection
+    header("Location: lenderDashboard.php#loanRequests"); // Redirects to the loanRequests section
+    exit(); // Terminates script execution after redirection
 }
 
-// Insert initial payment record into payments table
+// Inserts an initial payment record into the payments table
 $paymentQuery = "INSERT INTO payments (
     loan_id, customer_id, lender_id, amount,
     payment_method, payment_type, remaining_balance
-) VALUES (?, ?, ?, ?, ?, ?, ?)";
-$stmt = $myconn->prepare($paymentQuery);
-if (!$stmt) {
-    $myconn->rollback();
-    $_SESSION['loan_message'] = "Payment query preparation failed: " . $myconn->error;
-    $_SESSION['message_type'] = 'error';
-    error_log("Payment query preparation failed for Loan ID $loanId: " . $myconn->error);
-    $myconn->close();
-    header("Location: lenderDashboard.php#loanRequests");
-    exit();
+) VALUES (?, ?, ?, ?, ?, ?, ?)"; // SQL query to insert payment record
+$stmt = $myconn->prepare($paymentQuery); // Prepares the payment query
+if (!$stmt) { // Checks if statement preparation failed
+    $myconn->rollback(); // Cancels the transaction
+    $_SESSION['loan_message'] = "Payment query preparation failed: " . $myconn->error; // Sets error message with database error
+    $_SESSION['message_type'] = 'error'; // Sets the message type to error
+    error_log("Payment query preparation failed for Loan ID $loanId: " . $myconn->error); // Logs error to server log
+    $myconn->close(); // Closes the database connection
+    header("Location: lenderDashboard.php#loanRequests"); // Redirects to the loanRequests section
+    exit(); // Terminates script execution after redirection
 }
 
-$initialAmount = 0.00; // No payment made yet
-$paymentMethod = 'none'; // Placeholder
-$paymentType = 'unpaid';
-$remainingBalance = $totalAmountDue;
+// Defines initial payment data
+$initialAmount = 0.00; // Sets initial payment amount to 0 (no payment made yet)
+$paymentMethod = 'none'; // Placeholder for payment method
+$paymentType = 'unpaid'; // Sets payment type to unpaid
+$remainingBalance = $totalAmountDue; // Sets remaining balance to total amount due
 
+// Binds parameters to the payment query
 $stmt->bind_param(
     "iiiddsd",
     $loanId,
@@ -135,51 +144,57 @@ $stmt->bind_param(
     $paymentMethod,
     $paymentType,
     $remainingBalance
-);
+); // Binds parameters with types: integer (i), double (d), string (s)
 
-if (!$stmt->execute()) {
-    $myconn->rollback();
-    $_SESSION['loan_message'] = "Failed to initialize payment record: " . $myconn->error;
-    $_SESSION['message_type'] = 'error';
-    error_log("Failed to initialize payment record for Loan ID $loanId: " . $myconn->error);
-    $myconn->close();
-    header("Location: lenderDashboard.php#loanRequests");
-    exit();
+// Executes the payment query and checks for failure
+if (!$stmt->execute()) { // Checks if the statement execution failed
+    $myconn->rollback(); // Cancels the transaction
+    $_SESSION['loan_message'] = "Failed to initialize payment record: " . $myconn->error; // Sets error message with database error
+    $_SESSION['message_type'] = 'error'; // Sets the message type to error
+    error_log("Failed to initialize payment record for Loan ID $loanId: " . $myconn->error); // Logs error to server log
+    $myconn->close(); // Closes the database connection
+    header("Location: lenderDashboard.php#loanRequests"); // Redirects to the loanRequests section
+    exit(); // Terminates script execution after redirection
 }
 
-// Log loan disbursal activity
-$activity = "Disbursed loan ID $loanId";
+// Logs the loan disbursal activity
+$activity = "Disbursed loan ID $loanId"; // Creates activity description with loan ID
 $logQuery = "INSERT INTO activity (user_id, activity, activity_time, activity_type)
-             VALUES (?, ?, NOW(), 'loan disbursal')";
-$stmt = $myconn->prepare($logQuery);
-if (!$stmt) {
-    $myconn->rollback();
-    $_SESSION['loan_message'] = "Activity log query preparation failed: " . $myconn->error;
-    $_SESSION['message_type'] = 'error';
-    error_log("Activity log query preparation failed for Loan ID $loanId: " . $myconn->error);
-    $myconn->close();
-    header("Location: lenderDashboard.php#loanRequests");
-    exit();
+             VALUES (?, ?, NOW(), 'loan disbursal')"; // SQL query to log activity
+$stmt = $myconn->prepare($logQuery); // Prepares the activity log query
+if (!$stmt) { // Checks if statement preparation failed
+    $myconn->rollback(); // Cancels the transaction
+    $_SESSION['loan_message'] = "Activity log query preparation failed: " . $myconn->error; // Sets error message with database error
+    $_SESSION['message_type'] = 'error'; // Sets the message type to error
+    error_log("Activity log query preparation failed for Loan ID $loanId: " . $myconn->error); // Logs error to server log
+    $myconn->close(); // Closes the database connection
+    header("Location: lenderDashboard.php#loanRequests"); // Redirects to the loanRequests section
+    exit(); // Terminates script execution after redirection
 }
 
-$stmt->bind_param("is", $userId, $activity);
-if (!$stmt->execute()) {
-    $myconn->rollback();
-    $_SESSION['loan_message'] = "Failed to log activity: " . $myconn->error;
-    $_SESSION['message_type'] = 'error';
-    error_log("Failed to log activity for Loan ID $loanId: " . $myconn->error);
-    $myconn->close();
-    header("Location: lenderDashboard.php#loanRequests");
-    exit();
+// Binds parameters to the activity log query
+$stmt->bind_param("is", $userId, $activity); // Binds userId as integer and activity as string
+if (!$stmt->execute()) { // Checks if the statement execution failed
+    $myconn->rollback(); // Cancels the transaction
+    $_SESSION['loan_message'] = "Failed to log activity: " . $myconn->error; // Sets error message with database error
+    $_SESSION['message_type'] = 'error'; // Sets the message type to error
+    error_log("Failed to log activity for Loan ID $loanId: " . $myconn->error); // Logs error to server log
+    $myconn->close(); // Closes the database connection
+    header("Location: lenderDashboard.php#loanRequests"); // Redirects to the loanRequests section
+    exit(); // Terminates script execution after redirection
 }
 
-// Commit transaction
-$myconn->commit();
+// Commits the transaction to save all changes
+$myconn->commit(); // commit() finalizes the transaction
 
-$_SESSION['loan_message'] = "Loan ID $loanId has been disbursed!";
-$_SESSION['message_type'] = 'success';
+// Sets success message
+$_SESSION['loan_message'] = "Loan ID $loanId has been disbursed!"; // Sets success message with loan ID
+$_SESSION['message_type'] = 'success'; // Sets the message type to success
 
-$myconn->close();
-header("Location: lenderDashboard.php#loanRequests");
-exit();
+// Closes the database connection
+$myconn->close(); // Closes the database connection
+
+// Redirects to the loanRequests section of the lender dashboard
+header("Location: lenderDashboard.php#loanRequests"); // Sends HTTP header to redirect
+exit(); // Terminates script execution after redirection
 ?>

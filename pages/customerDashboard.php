@@ -1,13 +1,25 @@
 <?php
+// require_once is a PHP statement that includes and evaluates the specified file during script execution.
+// It ensures that the file is included only once, even if called multiple times in the same script.
 require_once 'customerDashboardData.php'; // has the dashboard data
 ?>
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html> <!-- Declares the document type and version of HTML (HTML5) -->
+<html lang="en"> <!-- Root element of the HTML document; 'lang="en"' specifies the language as English -->
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8"> <!-- Sets the character encoding for the document to UTF-8, supporting most characters from all languages -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Dashboard</title>
+    <!-- 
+        The viewport meta tag controls the layout on mobile browsers.
+        width=device-width: sets the width of the page to follow the screen-width of the device.
+        initial-scale=1.0: sets the initial zoom level when the page is first loaded by the browser.
+    -->
+    <title>Customer's Dashboard</title> <!-- Sets the title of the page, shown in the browser tab -->
     <link rel="stylesheet" href="../css/style.css">
+    <!-- 
+        The link tag links an external CSS stylesheet to the HTML document.
+        rel="stylesheet": specifies the relationship as a stylesheet.
+        href="../css/style.css": path to the CSS file that styles the page.
+    -->
 </head>
 <body>
     <main>

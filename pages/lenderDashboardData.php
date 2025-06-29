@@ -1,78 +1,80 @@
 <?php
-// Enable error reporting
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-
-session_start();
-
-
-// Access Restrictions from Admin Functionality
-require_once 'check_access.php';
-
-
-if (!isset($_SESSION['user_id'])) {
-    header("Location: signin.html");
-    exit();
+// Checks if a session is not already active before starting a new one
+if (session_status() !== PHP_SESSION_ACTIVE) { // session_status() returns the current session status (none, active, disabled)
+    session_start(); // Starts a new session or resumes the existing one
 }
 
-// Database config file
-include '../phpconfig/config.php';
+// Requires the access control file to enforce user permissions for this page
+require_once 'check_access.php'; // require_once includes and evaluates the specified file only once
 
-$userId = $_SESSION['user_id'];
+// Verifies if the user is logged in by checking for 'user_id' in the session
+if (!isset($_SESSION['user_id'])) { // isset() checks if a variable is set and not null
+    header("Location: signin.html"); // header() sends a raw HTTP header to redirect to the sign-in page
+    exit(); // exit() terminates script execution immediately
+}
 
-// Fetch user data
-$query = "SELECT user_name FROM users WHERE user_id = '$userId'";
-$result = mysqli_query($myconn, $query);
+// Includes the database configuration file to establish the $myconn connection
+include '../phpconfig/config.php'; // include brings in the specified file for database connectivity
 
-if ($result && mysqli_num_rows($result) > 0) {
-    $user = mysqli_fetch_assoc($result);
-    $_SESSION['user_name'] = $user['user_name'];
+// Stores the user ID from the session for use in queries
+$userId = $_SESSION['user_id']; // $_SESSION is a superglobal array for session variables; $userId holds the current user's ID
+
+// Fetches the user's name from the users table using a direct SQL query
+$query = "SELECT user_name FROM users WHERE user_id = '$userId'"; // SQL query to retrieve user_name
+$result = mysqli_query($myconn, $query); // mysqli_query() executes the query on the database connection
+
+// Checks if the query was successful and has results, then stores the user name
+if ($result && mysqli_num_rows($result) > 0) { // mysqli_num_rows() returns the number of rows in the result set
+    $user = mysqli_fetch_assoc($result); // mysqli_fetch_assoc() fetches a result row as an associative array
+    $_SESSION['user_name'] = $user['user_name']; // Stores the user name in the session for later use
 } else {
-    $_SESSION['user_name'] = "Guest";
+    $_SESSION['user_name'] = "Guest"; // Sets a default user name if no user is found
 }
 
-// Fetch lender_id
-$lenderQuery = "SELECT lender_id FROM lenders WHERE user_id = '$userId'";
-$lenderResult = mysqli_query($myconn, $lenderQuery);
+// Fetches the lender ID associated with the user
+$lenderQuery = "SELECT lender_id FROM lenders WHERE user_id = '$userId'"; // SQL query to get lender_id
+$lenderResult = mysqli_query($myconn, $lenderQuery); // Executes the query to fetch lender data
 
-if (mysqli_num_rows($lenderResult) > 0) {
-    $lender = mysqli_fetch_assoc($lenderResult);
-    $_SESSION['lender_id'] = $lender['lender_id'];
+// Verifies if the user is a registered lender
+if (mysqli_num_rows($lenderResult) > 0) { // Checks if the query returned any rows
+    $lender = mysqli_fetch_assoc($lenderResult); // Fetches the lender data as an associative array
+    $_SESSION['lender_id'] = $lender['lender_id']; // Stores the lender ID in the session
 } else {
-    $_SESSION['loan_message'] = "You are not registered as a lender.";
-    header("Location: lenderDashboard.php");
-    exit();
+    $_SESSION['loan_message'] = "You are not registered as a lender."; // Sets an error message in the session
+    header("Location: lenderDashboard.php"); // Redirects to the lender dashboard
+    exit(); // Stops script execution
 }
 
-// Include paymentReview.php 
-require_once 'paymentReview.php';
+// Stores the lender ID in a variable for use in queries
+$lender_id = $_SESSION['lender_id']; // $lender_id holds the current lender's ID
 
-// Include activeLoans.php
-$activeLoansData = require_once 'activeLoans.php';
-$activeLoanData = $activeLoansData['activeLoanData'];
-$activeFilters = $activeLoansData['filters'];
-$allLoanTypes = $activeLoansData['allLoanTypes'];
+// Includes the payment review logic for handling payment-related data
+require_once 'paymentReview.php'; // require_once includes the file for payment review functionality
 
-// Define all loan types
+// Includes the active loans data and extracts relevant arrays
+$activeLoansData = require_once 'activeLoans.php'; // Includes and evaluates the activeLoans.php file, which returns an array
+$activeLoanData = $activeLoansData['activeLoanData']; // Extracts the active loans data array
+$activeFilters = $activeLoansData['filters']; // Extracts the filters array for active loans
+$allLoanTypes = $activeLoansData['allLoanTypes']; // Extracts the array of all loan types
+
+// Defines an array of all possible loan types for consistency
 $allLoanTypes = [
     "Personal Loan", "Business Loan", "Mortgage Loan", 
     "MicroFinance Loan", "Student Loan", "Construction Loan",
     "Green Loan", "Medical Loan", "Startup Loan", "Agricultural Loan"
-];
+]; // Array listing all supported loan types
 
-// Get loan offers count
-$totalOffersQuery = "SELECT COUNT(*) FROM loan_offers WHERE lender_id = '$lender_id'";
-$totalOffersResult = mysqli_query($myconn, $totalOffersQuery);
-$totalOffers = (int)mysqli_fetch_row($totalOffersResult)[0];
+// Fetches the total count of loan offers made by the lender
+$totalOffersQuery = "SELECT COUNT(*) FROM loan_offers WHERE lender_id = '$lender_id'"; // SQL query to count loan offers
+$totalOffersResult = mysqli_query($myconn, $totalOffersQuery); // Executes the query
+$totalOffers = (int)mysqli_fetch_row($totalOffersResult)[0]; // Fetches the count and casts to integer
 
-// Get average interest rate
-$avgInterestQuery = "SELECT AVG(interest_rate) FROM loan_offers WHERE lender_id = '$lender_id'";
-$avgInterestResult = mysqli_query($myconn, $avgInterestQuery);
-$avgInterestRate = number_format((float)mysqli_fetch_row($avgInterestResult)[0], 2);
+// Fetches the average interest rate of the lender's loan offers
+$avgInterestQuery = "SELECT AVG(interest_rate) FROM loan_offers WHERE lender_id = '$lender_id'"; // SQL query to calculate average interest rate
+$avgInterestResult = mysqli_query($myconn, $avgInterestQuery); // Executes the query
+$avgInterestRate = number_format((float)mysqli_fetch_row($avgInterestResult)[0], 2); // Fetches the average and formats to 2 decimal places
 
-// Get total loan amount owed
-// subquery checks last payment state to determine state
+// Fetches the total outstanding balance for disbursed loans using a prepared statement
 $owedQuery = "
     SELECT COALESCE(SUM(latest_payment.remaining_balance), 0)
     FROM loans
@@ -86,23 +88,20 @@ $owedQuery = "
         )
     ) latest_payment ON loans.loan_id = latest_payment.loan_id
     WHERE loans.lender_id = ?
-    AND loans.status = 'disbursed'";
+    AND loans.status = 'disbursed'"; // Query to sum remaining balances for disbursed loans
+$stmt = $myconn->prepare($owedQuery); // prepare() creates a prepared statement for secure execution
+$stmt->bind_param("i", $lender_id); // bind_param() binds the lender ID as an integer
+$stmt->execute(); // Executes the prepared statement
+$owedResult = $stmt->get_result(); // Gets the result set
+$owedData = $owedResult->fetch_row(); // Fetches the result row
+$owedCapacity = $owedData[0] ? number_format((float)$owedData[0], 0) : '0'; // Formats the sum or defaults to '0'
 
-$stmt = $myconn->prepare($owedQuery);
-$stmt->bind_param("i", $lender_id);
-$stmt->execute();
-$owedResult = $stmt->get_result();
-$owedData = $owedResult->fetch_row();
-$owedCapacity = $owedData[0] ? number_format((float)$owedData[0], 0) : '0';
+// Fetches the count of disbursed loans for the lender
+$disbursedLoansQuery = "SELECT COUNT(*) FROM loans WHERE lender_id = '$lender_id' AND status = 'disbursed'"; // SQL query to count disbursed loans
+$disbursedLoansResult = mysqli_query($myconn, $disbursedLoansQuery); // Executes the query
+$disbursedLoans = (int)mysqli_fetch_row($disbursedLoansResult)[0]; // Fetches the count and casts to integer
 
-// Get total disbursed loans count
-$disbursedLoansQuery = "SELECT COUNT(*) FROM loans WHERE lender_id = '$lender_id' AND status = 'disbursed'";
-$disbursedLoansResult = mysqli_query($myconn, $disbursedLoansQuery);
-$disbursedLoans = (int)mysqli_fetch_row($disbursedLoansResult)[0];
-
-// Get active loans count (disbursed loans with remaining balance)
-// subquery checks last payment state to determine state
-
+// Fetches the count of active loans (disbursed with positive remaining balance)
 $activeLoansQuery = "
     SELECT COUNT(DISTINCT loans.loan_id)
     FROM loans
@@ -117,21 +116,20 @@ $activeLoansQuery = "
     ) latest_payment ON loans.loan_id = latest_payment.loan_id
     WHERE loans.lender_id = ?
     AND loans.status = 'disbursed'
-    AND latest_payment.remaining_balance > 0";
+    AND latest_payment.remaining_balance > 0"; // Query to count active loans
+$stmt = $myconn->prepare($activeLoansQuery); // Prepares the statement
+$stmt->bind_param("i", $lender_id); // Binds the lender ID
+$stmt->execute(); // Executes the statement
+$activeLoansResult = $stmt->get_result(); // Gets the result
+$activeLoans = (int)$activeLoansResult->fetch_row()[0] ?? 0; // Fetches the count or defaults to 0
 
-$stmt = $myconn->prepare($activeLoansQuery);
-$stmt->bind_param("i", $lender_id);
-$stmt->execute();
-$activeLoansResult = $stmt->get_result();
-$activeLoans = (int)$activeLoansResult->fetch_row()[0] ?? 0;
+// Fetches the total amount disbursed by the lender
+$disbursedAmountQuery = "SELECT SUM(amount) FROM loans WHERE lender_id = '$lender_id' AND status IN ('disbursed')"; // Query to sum disbursed loan amounts
+$disbursedAmountResult = mysqli_query($myconn, $disbursedAmountQuery); // Executes the query
+$disbursedAmountData = mysqli_fetch_row($disbursedAmountResult); // Fetches the result
+$totalDisbursedAmount = $disbursedAmountData[0] ? number_format((float)$disbursedAmountData[0]) : 0; // Formats the sum or defaults to 0
 
-// Get total amount disbursed
-$disbursedAmountQuery = "SELECT SUM(amount) FROM loans WHERE lender_id = '$lender_id' AND status IN ('disbursed')";
-$disbursedAmountResult = mysqli_query($myconn, $disbursedAmountQuery);
-$disbursedAmountData = mysqli_fetch_row($disbursedAmountResult);
-$totalDisbursedAmount = $disbursedAmountData[0] ? number_format((float)$disbursedAmountData[0]) : 0;
-
-// Get loan offers with their disbursed loans count
+// Fetches loan offers with their disbursed loan counts
 $loanOffersQuery = "SELECT 
                       loan_offers.offer_id,
                       loan_offers.loan_type,
@@ -145,20 +143,20 @@ $loanOffersQuery = "SELECT
                       AND loans.status = 'disbursed'
                     WHERE loan_offers.lender_id = '$lender_id'
                     GROUP BY loan_offers.offer_id, loan_offers.loan_type, loan_offers.interest_rate, 
-                             loan_offers.max_amount, loan_offers.max_duration";
+                             loan_offers.max_amount, loan_offers.max_duration"; // Query to fetch loan offers and their disbursed counts
+$loanOffersResult = mysqli_query($myconn, $loanOffersQuery); // Executes the query
 
-$loanOffersResult = mysqli_query($myconn, $loanOffersQuery);
+// Initializes arrays for loan counts and offer data
+$loanCounts = array_fill_keys($allLoanTypes, 0); // array_fill_keys() creates an array with specified keys and default value 0
+$offersData = []; // Initializes an empty array for offer data
 
-// Initialize loan counts
-$loanCounts = array_fill_keys($allLoanTypes, 0);
-$offersData = [];
-
-if ($loanOffersResult) {
-    while ($row = mysqli_fetch_assoc($loanOffersResult)) {
-        $loanType = $row['loan_type'];
-        $loanCounts[$loanType] = (int)$row['disbursed_count'];
+// Processes loan offers and counts disbursed loans by type
+if ($loanOffersResult) { // Checks if the query was successful
+    while ($row = mysqli_fetch_assoc($loanOffersResult)) { // Loops through each result row
+        $loanType = $row['loan_type']; // Extracts the loan type
+        $loanCounts[$loanType] = (int)$row['disbursed_count']; // Updates the count for the loan type
         
-        $offersData[] = [
+        $offersData[] = [ // Adds offer details to the offersData array
             'offer_id' => $row['offer_id'],
             'loan_type' => $loanType,
             'interest_rate' => $row['interest_rate'],
@@ -166,24 +164,22 @@ if ($loanOffersResult) {
             'max_duration' => $row['max_duration']
         ];
     }
-    // Sort the $offersData array by offer_id in descending order using funtion usort
-    usort($offersData, function($a, $b) {
-        return $b['offer_id'] - $a['offer_id'];
+    // Sorts the offersData array by offer_id in descending order
+    usort($offersData, function($a, $b) { // usort() sorts an array using a user-defined comparison function
+        return $b['offer_id'] - $a['offer_id']; // Compares offer IDs for descending order
     });
 }
 
-// Get loan status distribution
-$statusQuery = "SELECT status, COUNT(*) as count FROM loans WHERE lender_id = '$lender_id' GROUP BY status";
-$statusResult = mysqli_query($myconn, $statusQuery);
-$statusData = mysqli_fetch_all($statusResult, MYSQLI_ASSOC);
+// Fetches loan status distribution for the lender
+$statusQuery = "SELECT status, COUNT(*) as count FROM loans WHERE lender_id = '$lender_id' GROUP BY status"; // Query to count loans by status
+$statusResult = mysqli_query($myconn, $statusQuery); // Executes the query
+$statusData = mysqli_fetch_all($statusResult, MYSQLI_ASSOC); // Fetches all rows as an array of associative arrays
 
+// Retrieves filter parameters from the URL with defaults
+$statusFilter = $_GET['status'] ?? ''; // Null coalescing operator (??) provides a default empty string if not set
+$loanTypeFilter = $_GET['loan_type'] ?? ''; // Gets loan type filter or defaults to empty string
 
-
-// Get filter parameters from URL (add near top with other initializations)
-$statusFilter = $_GET['status'] ?? '';
-$loanTypeFilter = $_GET['loan_type'] ?? '';
-
-// loan requests query to include both filters
+// Builds the loan requests query with filters
 $loanRequestsQuery = "SELECT 
     loans.loan_id,
     loans.amount,
@@ -198,112 +194,109 @@ $loanRequestsQuery = "SELECT
 FROM loans
 JOIN loan_offers ON loans.offer_id = loan_offers.offer_id
 JOIN customers ON loans.customer_id = customers.customer_id
-WHERE loans.lender_id = '$lender_id'  -- exclude loans with status submitted
-AND loans.status != 'submitted'";
+WHERE loans.lender_id = '$lender_id'
+AND loans.status != 'submitted'"; // Base query to fetch loan requests, excluding 'submitted' status
 
-// Status filter
-if (!empty($statusFilter) && in_array($statusFilter, ['pending', 'disbursed', 'rejected'])) {
-    $loanRequestsQuery .= " AND loans.status = '$statusFilter'";
+// Applies status filter if provided and valid
+if (!empty($statusFilter) && in_array($statusFilter, ['pending', 'disbursed', 'rejected'])) { // in_array() checks if the status is valid
+    $loanRequestsQuery .= " AND loans.status = '$statusFilter'"; // Adds status filter to the query
 }
 
-// Loan type filter
-if (!empty($loanTypeFilter)) {
-    $loanRequestsQuery .= " AND loan_offers.loan_type = '$loanTypeFilter'";
+// Applies loan type filter if provided
+if (!empty($loanTypeFilter)) { // Checks if the loan type filter is not empty
+    $loanRequestsQuery .= " AND loan_offers.loan_type = '$loanTypeFilter'"; // Adds loan type filter
 }
 
-// Date range filter
-if (isset($_GET['date_range']) && $_GET['date_range']) {
-    switch ($_GET['date_range']) {
+// Applies date range filter if provided
+if (isset($_GET['date_range']) && $_GET['date_range']) { // Checks if 'date_range' exists and is not empty
+    switch ($_GET['date_range']) { // switch() selects code based on the date range value
         case 'today':
-            $loanRequestsQuery .= " AND DATE(loans.application_date) = CURDATE()";
+            $loanRequestsQuery .= " AND DATE(loans.application_date) = CURDATE()"; // Filters for today's loans
             break;
         case 'week':
-            $loanRequestsQuery .= " AND YEARWEEK(loans.application_date, 1) = YEARWEEK(CURDATE(), 1)";
+            $loanRequestsQuery .= " AND YEARWEEK(loans.application_date, 1) = YEARWEEK(CURDATE(), 1)"; // Filters for this week's loans
             break;
         case 'month':
-            $loanRequestsQuery .= " AND MONTH(loans.application_date) = MONTH(CURDATE()) AND YEAR(loans.application_date) = YEAR(CURDATE())";
+            $loanRequestsQuery .= " AND MONTH(loans.application_date) = MONTH(CURDATE()) AND YEAR(loans.application_date) = YEAR(CURDATE())"; // Filters for this month's loans
             break;
         case 'year':
-            $loanRequestsQuery .= " AND YEAR(loans.application_date) = YEAR(CURDATE())";
+            $loanRequestsQuery .= " AND YEAR(loans.application_date) = YEAR(CURDATE())"; // Filters for this year's loans
             break;
     }
 }
 
-// Amount range filter
-if (isset($_GET['amount_range']) && $_GET['amount_range']) {
-    list($minAmount, $maxAmount) = explode('-', str_replace('+', '-', $_GET['amount_range']));
-    $loanRequestsQuery .= " AND loans.amount >= $minAmount";
-    if (is_numeric($maxAmount)) {
-        $loanRequestsQuery .= " AND loans.amount <= $maxAmount";
+// Applies amount range filter if provided
+if (isset($_GET['amount_range']) && $_GET['amount_range']) { // Checks if 'amount_range' exists and is not empty
+    list($minAmount, $maxAmount) = explode('-', str_replace('+', '-', $_GET['amount_range'])); // Splits the range into min and max
+    $loanRequestsQuery .= " AND loans.amount >= $minAmount"; // Adds minimum amount filter
+    if (is_numeric($maxAmount)) { // is_numeric() checks if maxAmount is a valid number
+        $loanRequestsQuery .= " AND loans.amount <= $maxAmount"; // Adds maximum amount filter
     }
 }
 
-// Duration filter
-if (isset($_GET['duration_range']) && $_GET['duration_range']) {
-    list($minDuration, $maxDuration) = explode('-', str_replace('+', '-', $_GET['duration_range']));
-    $loanRequestsQuery .= " AND loans.duration >= $minDuration";
-    if (is_numeric($maxDuration)) {
-        $loanRequestsQuery .= " AND loans.duration <= $maxDuration";
+// Applies duration range filter if provided
+if (isset($_GET['duration_range']) && $_GET['duration_range']) { // Checks if 'duration_range' exists and is not empty
+    list($minDuration, $maxDuration) = explode('-', str_replace('+', '-', $_GET['duration_range'])); // Splits the range
+    $loanRequestsQuery .= " AND loans.duration >= $minDuration"; // Adds minimum duration filter
+    if (is_numeric($maxDuration)) { // Checks if maxDuration is valid
+        $loanRequestsQuery .= " AND loans.duration <= $maxDuration"; // Adds maximum duration filter
     }
 }
 
-// Collateral filter
-if (isset($_GET['collateral_range']) && $_GET['collateral_range']) {
-    list($minCollateral, $maxCollateral) = explode('-', str_replace('+', '-', $_GET['collateral_range']));
-    $loanRequestsQuery .= " AND loans.collateral_value >= $minCollateral";
-    if (is_numeric($maxCollateral)) {
-        $loanRequestsQuery .= " AND loans.collateral_value <= $maxCollateral";
+// Applies collateral value range filter if provided
+if (isset($_GET['collateral_range']) && $_GET['collateral_range']) { // Checks if 'collateral_range' exists and is not empty
+    list($minCollateral, $maxCollateral) = explode('-', str_replace('+', '-', $_GET['collateral_range'])); // Splits the range
+    $loanRequestsQuery .= " AND loans.collateral_value >= $minCollateral"; // Adds minimum collateral filter
+    if (is_numeric($maxCollateral)) { // Checks if maxCollateral is valid
+        $loanRequestsQuery .= " AND loans.collateral_value <= $maxCollateral"; // Adds maximum collateral filter
     }
 }
- $loanRequestsQuery .= " ORDER BY loans.application_date DESC";
 
+// Adds sorting to the query
+$loanRequestsQuery .= " ORDER BY loans.application_date DESC"; // Orders results by application date, newest first
 
-// Execute the query
-$loanRequestsResult = mysqli_query($myconn, $loanRequestsQuery);
-if (!$loanRequestsResult) {
-    die("Query failed: " . mysqli_error($myconn));
+// Executes the loan requests query
+$loanRequestsResult = mysqli_query($myconn, $loanRequestsQuery); // Runs the query
+if (!$loanRequestsResult) { // Checks if the query failed
+    die("Query failed: " . mysqli_error($myconn)); // die() stops execution and outputs the error
 }
-$loanRequests = mysqli_fetch_all($loanRequestsResult, MYSQLI_ASSOC);
+$loanRequests = mysqli_fetch_all($loanRequestsResult, MYSQLI_ASSOC); // Fetches all rows as an array of associative arrays
 
-
-// Pie Chart
-// Get loan status distribution for the current lender
+// Fetches loan status distribution for pie chart
 $statusQuery = "SELECT status, COUNT(*) as count 
                 FROM loans 
                 WHERE lender_id = '$lender_id' 
-                GROUP BY status";
-$statusResult = mysqli_query($myconn, $statusQuery);
-$statusData = [];
-$totalLoans = 0;
+                GROUP BY status"; // Query to count loans by status
+$statusResult = mysqli_query($myconn, $statusQuery); // Executes the query
+$statusData = []; // Initializes array for status data
+$totalLoans = 0; // Initializes total loan count
 
-while ($row = mysqli_fetch_assoc($statusResult)) {
-    $statusData[$row['status']] = (int)$row['count'];
-    // Only include "pending", "disbursed", and "rejected" in the total
-    if (in_array($row['status'], ['pending', 'disbursed', 'rejected'])) {
-        $totalLoans += (int)$row['count'];
+// Processes status data and calculates total loans
+while ($row = mysqli_fetch_assoc($statusResult)) { // Loops through result rows
+    $statusData[$row['status']] = (int)$row['count']; // Stores count for each status
+    if (in_array($row['status'], ['pending', 'disbursed', 'rejected'])) { // Checks for relevant statuses
+        $totalLoans += (int)$row['count']; // Adds to total loan count
     }
 }
 
-// Calculate percentages for each status, only for relevant statuses
+// Calculates percentages for pie chart data
 $pieData = [
-    'pending' => $totalLoans > 0 && isset($statusData['pending']) ? ($statusData['pending'] / $totalLoans * 100) : 0,
-    'disbursed' => $totalLoans > 0 && isset($statusData['disbursed']) ? ($statusData['disbursed'] / $totalLoans * 100) : 0,
-    'rejected' => $totalLoans > 0 && isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0
+    'pending' => $totalLoans > 0 && isset($statusData['pending']) ? ($statusData['pending'] / $totalLoans * 100) : 0, // Calculates pending percentage
+    'disbursed' => $totalLoans > 0 && isset($statusData['disbursed']) ? ($statusData['disbursed'] / $totalLoans * 100) : 0, // Calculates disbursed percentage
+    'rejected' => $totalLoans > 0 && isset($statusData['rejected']) ? ($statusData['rejected'] / $totalLoans * 100) : 0 // Calculates rejected percentage
 ];
 
-// Fetch lender profile data
-$lenderProfileQuery = "SELECT * FROM lenders WHERE lender_id = '$lender_id'";
-$lenderProfileResult = mysqli_query($myconn, $lenderProfileQuery);
-$lenderProfile = mysqli_fetch_assoc($lenderProfileResult);
+// Fetches lender profile data
+$lenderProfileQuery = "SELECT * FROM lenders WHERE lender_id = '$lender_id'"; // Query to fetch all lender details
+$lenderProfileResult = mysqli_query($myconn, $lenderProfileQuery); // Executes the query
+$lenderProfile = mysqli_fetch_assoc($lenderProfileResult); // Fetches the lender profile as an associative array
 
-
-
-// Check for messages
-if (isset($_SESSION['loan_message'])) {
-    $loan_message = $_SESSION['loan_message'];
-    unset($_SESSION['loan_message']);
+// Checks for and clears loan message after display
+if (isset($_SESSION['loan_message'])) { // Checks if a loan message exists in the session
+    $loan_message = $_SESSION['loan_message']; // Stores the message in a variable
+    unset($_SESSION['loan_message']); // Removes the message from the session
 } else {
-    $loan_message = null;
+    $loan_message = null; // Sets message to null if none exists
 }
 
 ?>
