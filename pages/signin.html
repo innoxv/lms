@@ -53,44 +53,53 @@
     <script src="../js/validinput.js"></script>
     
     <!-- Log In errors AJAX functionality -->
-    <script>
-        // Initialize page and check for login errors
-        document.addEventListener('DOMContentLoaded', function() {
-            // Get URL query parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            // Check if error flag is present in URL
-            if (urlParams.has('error')) {
-                // Make AJAX request to fetch session error messages
-                fetch('signin.php?action=get_error')
-                    .then(response => response.json())
-                    .then(data => {
-                        // Get the error div element
-                        const errorDiv = document.getElementById('error');
-                        // Check if an error message exists in the response
-                        if (data.login_error) {
-                            // Display error message with alert styling
-                            errorDiv.textContent = data.login_error;
-                            errorDiv.className = `${data.login_error_type || 'error'}`;
-                            // Fade out error message after 3 seconds
-                            setTimeout(() => {
-                                errorDiv.style.opacity = '0';
-                                // Clear error div and reset styles after fade-out
-                                setTimeout(() => {
-                                    errorDiv.textContent = '';
-                                    errorDiv.style.opacity = '';
-                                    errorDiv.className = '';
-                                    // Remove error query parameter from URL
-                                    window.history.replaceState({}, document.title, 'signin.html');
-                                });
-                            }, 3000);  // 3000ms fadeout 
-                        }
-                    })
-                    .catch(error => {
-                        // Log any errors during AJAX request
-                        console.error('Error fetching session messages:', error);
-                    });
-            }
-        });
-    </script>
+<script>
+// LOGIN ERROR HANDLING SECTION
+// Initializes the page and checks for login errors when the document is fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Creates a URLSearchParams object to parse query parameters from the current URL
+    const urlParams = new URLSearchParams(window.location.search);
+    // Checks if the URL contains an 'error' query parameter (e.g., ?error=true)
+    if (urlParams.has('error')) {
+        // Makes an AJAX request to the server to fetch session error messages
+        fetch('signin.php?action=get_error')
+            // Converts the server response to JSON format
+            .then(response => response.json())
+            // Processes the JSON data from the server
+            .then(data => {
+                // Gets the element with ID 'error' to display error messages
+                const errorDiv = document.getElementById('error');
+                // Checks if the response contains a login error message
+                if (data.login_error) {
+                    // Sets the text content of the error div to the error message
+                    errorDiv.textContent = data.login_error;
+                    // Sets the class of the error div to the error type (defaults to 'error')
+                    errorDiv.className = `${data.login_error_type || 'error'}`;
+                    // Starts a timer to fade out the error message after 3 seconds
+                    setTimeout(() => {
+                        // Sets the error div’s opacity to 0 for a fade-out effect
+                        errorDiv.style.opacity = '0';
+                        // Starts a timer to clear the error div after the fade-out transition
+                        setTimeout(() => {
+                            // Clears the text content of the error div
+                            errorDiv.textContent = '';
+                            // Resets the opacity to its default value
+                            errorDiv.style.opacity = '';
+                            // Clears the class of the error div
+                            errorDiv.className = '';
+                            // Removes the 'error' query parameter from the URL without reloading
+                            window.history.replaceState({}, document.title, 'signin.html');
+                        }, 700); // Matches the CSS transition duration (700ms)
+                    }, 3000); // Displays the error message for 3000 milliseconds (3 seconds)
+                }
+            })
+            // Handles any errors that occur during the AJAX request
+            .catch(error => {
+                // Logs the error to the console for debugging purposes
+                console.error('Error fetching session messages:', error);
+            });
+    }
+});
+</script>
 </body>
 </html>

@@ -81,26 +81,43 @@
     <!-- External JavaScript for validation -->
     <script src="../js/validinput.js"></script>
 
-    <script>
-    
-        // Show/hide fields based on role selection
-        const roleDropdown = document.getElementById('role');
-        const customerFields = document.querySelectorAll('#customerFields');
-    
-        roleDropdown.addEventListener('change', function () {
-            if (roleDropdown.value === 'Lender') {
-                customerFields.forEach(field => field.classList.add('hidden'));
-            } else {
-                customerFields.forEach(field => field.classList.remove('hidden'));
-            }
+<script>
+// USER ROLE FORM FIELD VISIBILITY SECTION
+// Manages the visibility of customer-specific fields based on the selected user role
+// Gets the dropdown element for selecting the user role, identified by ID 'role'
+const roleDropdown = document.getElementById('role');
+// Selects all elements with ID 'customerFields' (fields specific to the Customer role)
+const customerFields = document.querySelectorAll('#customerFields');
+
+// Adds a change event listener to the role dropdown to handle role selection changes
+roleDropdown.addEventListener('change', function() {
+    // Checks if the selected value in the dropdown is 'Lender'
+    if (roleDropdown.value === 'Lender') {
+        // Loops through all customer-specific fields
+        customerFields.forEach(field => {
+            // Adds the 'hidden' CSS class to hide each field
+            field.classList.add('hidden');
         });
-    
-        // Initialize visibility on page load
-        window.onload = function () {
-            if (roleDropdown.value === '--select option--') {
-                customerFields.forEach(field => field.classList.remove('hidden'));
-            }
-        };
-    </script>
+    } else {
+        // If the selected role is not 'Lender' (e.g., 'Customer' or other roles)
+        customerFields.forEach(field => {
+            // Removes the 'hidden' CSS class to show each field
+            field.classList.remove('hidden');
+        });
+    }
+});
+
+// Initializes the visibility of customer fields when the page loads
+window.onload = function() {
+    // Checks if the role dropdown’s value is the default placeholder '--select option--'
+    if (roleDropdown.value === '--select option--') {
+        // Loops through all customer-specific fields
+        customerFields.forEach(field => {
+            // Removes the 'hidden' CSS class to show the fields by default
+            field.classList.remove('hidden');
+        });
+    }
+};
+</script>
 </body>
 </html>
