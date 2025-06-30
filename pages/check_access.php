@@ -26,7 +26,7 @@ $result = mysqli_stmt_get_result($stmt); // mysqli_stmt_get_result() fetches the
 // Checks if the user exists and processes their role and status
 if ($result && mysqli_num_rows($result) > 0) { // mysqli_num_rows() returns the number of rows in the result set
     $user = mysqli_fetch_assoc($result); // mysqli_fetch_assoc() fetches a result row as an associative array
-    $role = $user['role']; // Stores the user's role (e.g., Admin, Lender, Customer)
+    $role = $user['role']; // Stores the user's role (Admin, Lender, Customer)
     
     // Determines the status query based on the user's role
     if ($role === 'Lender') {

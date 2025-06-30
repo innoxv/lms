@@ -78,7 +78,7 @@ if (isset($_POST['submit'])) { // isset() checks if submit button was clicked in
                 $sql = "INSERT INTO lenders (user_id, name, email, phone, password, address, status, registration_date, total_loans, average_interest_rate) 
                         VALUES ('$userId', '$userName', '$email', '$phone', '$hashedPassword', '$address', '$status', '$registrationDate', 0, 0)"; // Query to insert lender
             } else {
-                // Skips role-specific insertion for other roles (e.g., Admin)
+                // Skips role-specific insertion for other roles (Admin)
                 $sql = true; // Indicates no further insertion needed
             }
 

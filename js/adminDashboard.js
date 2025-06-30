@@ -1,0 +1,146 @@
+// ACTIVE NAV LINK SECTION
+// Manages the visual indication of the active navigation link based on the current URL hash
+function updateActiveNavLink() {
+    // Selects all anchor tags (<a>) inside list items within the navigation menu (.nav ul li a)
+    const navLinks = document.querySelectorAll('.nav ul li a');
+    // Gets the current URL hash or defaults to '#dashboard' if no hash is present
+    const currentHash = window.location.hash || '#dashboard';
+
+    // Loops through all navigation links to remove the 'active' CSS class, resetting their appearance
+    navLinks.forEach(link => link.classList.remove('active'));
+
+    // Finds the navigation link whose href attribute matches the current hash
+    const activeLink = document.querySelector(`.nav ul li a[href="${currentHash}"]`);
+    // Checks if a matching link was found
+    if (activeLink) {
+        // Adds the 'active' CSS class to the matching link to highlight it visually
+        activeLink.classList.add('active');
+    } else {
+        // If no matching link is found, defaults to highlighting the Dashboard link
+        document.querySelector('.nav ul li a[href="#dashboard"]').classList.add('active');
+    }
+}
+
+// Sets up navigation link behavior when the page loads or the URL hash changes
+document.addEventListener('DOMContentLoaded', function() {
+    // Calls updateActiveNavLink to set the initial active link when the page loads
+    updateActiveNavLink();
+
+    // Adds an event listener to detect changes in the URL hash (when the user navigates)
+    window.addEventListener('hashchange', updateActiveNavLink);
+
+    // Loops through all navigation links to add click event listeners
+    document.querySelectorAll('.nav ul li a').forEach(link => {
+        // Adds a click event listener to each navigation link
+        link.addEventListener('click', function() {
+            // Removes the 'active' class from all navigation links to ensure only one is highlighted
+            document.querySelectorAll('.nav ul li a').forEach(l => l.classList.remove('active'));
+            // Adds the 'active' class to the clicked link for visual feedback
+            this.classList.add('active');
+        });
+    });
+});
+
+// ADD USER SECTION
+// Manages the visibility of customer-specific fields based on the selected user role
+// Gets the dropdown element for selecting the user role
+const roleDropdown = document.getElementById('user-role');
+// Selects all elements with ID 'customerFields' (fields specific to the Customer role)
+const customerFields = document.querySelectorAll('#customerFields');
+
+// Adds a change event listener to the role dropdown
+roleDropdown.addEventListener('change', function() {
+    // Checks if the selected value in the dropdown is 'Customer'
+    if (roleDropdown.value === 'Customer') {
+        // Loops through all customer-specific fields
+        customerFields.forEach(field => {
+            // Removes the 'hidden' CSS class to show the field
+            field.classList.remove('hidden');
+        });
+    } else {
+        // If the selected role is not 'Customer', loops through all customer-specific fields
+        customerFields.forEach(field => {
+            // Adds the 'hidden' CSS class to hide the field
+            field.classList.add('hidden');
+        });
+    }
+});
+
+// Initializes the visibility of customer fields when the page loads
+window.onload = function() {
+    // Checks if the role dropdown’s value is the default placeholder '--select option--'
+    if (roleDropdown.value === '--select option--') {
+        // Loops through all customer-specific fields
+        customerFields.forEach(field => {
+            // Removes the 'hidden' CSS class to show the fields by default
+            field.classList.remove('hidden');
+        });
+    }
+};
+
+// MESSAGE HANDLING
+// Manages the display and automatic hiding of admin notification messages
+function hideAdminMessage() {
+    // Gets the element with ID 'admin-message' that contains the notification
+    const adminMessage = document.getElementById('admin-message');
+    // Checks if the admin message element exists
+    if (adminMessage) {
+        // Starts a timer to fade out the message after 2 seconds
+        setTimeout(() => {
+            // Sets the message’s opacity to 0 for a fade-out effect
+            adminMessage.style.opacity = '0';
+            // Starts a timer to hide the message after the fade-out transition completes
+            setTimeout(() => {
+                // Sets the message’s display style to 'none' to hide it
+                adminMessage.style.display = 'none';
+            }, 700); // Matches the CSS transition duration (700ms)
+        }, 2000); // Displays the message for 2000 milliseconds (2 seconds)
+    }
+}
+
+// Calls hideAdminMessage when the page loads
+window.onload = hideAdminMessage;
+
+// POPUP HANDLING
+// Displays a popup with detailed information about a loan
+function openLoanPopup(loan) {
+    // Sets the text content of the element with ID 'popup-loan-id' to the loan’s ID
+    document.getElementById('popup-loan-id').textContent = loan.loan_id;
+    // Sets the text content of the element with ID 'popup-customer-id' to the customer’s ID
+    document.getElementById('popup-customer-id').textContent = loan.customer_id;
+    // Sets the text content of the element with ID 'popup-customer-name' to the customer’s name
+    document.getElementById('popup-customer-name').textContent = loan.customer_name;
+    // Formats the loan amount to two decimal places and sets it
+    document.getElementById('popup-amount').textContent = parseFloat(loan.amount).toFixed(2);
+    // Sets the text content of the element with ID 'popup-duration' to the loan duration
+    document.getElementById('popup-duration').textContent = loan.duration;
+    // Formats the collateral value to two decimal places and sets it
+    document.getElementById('popup-collateral-value').textContent = parseFloat(loan.collateral_value).toFixed(2);
+    // Sets the text content of the element with ID 'popup-collateral-desc' to the collateral description
+    document.getElementById('popup-collateral-desc').textContent = loan.collateral_description;
+    // Sets the src attribute of the element with ID 'popup-collateral-image' to the collateral image URL, or empty string if none
+    document.getElementById('popup-collateral-image').src = loan.collateral_image || '';
+    // Sets the value of the hidden input with ID 'popup-loan-id-input' to the loan ID (for approval form)
+    document.getElementById('popup-loan-id-input').value = loan.loan_id;
+    // Sets the value of the hidden input with ID 'popup-loan-id-input-reject' to the loan ID (for rejection form)
+    document.getElementById('popup-loan-id-input-reject').value = loan.loan_id;
+    // Shows the loan popup by setting its display style to 'block'
+    document.getElementById('loanPopup').style.display = 'block';
+}
+
+// Hides the loan popup
+function closeLoanPopup() {
+    // Sets the loan popup’s display style to 'none' to hide it
+    document.getElementById('loanPopup').style.display = 'none';
+}
+
+// Adds a click event listener to the window to close the popup when clicking outside
+window.onclick = function(event) {
+    // Gets the loan popup element
+    const popup = document.getElementById('loanPopup');
+    // Checks if the clicked element is the popup itself (the overlay)
+    if (event.target == popup) {
+        // Hides the popup by setting its display style to 'none'
+        popup.style.display = 'none';
+    }
+}

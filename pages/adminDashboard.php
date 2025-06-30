@@ -649,48 +649,15 @@ require_once 'adminDashboardData.php'; // has the dashboard data
                  
     </main>
 
-    <!-- External JavaScript for validation -->
+    <!-- input validation javascript -->
     <script src="../js/validinput.js"></script>
-   
+
+    <!-- admin dashboard javascript -->
+    <script src="../js/adminDashboard.js"></script>
+
+<!-- CHART FUNCTIONS -->
 <script>
-    // ACTIVE NAV LINK
-function updateActiveNavLink() {
-    const navLinks = document.querySelectorAll('.nav ul li a');
-    const currentHash = window.location.hash || '#dashboard'; // Default to #dashboard if no hash
-
-    // Remove .active class from all links
-    navLinks.forEach(link => link.classList.remove('active'));
-
-    // Find the link that matches the current hash and add .active class
-    const activeLink = document.querySelector(`.nav ul li a[href="${currentHash}"]`);
-    if (activeLink) {
-        activeLink.classList.add('active');
-    } else {
-        // Default to Dashboard if no matching link
-        document.querySelector('.nav ul li a[href="#dashboard"]').classList.add('active');
-    }
-}
-
-// Initialize active link on page load and handle hash changes
-document.addEventListener('DOMContentLoaded', function() {
-    updateActiveNavLink();
-
-    // Update active link when hash changes
-    window.addEventListener('hashchange', updateActiveNavLink);
-
-    // Update active link when navigation links are clicked
-    document.querySelectorAll('.nav ul li a').forEach(link => {
-        link.addEventListener('click', function() {
-            // Remove .active from all links
-            document.querySelectorAll('.nav ul li a').forEach(l => l.classList.remove('active'));
-            // Add .active to the clicked link
-            this.classList.add('active');
-        });
-    });
-});
-</script>
-<!-- Pie Chart for user Distribution -->
-<script>
+    // PIE CHART
     function initializePieChart() {
     const pieData = <?= json_encode($pieData) ?>;
     const pieCanvas = document.getElementById('pieChart');
@@ -752,75 +719,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Make sure to call this when the page loads
 document.addEventListener('DOMContentLoaded', initializePieChart);
-</script>
-
-    <script>
-    
-        // Show/hide fields based on role selection
-        const roleDropdown = document.getElementById('user-role');
-        const customerFields = document.querySelectorAll('#customerFields');
-    
-        roleDropdown.addEventListener('change', function () {
-            if (roleDropdown.value === 'Customer') {
-                customerFields.forEach(field => field.classList.remove('hidden'));
-            } else {
-                customerFields.forEach(field => field.classList.add('hidden'));
-            }
-        });
-    
-        // Initialize visibility on page load
-        window.onload = function () {
-            if (roleDropdown.value === '--select option--') {
-                customerFields.forEach(field => field.classList.remove('hidden'));
-            }
-        };
-    </script>
-
-<script>
-        // Function to hide the admin message after 2 seconds
-        function hideAdminMessage() {
-            const adminMessage = document.getElementById('admin-message');
-            if (adminMessage) {
-                setTimeout(() => {
-                    adminMessage.style.opacity = '0'; // Fade out the message
-                    setTimeout(() => {
-                        adminMessage.style.display = 'none'; // Hide the message after fading out
-                    }, 700); // Wait for the transition to complete
-                }, 2000); // 2000 milliseconds = 2seconds
-            }
-        }
-
-        // Call the function when the page loads
-        window.onload = hideAdminMessage;
-    </script>
-
-<!-- Pop Up -->
-<script>
-    function openLoanPopup(loan) {
-        document.getElementById('popup-loan-id').textContent = loan.loan_id;
-        document.getElementById('popup-customer-id').textContent = loan.customer_id;
-        document.getElementById('popup-customer-name').textContent = loan.customer_name;
-        document.getElementById('popup-amount').textContent = parseFloat(loan.amount).toFixed(2);
-        document.getElementById('popup-duration').textContent = loan.duration;
-        document.getElementById('popup-collateral-value').textContent = parseFloat(loan.collateral_value).toFixed(2);
-        document.getElementById('popup-collateral-desc').textContent = loan.collateral_description;
-        document.getElementById('popup-collateral-image').src = loan.collateral_image || '';
-        document.getElementById('popup-loan-id-input').value = loan.loan_id;
-        document.getElementById('popup-loan-id-input-reject').value = loan.loan_id;
-        document.getElementById('loanPopup').style.display = 'block';
-    }
-
-    function closeLoanPopup() {
-        document.getElementById('loanPopup').style.display = 'none';
-    }
-
-    // Close popup when clicking outside of it
-    window.onclick = function(event) {
-        const popup = document.getElementById('loanPopup');
-        if (event.target == popup) {
-            popup.style.display = 'none';
-        }
-    }
 </script>
     
 </body>

@@ -383,7 +383,7 @@ function validateLoanApplicationForm() {
         collateralImageInput.focus(); // Sets focus to the collateralImage input field
         return false; // Returns false to indicate validation failure
     }
-    // Validate file size (e.g., max 2MB)
+    // Validate file size (max 2MB)
     const maxSize = 2 * 1024 * 1024; // Defines maximum file size as 2MB in bytes
     if (file.size > maxSize) { // Checks if file size exceeds maxSize
         displayError("Image file size must not exceed 2MB."); // Displays error if file is too large
