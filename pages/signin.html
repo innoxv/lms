@@ -92,12 +92,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         }, 700); // Matches the CSS transition duration (700ms)
                     }, 3000); // Displays the error message for 3000 milliseconds (3 seconds)
                 }
-            })
-            // Handles any errors that occur during the AJAX request
-            .catch(error => {
-                // Logs the error to the console for debugging purposes
-                console.error('Error fetching session messages:', error);
             });
+        
     }
 });
 </script>
