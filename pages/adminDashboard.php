@@ -657,69 +657,90 @@ require_once 'adminDashboardData.php'; // has the dashboard data
 
 <!-- CHART FUNCTIONS -->
 <script>
-    // PIE CHART
-    function initializePieChart() {
+ // PIE CHART SECTION
+// Initializes and renders a pie chart to display the distribution of user roles
+function initializePieChart() {
+    // Parses JSON data (injected from PHP) into a JavaScript object containing user role counts
     const pieData = <?= json_encode($pieData) ?>;
+    // Gets the canvas element with ID 'pieChart' for rendering the chart
     const pieCanvas = document.getElementById('pieChart');
+    // Gets the 2D rendering context of the canvas for drawing
     const pieCtx = pieCanvas.getContext('2d');
     
-    // Corrected labels to match your data
+    // Defines the labels for the pie chart segments, corresponding to user roles
     const labels = ['Admin', 'Lender', 'Customer'];
+    // Extracts values for each user role from the pieData object
     const values = [
-        pieData.Admin,
-        pieData.Lender,
-        pieData.Customer
+        pieData.Admin, // Number of Admin users
+        pieData.Lender, // Number of Lender users
+        pieData.Customer // Number of Customer users
     ];
     
-    // Assign colors to the correct labels
+    // Defines colors for each user role segment
     const statusColors = {
-        'Admin': 'tomato',    
-        'Lender': 'teal',  
-        'Customer': '#ddd' 
+        'Admin': 'tomato', // Red-orange color for Admin users
+        'Lender': 'teal', // Teal color for Lender users
+        'Customer': '#ddd' // Light gray color for Customer users
     };
 
+    // Calculates the total sum of all values for percentage calculations
     const total = values.reduce((sum, value) => sum + value, 0);
+    // Initializes the starting angle for the first pie slice
     let startAngle = 0;
+    // Sets the x-coordinate of the pie chart’s center (1/4 of canvas width)
     const centerX = pieCanvas.width / 4;
+    // Sets the y-coordinate of the pie chart’s center (half of canvas height)
     const centerY = pieCanvas.height / 2;
+    // Calculates the radius of the pie chart, ensuring it fits within the canvas
     const radius = Math.min(pieCanvas.width / 3, pieCanvas.height / 2) - 10;
 
-    // Draw pie slices
+    // Draws pie chart slices for each user role
     labels.forEach((label, index) => {
+        // Gets the value for the current user role
         const value = values[index];
+        // Only draws a slice if the value is greater than 0
         if (value > 0) {
+            // Calculates the angle for the current slice based on its proportion of the total
             const sliceAngle = (2 * Math.PI * value) / total;
-            pieCtx.beginPath();
-            pieCtx.moveTo(centerX, centerY);
+            pieCtx.beginPath(); // Starts a new drawing path
+            pieCtx.moveTo(centerX, centerY); // Moves to the center of the pie chart
+            // Draws an arc from the start angle to the end angle with the specified radius
             pieCtx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
-            pieCtx.closePath();
+            pieCtx.closePath(); // Closes the path to form a slice
+            // Sets the fill color for the slice based on the user role
             pieCtx.fillStyle = statusColors[label];
-            pieCtx.fill();
+            pieCtx.fill(); // Fills the slice with the specified color
+            // Updates the start angle for the next slice
             startAngle += sliceAngle;
         }
     });
 
-    // Add legend
-    pieCtx.font = '16px Trebuchet MS';
-    let legendY = 20;
-    const legendX = centerX + radius + 20;
-    const legendSpacing = 20;
+    // Draws the legend for the pie chart
+    pieCtx.font = '16px Trebuchet MS'; // Sets the font for legend text
+    let legendY = 20; // Sets the starting y-coordinate for the legend
+    const legendX = centerX + radius + 20; // Sets the x-coordinate for the legend (right of pie)
+    const legendSpacing = 20; // Sets the vertical spacing between legend items
 
     labels.forEach((label, index) => {
+        // Gets the value for the current user role
         const value = values[index];
+        // Only includes legend entries for non-zero values
         if (value > 0) {
+            // Draws a colored square for the legend item
             pieCtx.fillStyle = statusColors[label];
             pieCtx.fillRect(legendX, legendY, 15, 15);
+            // Sets the text color to a light gray for readability
             pieCtx.fillStyle = 'whitesmoke';
+            // Draws the legend text, showing the user role and percentage
             pieCtx.fillText(`${label}: ${value.toFixed(1)}%`, legendX + 20, legendY + 12);
+            // Moves the y-coordinate down for the next legend item
             legendY += legendSpacing;
         }
     });
 }
 
-// Make sure to call this when the page loads
+// Initializes the pie chart when the page is fully loaded
 document.addEventListener('DOMContentLoaded', initializePieChart);
 </script>
-    
 </body>
 </html>
