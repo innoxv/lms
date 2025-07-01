@@ -57,9 +57,18 @@ body{
 .header-label{
     color: #74C0FC;
     font-size: 1.5em;
-    margin: .2em;
+    font-weight: 100;
 }
-
+.header-label a{
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+.header-label img{
+    width: 1em;
+    height: 1em;
+    margin-left: .2em;
+}
 .content{
     display: flex;
     justify-content: center;
@@ -67,7 +76,7 @@ body{
     /* margin: 1em 0; */
     height: 100%;
     /* width: fit-content; */
-    padding: 1em;
+    padding: .5em .2em;
 
 }
 .content-2{
@@ -369,6 +378,7 @@ main {
     /* outline: 1px solid red; */
     display: flex;
     flex-direction: row;
+    gap: 1em;
 }
 .hero-section h1{
     font-size: 5em;
@@ -405,18 +415,20 @@ img{
     height: 65vh;
 
 }
-    .right {
-      position: relative;
-      overflow: hidden;
-    }
 
-    .right img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      opacity: 0;
-      animation: imageFadeIn 1.5s ease-in-out forwards;
-    }
+
+.right img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    animation: imageFadeIn 1.5s ease-in-out forwards;
+    transition: transform 0.3s cubic-bezier(.4,2,.6,1);
+}
+.right img:hover {
+transform: translateY(-10px) scale(1.03);
+}
+    
 
     @keyframes imageFadeIn {
       0% {
@@ -480,9 +492,14 @@ img{
     }
     .nav-link:hover{
         color: #74C0FC;
-        transition: color .2s ease-in-out;
+        transition:  .2s ease;
 
     }
+    .nav-link.active {
+    color: #74C0FC;
+    border-bottom: 2px solid lightgray;
+    padding-bottom: .2em;
+}
 
     .content-section h1, .content-section h2{
         color: whitesmoke;
@@ -671,7 +688,14 @@ img{
     .contact-details {
         margin-top: 1.5rem;
     }
-    
+    .contact-details p{
+        display: flex;
+    }
+    .contact-details img{
+        width: 20px;
+        height: 20px;
+        margin-right: .5em;
+    }
     .business-hours {
         margin-top: 2rem;
     }
@@ -681,8 +705,18 @@ img{
     flex-direction: column;
     gap: 1em;
 }
-.social-media-links a:hover{
-color: whitesmoke;
+.social-media-links a{
+    display: flex;
+
+}
+.social-media-links a:hover, .contact-details a:hover{
+color: lightgray;
+}
+.social-media-links img{
+    width: 20px;
+    height: 20px;
+    margin-right: .5em;
+
 }
     
     /* FAQs section */
@@ -753,6 +787,10 @@ color: whitesmoke;
     .social-links img{
         width: 25px;
         height: 25px;
+        transition: transform 0.2s cubic-bezier(.4,2,.6,1);
+    }
+    .social-links img:hover {
+        transform: translateY(-5px) scale(1.08);
     }
     .footer h4{
         color: gray;
