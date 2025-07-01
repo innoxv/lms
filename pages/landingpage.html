@@ -223,9 +223,9 @@
                         <p>Have questions or need assistance? Our team is here to help.</p>
                         
                         <div class="contact-details">
-                            <p><strong>Email:</strong> support@lms.com</p>
-                            <p><strong>Phone:</strong> +254 705 036 698</p>
-                            <p><strong>Address:</strong> 125 Ongata Rongai, Kajiado, Kenya</p>
+                            <p><img src="../icons/mail.svg" alt="" srcset=""> <a href="mailto:support@lms.com">support@lms.com</a></p>
+                            <p><img src="../icons/phone.svg" alt="" srcset=""> <a href="tel:+254705036698">+254 705 036 698</a></p>
+                            <p><img src="../icons/map2.svg" alt="" srcset=""> <a href="https://www.google.com/maps/search/?api=1&query=125+Ongata+Rongai,+Kajiado,+Kenya" target="_blank" rel="noopener">125 Ongata Rongai, Kajiado, Kenya</a></p>
                         </div>
                         
                         <div class="business-hours">
@@ -238,11 +238,11 @@
                     <div class="social-media">
                         <h2>Social Media Platforms</h2>
                         <div class="social-media-links">
-                            <a href="https://www.instagram.com/innoxv/" >Instagram</a>
-                            <a href="https://github.com/innoxv/" >Github</a>
-                            <a href="https://wa.me/254705036698?text=hi, (wink)" >Whatsapp</a>
-                            <a href="" >X</a>
-                            <a href="" >LinkedIn</a>
+                            <a href="https://www.instagram.com/innoxv/" ><img src="../icons/instagram.svg" alt="">Instagram</a>
+                            <a href="https://github.com/innoxv/" ><img src="../icons/github.svg" alt="">Github</a>
+                            <a href="https://wa.me/254705036698?text=hi, (wink)" ><img src="../icons/whatsapp.svg" alt="">Whatsapp</a>
+                            <a href="" ><img src="../icons/x.svg" alt="">X</a>
+                            <a href="" ><img src="../icons/linkedin.svg" alt="">LinkedIn</a>
                         </div>
                     </div>
                 </div>
@@ -305,7 +305,7 @@
                         </div>
                     </div>
                     <div class="right">
-                        <img src="../img/comments-dollar-solid.svg" alt="Financial services illustration">
+                        <img src="../icons/transactions.svg" alt="Financial services illustration">
                     </div>
                 </div>
                 
@@ -330,10 +330,10 @@
                     <div>
                         <h4><code>Socials:</code></h4>
                         <div class="social-links">
-                            <a href="https://www.instagram.com/innoxv/" ><img src="../icons/instagram.png" alt="" ></a>
-                            <a href="https://github.com/innoxv/" ><img src="../icons/github.png" alt="" ></a>
-                            <a href="" ><img src="../icons/x.png" alt="" ></a>
-                            <a href="" ><img src="../icons/linkedin.png" alt="" ></a>
+                            <a href="https://www.instagram.com/innoxv/" ><img src="../icons/instagram.svg" alt="" ></a>
+                            <a href="https://github.com/innoxv/" ><img src="../icons/github.svg" alt="" ></a>
+                            <a href="" ><img src="../icons/x.svg" alt="" ></a>
+                            <a href="" ><img src="../icons/linkedin.svg" alt="" ></a>
                         </div>
                     </div>
                 </div>
@@ -344,6 +344,34 @@
 
 
 <script>
+
+// ACTIVE LINK FUNCTIONALITY
+// Set active nav-link based on current hash
+function setActiveNavLink() {
+    const hash = window.location.hash || '#home';
+    document.querySelectorAll('.nav-link').forEach(link => {
+        if (link.getAttribute('href') === hash) {
+            link.classList.add('active');
+        } else {
+            link.classList.remove('active');
+        }
+    });
+}
+
+    // Run on page load
+setActiveNavLink();
+
+// Run when hash changes (user clicks nav or uses browser back/forward)
+window.addEventListener('hashchange', setActiveNavLink);
+
+// Also keep your click handler for smooth UX
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', function() {
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+    });
+});
+
 // ABOUT US STATS ANIMATION SECTION
 // Animates a numerical counter from 0 to a target value over a specified duration
 function animateCounter(el, target, duration = 2000) {
@@ -403,6 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(runStatsAnimation, 300);
         });
     });
+
 });
 
 // FAQ TOGGLE SECTION
