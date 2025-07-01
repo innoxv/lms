@@ -59,7 +59,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Creates a URLSearchParams object to parse query parameters from the current URL
     const urlParams = new URLSearchParams(window.location.search);
-    // Checks if the URL contains an 'error' query parameter (e.g., ?error=true)
+    // Checks if the URL contains an 'error' query parameter (?error=true)
     if (urlParams.has('error')) {
         // Makes an AJAX request to the server to fetch session error messages
         fetch('signin.php?action=get_error')

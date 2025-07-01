@@ -975,156 +975,184 @@ require_once 'lenderDashboardData.php'; // has the dashboard data
 
 <!-- CHART FUNCTIONS -->
 <script>
+// BAR CHART SECTION
+// Initializes and renders a bar chart to display loan counts by loan type when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Parses JSON data (injected from PHP) into a JavaScript object containing loan counts
+    const loanCounts = <?php echo json_encode($loanCounts); ?>;
+    // Extracts loan type names as an array from the keys of the loanCounts object
+    const loanTypes = Object.keys(loanCounts);
+    // Extracts loan count values as an array from the values of the loanCounts object
+    const counts = Object.values(loanCounts);
+    
+    // Gets the canvas element with ID 'barChart' for rendering the chart
+    const barCanvas = document.getElementById('barChart');
+    // Gets the 2D rendering context of the canvas for drawing
+    const barCtx = barCanvas.getContext('2d');
+    
+    // Clears the entire canvas to remove any previous chart content
+    barCtx.clearRect(0, 0, barCanvas.width, barCanvas.height);
+    
+    // Defines constants for chart dimensions and layout
+    const barWidth = 20; // Sets the width of each bar to 20 pixels
+    const barSpacing = 20; // Sets the spacing between bars to 20 pixels
+    const startX = 30; // Sets the x-coordinate where the first bar starts
+    const startY = barCanvas.height - 50; // Sets the y-coordinate of the chart base (50px from bottom)
+    const axisPadding = 10; // Sets padding for the y-axis (space for labels)
+    
+    // Calculates the maximum value for the y-axis, ensuring a minimum of 5 for visibility
+    const maxCount = Math.max(5, ...counts);
+    // Rounds up the maximum count to the nearest multiple of 5 for y-axis scaling
+    const yAxisMax = Math.ceil(maxCount / 5) * 5;
+    
+    // Draws bars for each loan type
+    counts.forEach((value, index) => {
+        // Calculates the x-coordinate for the current bar based on its index
+        const x = startX + (barWidth + barSpacing) * index;
+        // Calculates the height of the bar proportional to the y-axis maximum
+        const barHeight = (value / yAxisMax) * (startY - 20);
+        // Calculates the y-coordinate for the top of the bar
+        const y = startY - barHeight;
+        
+        // Sets the fill color for the bars to a light blue shade (#74C0FC)
+        barCtx.fillStyle = '#74C0FC';
+        // Draws a filled rectangle (bar) at the calculated position and size
+        barCtx.fillRect(x, y, barWidth, barHeight);
+    });
+    
+    // Draws x-axis labels for loan types (abbreviated)
+    barCtx.fillStyle = 'white'; // Sets the text color to white
+    barCtx.font = '16px Trebuchet MS'; // Sets the font for labels
+    loanTypes.forEach((type, index) => {
+        // Creates a short label by taking the first two characters of the loan type and capitalizing them
+        const label = type.substring(0, 2).toUpperCase();
+        // Calculates the x-coordinate for the label, slightly offset from the bar’s left edge
+        const x = startX + (barWidth + barSpacing) * index + barWidth / 5;
+        // Draws the label below the bar (20px below the chart base)
+        barCtx.fillText(label, x, startY + 20);
+    });
+    
+    // Draws the y-axis line
+    barCtx.strokeStyle = 'white'; // Sets the line color to white
+    barCtx.beginPath(); // Starts a new drawing path
+    barCtx.moveTo(startX - axisPadding, startY); // Moves to the bottom of the y-axis
+    barCtx.lineTo(startX - axisPadding, 20); // Draws a line to the top of the y-axis
+    barCtx.stroke(); // Renders the y-axis line
+    
+    // Draws y-axis labels and grid lines
+    barCtx.fillStyle = 'whitesmoke'; // Sets the text color to a light gray
+    barCtx.textAlign = 'right'; // Aligns text to the right for y-axis labels
+    barCtx.font = '16px Trebuchet MS'; // Sets the font for y-axis labels
+    
+    // Loops through y-axis values, stepping by 2 if max is >10, otherwise by 1
+    for (let i = 0; i <= yAxisMax; i += (yAxisMax > 10 ? 2 : 1)) {
+        // Calculates the y-coordinate for the current label based on the y-axis scale
+        const y = startY - (i / yAxisMax) * (startY - 20);
+        // Draws the label to the left of the y-axis, slightly offset vertically
+        barCtx.fillText(i, startX - axisPadding - 5, y + 5);
+        
+        // Draws horizontal grid lines
+        barCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; // Sets a semi-transparent white for grid lines
+        barCtx.beginPath(); // Starts a new drawing path
+        barCtx.moveTo(startX - axisPadding, y); // Moves to the start of the grid line
+        barCtx.lineTo(barCanvas.width - 240, y); // Draws the grid line across the chart
+        barCtx.stroke(); // Renders the grid line
+    }
+    
+    // Draws the legend
+    const legendX = barCanvas.width - 240; // Sets the x-coordinate for the legend (right side)
+    const legendY = 60; // Sets the starting y-coordinate for the legend
+    const legendSpacing = 20; // Sets the vertical spacing between legend items
+    
+    barCtx.font = '16px Trebuchet MS'; // Sets the font for legend text
+    barCtx.textAlign = 'left'; // Aligns legend text to the left
+    loanTypes.forEach((type, index) => {
+        // Creates a short label for the legend by capitalizing the first two characters
+        const label = type.substring(0, 2).toUpperCase();
+        barCtx.fillStyle = 'lightgray'; // Sets the text color to light gray
+        // Draws the legend text, combining the short label and full loan type
+        barCtx.fillText(`${label}: ${type}`, legendX + 20, legendY + index * legendSpacing + 12);
+    });
+});
 
-// BARCHART
-    document.addEventListener('DOMContentLoaded', function() {
-        const loanCounts = <?php echo json_encode($loanCounts); ?>;
-        const loanTypes = Object.keys(loanCounts);
-        const counts = Object.values(loanCounts);
-        
-        const barCanvas = document.getElementById('barChart');
-        const barCtx = barCanvas.getContext('2d');
-        
-        // Clear any previous chart
-        barCtx.clearRect(0, 0, barCanvas.width, barCanvas.height);
-        
-        // Chart dimensions
-        const barWidth = 20;
-        const barSpacing = 20;
-        const startX = 30;
-        const startY = barCanvas.height - 50;
-        const axisPadding = 10;
-        
-        // Calculate Y-axis max (minimum of 5 for visibility)
-        const maxCount = Math.max(5, ...counts);
-        const yAxisMax = Math.ceil(maxCount / 5) * 5;
-        
-        // Draw bars
-        counts.forEach((value, index) => {
-            const x = startX + (barWidth + barSpacing) * index;
-            const barHeight = (value / yAxisMax) * (startY - 20);
-            const y = startY - barHeight;
-            
-            barCtx.fillStyle = '#74C0FC';
-            barCtx.fillRect(x, y, barWidth, barHeight);
-            
-      
-        });
-        
-        // X-axis labels (abbreviated)
-        barCtx.fillStyle = 'white';
-        barCtx.font = '16px Trebuchet MS';
-        loanTypes.forEach((type, index) => {
-            const label = type.substring(0, 2).toUpperCase();
-            const x = startX + (barWidth + barSpacing) * index + barWidth / 5;
-            barCtx.fillText(label, x, startY + 20);
-        });
-        
-        // Y-axis and grid
-        barCtx.strokeStyle = 'white';
-        barCtx.beginPath();
-        barCtx.moveTo(startX - axisPadding, startY);
-        barCtx.lineTo(startX - axisPadding, 20);
-        barCtx.stroke();
-        
-        // Y-axis labels
-        barCtx.fillStyle = 'whitesmoke';
-        barCtx.textAlign = 'right';
-        barCtx.font = '16px Trebuchet MS';
-        
-        for (let i = 0; i <= yAxisMax; i += (yAxisMax > 10 ? 2 : 1)) {
-            const y = startY - (i / yAxisMax) * (startY - 20);
-            barCtx.fillText(i, startX - axisPadding - 5, y + 5);
-            
-            // Grid lines
-            barCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-            barCtx.beginPath();
-            barCtx.moveTo(startX - axisPadding, y);
-            barCtx.lineTo(barCanvas.width - 240, y);
-            barCtx.stroke();
+// PIE CHART SECTION
+// Initializes and renders a pie chart to display loan status distribution when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Gets the canvas element with ID 'pieChart' for rendering the chart
+    const pieCanvas = document.getElementById('pieChart');
+    // Gets the 2D rendering context of the canvas for drawing
+    const pieCtx = pieCanvas.getContext('2d');
+    
+    // Defines the pie chart data, with labels and values injected from PHP
+    const pieData = {
+        labels: ['Pending', 'Disbursed', 'Rejected'], // Defines the labels for loan statuses
+        values: [
+            <?php echo round($pieData['pending'], 2); ?>, // Rounds the pending value to 2 decimal places
+            <?php echo round($pieData['disbursed'], 2); ?>, // Rounds the disbursed value to 2 decimal places
+            <?php echo round($pieData['rejected'], 2); ?>, // Rounds the rejected value to 2 decimal places
+        ]
+    };
+
+    // Defines colors for each loan status
+    const statusColors = {
+        'Pending': '#ddd', // Light gray for pending loans
+        'Disbursed': 'teal', // Teal for disbursed loans
+        'Rejected': 'tomato' // Red-orange for rejected loans
+    };
+
+    // Extracts labels and values from the pieData object for easier access
+    const labels = pieData.labels;
+    const values = pieData.values;
+
+    // Calculates the total sum of all values for percentage calculations
+    const total = values.reduce((sum, value) => sum + value, 0);
+
+    // Draws the pie chart
+    let startAngle = 0; // Initializes the starting angle for the first pie slice
+    const centerX = pieCanvas.width / 4; // Sets the x-coordinate of the pie chart’s center
+    const centerY = pieCanvas.height / 2; // Sets the y-coordinate of the pie chart’s center
+    const radius = Math.min(pieCanvas.width / 3, pieCanvas.height / 2) - 10; // Calculates the radius to fit within the canvas
+
+    // Draws pie chart slices for each loan status
+    values.forEach((value, index) => {
+        // Only draws a slice if the value is greater than 0
+        if (value > 0) {
+            // Calculates the angle for the current slice based on its proportion of the total
+            const sliceAngle = (2 * Math.PI * value) / total;
+            pieCtx.beginPath(); // Starts a new drawing path
+            pieCtx.moveTo(centerX, centerY); // Moves to the center of the pie chart
+            // Draws an arc from the start angle to the end angle with the specified radius
+            pieCtx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+            pieCtx.closePath(); // Closes the path to form a slice
+            // Sets the fill color for the slice based on the loan status
+            pieCtx.fillStyle = statusColors[labels[index]];
+            pieCtx.fill(); // Fills the slice with the specified color
+            // Updates the start angle for the next slice
+            startAngle += sliceAngle;
         }
-        
-        // Legend
-        const legendX = barCanvas.width - 240;
-        const legendY = 60;
-        const legendSpacing = 20;
-        
-        barCtx.font = '16px Trebuchet MS';
-        barCtx.textAlign = 'left';
-        loanTypes.forEach((type, index) => {
-            const label = type.substring(0, 2).toUpperCase();
-            barCtx.fillStyle = 'lightgray';
-            barCtx.fillText(`${label}: ${type}`, legendX + 20, legendY + index * legendSpacing + 12);
-        });
     });
 
+    // Draws the legend for the pie chart
+    pieCtx.font = '16px Trebuchet MS'; // Sets the font for legend text
+    let legendY = 20; // Sets the starting y-coordinate for the legend
+    const legendX = centerX + radius + 20; // Sets the x-coordinate for the legend (right of pie)
+    const legendSpacing = 20; // Sets the vertical spacing between legend items
 
-    //  PIE CHART 
-    document.addEventListener('DOMContentLoaded', function() {
-        const pieCanvas = document.getElementById('pieChart');
-        const pieCtx = pieCanvas.getContext('2d');
-        
-        // Get the actual data from PHP
-        const pieData = {
-            labels: ['Pending', 'Disbursed', 'Rejected'
-            ],
-            values: [
-                <?php echo round($pieData['pending'], 2); ?>,
-                <?php echo round($pieData['disbursed'], 2); ?>,
-                <?php echo round($pieData['rejected'], 2); ?>,
-                
-            ]
-        };
-
-        // Define colors for each status
-        const statusColors = {
-            'Pending': '#ddd',  
-            'Disbursed': 'teal',
-            'Rejected': 'tomato', 
-        };
-
-        // Extract labels and values from pieData
-        const labels = pieData.labels;
-        const values = pieData.values;
-
-        // Calculate the total for percentage calculations
-        const total = values.reduce((sum, value) => sum + value, 0);
-
-        // Draw the pie chart
-        let startAngle = 0;
-        const centerX = pieCanvas.width / 4;
-        const centerY = pieCanvas.height / 2;
-        const radius = Math.min(pieCanvas.width / 3, pieCanvas.height / 2) - 10;
-
-        values.forEach((value, index) => {
-            if (value > 0) {  // Only draw slices for non-zero values
-                const sliceAngle = (2 * Math.PI * value) / total;
-                pieCtx.beginPath();
-                pieCtx.moveTo(centerX, centerY);
-                pieCtx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
-                pieCtx.closePath();
-                pieCtx.fillStyle = statusColors[labels[index]];
-                pieCtx.fill();
-                startAngle += sliceAngle;
-            }
-        });
-
-        // Add a legend
-        pieCtx.font = '16px Trebuchet MS';
-        let legendY = 20;
-        const legendX = centerX + radius + 20;
-        const legendSpacing = 20;
-
-        values.forEach((value, index) => {
-            if (value > 0) {  // Only show legend items for non-zero values
-                pieCtx.fillStyle = statusColors[labels[index]];
-                pieCtx.fillRect(legendX, legendY, 15, 15);
-                pieCtx.fillStyle = 'whitesmoke';
-                pieCtx.fillText(`${labels[index]}: ${value.toFixed(1)}%`, legendX + 20, legendY + 12);
-                legendY += legendSpacing;
-            }
-        });       
+    values.forEach((value, index) => {
+        // Only includes legend entries for non-zero values
+        if (value > 0) {
+            // Draws a colored square for the legend item
+            pieCtx.fillStyle = statusColors[labels[index]];
+            pieCtx.fillRect(legendX, legendY, 15, 15);
+            // Sets the text color to a light gray for readability
+            pieCtx.fillStyle = 'whitesmoke';
+            // Draws the legend text, showing the loan status and percentage
+            pieCtx.fillText(`${labels[index]}: ${value.toFixed(1)}%`, legendX + 20, legendY + 12);
+            // Moves the y-coordinate down for the next legend item
+            legendY += legendSpacing;
+        }
     });
+});
     </script>
 
 </body>
