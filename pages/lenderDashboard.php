@@ -1082,16 +1082,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const pieCanvas = document.getElementById('pieChart');
     // Gets the 2D rendering context of the canvas for drawing
     const pieCtx = pieCanvas.getContext('2d');
-    
-    // Defines the pie chart data, with labels and values injected from PHP
-    const pieData = {
-        labels: ['Pending', 'Disbursed', 'Rejected'], // Defines the labels for loan statuses
-        values: [
-            <?php echo round($pieData['pending'], 2); ?>, // Rounds the pending value to 2 decimal places
-            <?php echo round($pieData['disbursed'], 2); ?>, // Rounds the disbursed value to 2 decimal places
-            <?php echo round($pieData['rejected'], 2); ?>, // Rounds the rejected value to 2 decimal places
-        ]
-    };
+
+    // Clears the canvas to ensure a fresh drawing surface
+    pieCtx.clearRect(0, 0, pieCanvas.width, pieCanvas.height);
+
+    // Defines the pie chart data, injected from PHP as a JSON object
+    const pieData = <?= json_encode($pieData) ?>;
+
+    // Defines the labels for loan statuses
+    const labels = ['Pending', 'Disbursed', 'Rejected'];
+    // Extracts values for each status from the pieData object
+    const values = [
+        pieData.pending || 0, // Percentage of pending loans, default to 0 if undefined
+        pieData.disbursed || 0, // Percentage of disbursed loans, default to 0 if undefined
+        pieData.rejected || 0 // Percentage of rejected loans, default to 0 if undefined
+    ];
 
     // Defines colors for each loan status
     const statusColors = {
@@ -1100,58 +1105,127 @@ document.addEventListener('DOMContentLoaded', function() {
         'Rejected': 'tomato' // Red-orange for rejected loans
     };
 
-    // Extracts labels and values from the pieData object for easier access
-    const labels = pieData.labels;
-    const values = pieData.values;
-
-    // Calculates the total sum of all values for percentage calculations
+    // Calculates the total sum of all values for proportion calculations
     const total = values.reduce((sum, value) => sum + value, 0);
 
-    // Draws the pie chart
-    let startAngle = 0; // Initializes the starting angle for the first pie slice
-    const centerX = pieCanvas.width / 4; // Sets the x-coordinate of the pie chart’s center
-    const centerY = pieCanvas.height / 2; // Sets the y-coordinate of the pie chart’s center
+    // Defines chart configuration for the donut chart
+    const centerX = pieCanvas.width / 4; // Sets the x-coordinate of the chart’s center
+    const centerY = pieCanvas.height / 2; // Sets the y-coordinate of the chart’s center
     const radius = Math.min(pieCanvas.width / 3, pieCanvas.height / 2) - 10; // Calculates the radius to fit within the canvas
+    const lineWidth = 20; // Sets the thickness of the donut rings
+    const animationDuration = 1000; // Sets the animation duration in milliseconds
+    const startTime = performance.now(); // Records the start time for animation timing
 
-    // Draws pie chart slices for each loan status
-    values.forEach((value, index) => {
-        // Only draws a slice if the value is greater than 0
-        if (value > 0) {
-            // Calculates the angle for the current slice based on its proportion of the total
-            const sliceAngle = (2 * Math.PI * value) / total;
-            pieCtx.beginPath(); // Starts a new drawing path
-            pieCtx.moveTo(centerX, centerY); // Moves to the center of the pie chart
-            // Draws an arc from the start angle to the end angle with the specified radius
-            pieCtx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
-            pieCtx.closePath(); // Closes the path to form a slice
-            // Sets the fill color for the slice based on the loan status
-            pieCtx.fillStyle = statusColors[labels[index]];
-            pieCtx.fill(); // Fills the slice with the specified color
-            // Updates the start angle for the next slice
-            startAngle += sliceAngle;
+    // Initializes an array to store the current angle for each segment during animation
+    const currentAngles = new Array(labels.length).fill(0);
+    // Calculates the final angle for each segment based on its proportion of the total
+    const finalAngles = values.map(value => (value > 0 ? (2 * Math.PI * value) / total : 0));
+
+    // Defines the animation function to progressively draw the donut chart
+    function animate(currentTime) {
+        // Clears the canvas on each frame to redraw with updated angles
+        pieCtx.clearRect(0, 0, pieCanvas.width, pieCanvas.height);
+
+        // Calculates the animation progress (0 to 1) based on elapsed time
+        // Progress is the completion fraction of the animation, ranging from 0 (start) to 1 (end)
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / animationDuration, 1); // Caps progress at 1
+
+        // Draws donut chart slices with animated angles
+        let startAngle = 0; // Initializes the starting angle for the current frame
+        values.forEach((value, index) => {
+            // Only draws a slice if the value is greater than 0
+            if (value > 0) {
+                // Calculates the current angle for the segment based on animation progress
+                currentAngles[index] = progress * finalAngles[index];
+                pieCtx.beginPath(); // Starts a new drawing path
+                // Draws an arc from the start angle to the current animated angle
+                pieCtx.arc(centerX, centerY, radius, startAngle, startAngle + currentAngles[index]);
+                pieCtx.lineWidth = lineWidth; // Sets the thickness of the ring
+                pieCtx.strokeStyle = statusColors[labels[index]]; // Sets the color for the slice
+                pieCtx.stroke(); // Draws the arc as a hollow ring
+                // Updates the start angle for the next slice
+                startAngle += currentAngles[index];
+            }
+        });
+
+        // Continues the animation if progress is less than 1
+        if (progress < 1) {
+            requestAnimationFrame(animate); // Schedules the next animation frame
+        } else {
+            // Draws the legend for the donut chart after animation completes
+            pieCtx.font = '16px Trebuchet MS'; // Sets the font for legend text
+            let legendY = 20; // Sets the starting y-coordinate for the legend
+            const legendX = centerX + radius + 20; // Sets the x-coordinate for the legend (right of chart)
+            const legendSpacing = 20; // Sets the vertical spacing between legend items
+
+            values.forEach((value, index) => {
+                // Only includes legend entries for non-zero values
+                if (value > 0) {
+                    // Draws a colored square for the legend item
+                    pieCtx.fillStyle = statusColors[labels[index]];
+                    pieCtx.fillRect(legendX, legendY, 15, 15);
+                    // Sets the text color to a light gray for readability
+                    pieCtx.fillStyle = 'whitesmoke';
+                    // Draws the legend text, showing the loan status and percentage (already in pieData)
+                    pieCtx.fillText(`${labels[index]}: ${value.toFixed(1)}%`, legendX + 20, legendY + 12);
+                    // Moves the y-coordinate down for the next legend item
+                    legendY += legendSpacing;
+                }
+            });
         }
-    });
+    }
 
-    // Draws the legend for the pie chart
-    pieCtx.font = '16px Trebuchet MS'; // Sets the font for legend text
-    let legendY = 20; // Sets the starting y-coordinate for the legend
-    const legendX = centerX + radius + 20; // Sets the x-coordinate for the legend (right of pie)
-    const legendSpacing = 20; // Sets the vertical spacing between legend items
+    // Checks if there is valid data to animate
+    if (total > 0) {
+        // Starts the animation if there are non-zero values
+        requestAnimationFrame(animate);
+    } else {
+        // Draws a static donut chart if no data is available
+        let startAngle = 0; // Initializes the starting angle for the first slice
+        values.forEach((value, index) => {
+            // Only draws a slice if the value is greater than 0
+            if (value > 0) {
+                // Calculates the angle for the current slice based on its proportion of the total
+                const sliceAngle = (2 * Math.PI * value) / total;
+                pieCtx.beginPath(); // Starts a new drawing path
+                // Draws an arc from the start angle to the end angle with the specified radius
+                pieCtx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+                pieCtx.lineWidth = lineWidth; // Sets the thickness of the ring
+                pieCtx.strokeStyle = statusColors[labels[index]]; // Sets the color for the slice
+                pieCtx.stroke(); // Draws the arc as a hollow ring
+                // Updates the start angle for the next slice
+                startAngle += sliceAngle;
+            }
+        });
 
-    values.forEach((value, index) => {
-        // Only includes legend entries for non-zero values
-        if (value > 0) {
-            // Draws a colored square for the legend item
-            pieCtx.fillStyle = statusColors[labels[index]];
-            pieCtx.fillRect(legendX, legendY, 15, 15);
-            // Sets the text color to a light gray for readability
-            pieCtx.fillStyle = 'whitesmoke';
-            // Draws the legend text, showing the loan status and percentage
-            pieCtx.fillText(`${labels[index]}: ${value.toFixed(1)}%`, legendX + 20, legendY + 12);
-            // Moves the y-coordinate down for the next legend item
-            legendY += legendSpacing;
-        }
-    });
+        // Draws a filled circle in the center to maintain the donut’s hollow effect
+        pieCtx.beginPath();
+        pieCtx.arc(centerX, centerY, radius - lineWidth, 0, 2 * Math.PI);
+        pieCtx.fillStyle = '#1a2526'; // Matches the canvas background color (adjust as needed)
+        pieCtx.fill();
+
+        // Draws the legend for the static donut chart
+        pieCtx.font = '16px Trebuchet MS'; // Sets the font for legend text
+        let legendY = 20; // Sets the starting y-coordinate for the legend
+        const legendX = centerX + radius + 20; // Sets the x-coordinate for the legend (right of chart)
+        const legendSpacing = 20; // Sets the vertical spacing between legend items
+
+        values.forEach((value, index) => {
+            // Only includes legend entries for non-zero values
+            if (value > 0) {
+                // Draws a colored square for the legend item
+                pieCtx.fillStyle = statusColors[labels[index]];
+                pieCtx.fillRect(legendX, legendY, 15, 15);
+                // Sets the text color to a light gray for readability
+                pieCtx.fillStyle = 'whitesmoke';
+                // Draws the legend text, showing the loan status and percentage (already in pieData)
+                pieCtx.fillText(`${labels[index]}: ${value.toFixed(1)}%`, legendX + 20, legendY + 12);
+                // Moves the y-coordinate down for the next legend item
+                legendY += legendSpacing;
+            }
+        });
+    }
 });
     </script>
 
