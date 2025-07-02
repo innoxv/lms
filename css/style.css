@@ -393,6 +393,7 @@ main {
 .hero-section h1{
     font-size: 5em;
     color: whitesmoke;
+    margin-bottom: 0;
 }
 .hero-section p{
     font-size: 1.5em;
@@ -581,6 +582,7 @@ transform: translateY(-10px) scale(1.03);
         display: flex;
         align-items: center;
         gap: 10px;
+        margin: 0;
     }
     .about-column h2 img{
         width: 40px;
