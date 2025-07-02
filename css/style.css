@@ -56,19 +56,21 @@ body{
 
 .header-label{
     color: #74C0FC;
-    font-size: 1.5em;
-    font-weight: 100;
-}
-.header-label a{
+    font-size: 1em;
+    font-weight: 900;
     display: flex;
     align-items: center;
+    justify-content: space-between ;
+    margin: 0 .2em;
+    /* outline: 1px solid red; */
+}
+.header-label a{
     cursor: pointer;
-
 }
 .header-label img{
-    width: 1em;
-    height: 1em;
-    margin-left: .2em;
+    width: 1.5em;
+    height: 1.5em;
+    /* margin-left: .2em; */
     transition: transform 0.2s cubic-bezier(.4,2,.6,1);
 
 }

@@ -23,7 +23,7 @@ require_once 'lenderDashboardData.php'; // has the dashboard data
     <main>
         <div class="header">
             <div class="header2">
-                <div class="logo">LMS</div>
+                <div class="logo">loanSqr</div>
             </div>
             <div class="header4">
                 <div>
