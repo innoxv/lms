@@ -393,9 +393,8 @@ main {
     color: whitesmoke;
 }
 .hero-section p{
-    font-size: 1.1em;
+    font-size: 1.5em;
     color: lightgray;
-    margin-bottom: 2em;
 }
 .left, .right{
     width: 50%;
@@ -569,10 +568,12 @@ transform: translateY(-10px) scale(1.03);
         background: #2C2C2C;
         transition: .2s ease-in-out;
     }
+    .sec p{
+        text-align: justify;    /* Stretches text to fill width */
+
+    }
     .home-p{
         text-align: justify;    /* Stretches text to fill width */
-        hyphens: auto;         /* Hyphenates long words if needed */
-        line-break: strict;     /* Prevents awkward breaks */
       }
     .about-column h2{
         display: flex;
