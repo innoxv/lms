@@ -142,33 +142,25 @@ transform: translateY(-2px) scale(1);
     height: 1em;
     position: relative;
     display: inline-block;
-    background-color: lightgray;
+    background-color: #74C0FC;
     border-radius: 50%;
     border: 1px solid light;
-
+    line-height: 1em;
 }
 
-/* Checked state (show password, open eye) */
-.checkbox-label input[type="checkbox"]:checked + .custom-checkbox::after {
-    content: "👁"; /* Open eye for show password */
-    color: #2C2C2C; 
-    font-size: .8em;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-/* Strikethrough eye when unchecked */
+/* Checked and unchecked states */
+.checkbox-label input[type="checkbox"]:checked + .custom-checkbox::after,
 .checkbox-label input[type="checkbox"]:not(:checked) + .custom-checkbox::after {
-    content: "👁"; /* Same open eye */
-    color: #2C2C2C; 
-    font-size: .8em;
+    content: "👁";
+    color: #1D1E20;
+    font-size: .8em; 
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
 }
+
+
 
 /* Strikethrough slash for unchecked state */
 .checkbox-label input[type="checkbox"]:not(:checked) + .custom-checkbox::before {
@@ -184,7 +176,8 @@ transform: translateY(-2px) scale(1);
 
 /* Hover effect */
 .checkbox-label:hover .custom-checkbox::after {
-    color: #74C0FC;
+    box-shadow: 0 0 8px 2px #74C0FC;
+    border-radius: 50%;
 }
 
 label{
