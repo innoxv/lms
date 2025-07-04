@@ -129,6 +129,13 @@ $disbursedAmountResult = mysqli_query($myconn, $disbursedAmountQuery); // Execut
 $disbursedAmountData = mysqli_fetch_row($disbursedAmountResult); // Fetches the result
 $totalDisbursedAmount = $disbursedAmountData[0] ? number_format((float)$disbursedAmountData[0]) : 0; // Formats the sum or defaults to 0
 
+
+// Fetches total pending loan requests for the lender
+$loanRequestsCountQuery = "SELECT COUNT(*) FROM loans WHERE lender_id = '$lender_id' AND status = 'pending'"; // Query counts pending loans
+$loanRequestsCountResult = mysqli_query($myconn, $loanRequestsCountQuery); // Executes query
+$loanRequestsCountRow = mysqli_fetch_row($loanRequestsCountResult); // Gets result as numeric array
+$loanRequestsCount = isset($loanRequestsCountRow[0]) ? (int)$loanRequestsCountRow[0] : 0; // Extracts count (0 if empty)
+
 // Fetches loan offers with their disbursed loan counts
 $loanOffersQuery = "SELECT 
                       loan_offers.offer_id,

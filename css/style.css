@@ -846,7 +846,7 @@ color: lightgray;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding: 0 1em;
+    padding: 0 .5em;
 }
 .nav ul li{
     list-style: none;
@@ -890,16 +890,16 @@ color: lightgray;
 .top li a.active {
     color: #74C0FC; 
     background-color: rgba(0, 0, 0, 0.3);
-    border-left: 3px solid #74C0FC; 
-    padding-left: 0.7em; 
+    border-left: 2px solid #74C0FC; 
+    padding-left: 0.5em; 
 }
 
 /* Active state for bottom navigation links */
 .bottom li a.active {
     color: lightgray; 
     background-color: rgba(0, 0, 0, 0.3);
-    border-left: 3px solid lightgray; 
-    padding-left: 0.7em; 
+    border-left: 2px solid lightgray; 
+    padding-left: 0.5em; 
 
 }
 
@@ -908,6 +908,14 @@ color: lightgray;
     transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-left 0.2s ease-in-out, padding-left 0.2s ease-in-out;
 }
 
+.badge {
+    background:  #74C0FC;
+    color: #1D1E20;
+    font-size: 0.85em;
+    font-weight: bold;
+    border-radius: 1em;
+    padding: 0 .3em;
+}
 /* Show the Dashboard section by default */
 #dashboard {
     display: block;
