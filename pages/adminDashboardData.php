@@ -87,6 +87,12 @@ if ($adminsResult && mysqli_num_rows($adminsResult) > 0) { // Checks if the quer
     $totalAdmins = $countData['total_admins']; // Stores the total admins count
 }
 
+// Fetches total loan applications with 'submitted' status (admin view )
+$pendingLoansQuery = "SELECT COUNT(*) FROM loans WHERE status = 'submitted'"; // Counts all submitted loans system-wide
+$pendingLoansResult = mysqli_query($myconn, $pendingLoansQuery); // Executes the query
+$pendingLoansRow = mysqli_fetch_row($pendingLoansResult); // Fetches result as numeric array (index 0 holds count)
+$pendingLoans = isset($pendingLoansRow[0]) ? (int)$pendingLoansRow[0] : 0; // Safely converts count to integer (0 if empty)
+
 // Retrieves filter parameters for the View Users section from the URL
 $roleFilter = isset($_GET['role']) ? $_GET['role'] : ''; // Gets role filter or defaults to empty string
 $statusFilter = isset($_GET['status']) ? $_GET['status'] : ''; // Gets status filter or defaults to empty string

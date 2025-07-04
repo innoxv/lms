@@ -51,7 +51,11 @@ require_once 'adminDashboardData.php'; // has the dashboard data
                 <ul class="nav-split">
                     <div class="top">
                         <li><a href="#dashboard">Dashboard</a></li>
-                        <li><a href="#riskAssessment">Application Review</a></li>
+                        <li><a href="#riskAssessment">Application Review
+                            <?php if ($pendingLoans > 0): ?>
+                                <span class="badge"><?php echo $pendingLoans; ?></span> 
+                            <?php endif; ?>
+                        </a></li>
                         <li><a href="#viewUsers">View Users</a></li>
                         <li><a href="#addUsers">Add New User</a></li>
                         <li><a href="#activityLogs">Activity Logs</a></li>

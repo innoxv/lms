@@ -40,7 +40,14 @@ require_once 'customerDashboardData.php'; // has the dashboard data
                         <li><a href="#dashboard" id="dashboardLink">Dashboard</a></li>
                         <li><a href="#applyLoan" id="applyLoanLink" class="<?php echo ($status === 'restricted_apply') ? 'disabled-link' : ''; ?>">Apply Loan</a></li>
                         <li><a href="#loanHistory" id="loanHistoryLink">Loan History</a></li>
-                        <li><a href="#paymentTracking" id="">Payment Tracking</a></li> 
+                        <li>
+                            <a href="#paymentTracking" id="paymentTrackingLink">
+                                Payment Tracking
+                                <?php if ($activeLoansCount > 0): ?>
+                                    <span class="badge"><?= $activeLoansCount ?></span>
+                                <?php endif; ?>
+                            </a>
+                        </li>
                         <li><a href="#transactionHistory" id="">Transaction History</a></li> 
                         <!-- <li class="disabled-link"><a href="#notifications">Notifications</a></li> -->
                         <li><a href="#profile">Profile</a></li>

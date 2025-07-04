@@ -53,8 +53,18 @@ require_once 'lenderDashboardData.php'; // has the dashboard data
                             Loan Offers
                             </a>
                         </li>
-                        <li><a href="#loanRequests">Loan Requests</a></li>
-                        <li><a href="#activeLoans">Active Loans</a></li>  
+                        <li>
+                        <a href="#loanRequests">Loan Requests
+                            <?php if ($loanRequestsCount > 0): // Only show badge if count > 0 ?>
+                            <span class="badge"><?php echo $loanRequestsCount;?></span>
+                            <?php endif; ?>
+                        </a>
+                        </li>
+                        <li><a href="#activeLoans">Active Loans
+                            <?php if ($activeLoans > 0): ?>
+                                <span class="badge"><?php echo $activeLoans; ?></span>
+                            <?php endif; ?>
+                        </a></li>  
                         <li><a href="#paymentReview">Payment Tracking</a></li>  
                         <li><a href="#profile">Profile</a></li>
                     </div>
