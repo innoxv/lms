@@ -232,24 +232,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let debounceTimer;
 
     // Adds an input event listener to the search input field
-    searchInput.addEventListener('input', () => {
-        // Clears any existing debounce timer to prevent multiple rapid calls
-        clearTimeout(debounceTimer);
-        // Sets a new debounce timer to delay the search by 100ms
-        debounceTimer = setTimeout(() => {
-            // Gets and trims the search query
-            const query = searchInput.value.trim();
-            // Checks if the query is at least 1 character long
-            if (query.length >= 1) {
-                // Calls fetchSuggestions to get matching results
-                fetchSuggestions(query);
-            } else {
-                // Hides and clears the suggestions container if the query is too short
-                suggestionsDiv.style.display = 'none';
-                suggestionsDiv.innerHTML = '';
-            }
-        }, 100); // 100ms delay to debounce input
-    });
+    if (searchInput && suggestionsDiv && form) {
+        searchInput.addEventListener('input', () => {
+            // Clears any existing debounce timer to prevent multiple rapid calls
+            clearTimeout(debounceTimer);
+            // Sets a new debounce timer to delay the search by 100ms
+            debounceTimer = setTimeout(() => {
+                // Gets and trims the search query
+                const query = searchInput.value.trim();
+                // Checks if the query is at least 1 character long
+                if (query.length >= 1) {
+                    // Calls fetchSuggestions to get matching results
+                    fetchSuggestions(query);
+                } else {
+                    // Hides and clears the suggestions container if the query is too short
+                    suggestionsDiv.style.display = 'none';
+                    suggestionsDiv.innerHTML = '';
+                }
+            }, 100); // 100ms delay to debounce input
+        });
+    }
 
     // Fetches suggestions from the server based on the search query
     function fetchSuggestions(query) {
@@ -262,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Clears existing suggestions
                 suggestionsDiv.innerHTML = '';
                 // Checks if there are any loan types or lenders in the response
-                if (data.loan_types.length > 0 || data.lenders.length > 0) {
+                if ((data.loan_types && data.loan_types.length > 0) || (data.lenders && data.lenders.length > 0)) {
                     // Loops through lender suggestions
                     data.lenders.forEach(item => {
                         // Creates a div for each lender suggestion
@@ -345,25 +347,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Shows the suggestions dropdown
                     suggestionsDiv.style.display = 'block';
                 } else {
-                    // Hides the suggestions container if no results are found
-                    suggestionsDiv.style.display = 'none';
+                    // Show "No results found" if no lenders or loan types
+                    const div = document.createElement('div');
+                    div.className = 'no-search-results';
+                    div.textContent = 'No results found!';
+                    suggestionsDiv.appendChild(div);
+                    suggestionsDiv.style.display = 'block';
                 }
-            })
-            // Handles errors during the fetch
-            .catch(error => {
-                // Logs the error to the console for debugging
-                console.error('Error fetching suggestions:', error);
-                // Hides the suggestions container
-                suggestionsDiv.style.display = 'none';
             });
     }
 
     // Adds a click event listener to hide suggestions when clicking outside
     document.addEventListener('click', (e) => {
-        // Checks if the click target is outside the search input and suggestions
-        if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
-            // Hides the suggestions container
-            suggestionsDiv.style.display = 'none';
+        if (searchInput && suggestionsDiv) {
+            // Checks if the click target is outside the search input and suggestions
+            if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                // Hides the suggestions container
+                suggestionsDiv.style.display = 'none';
+            }
         }
     });
 });

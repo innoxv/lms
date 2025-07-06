@@ -1297,6 +1297,12 @@ li p{
     color: #333;
 
 }
+.no-search-results {
+    color: tomato;
+    padding: 8px;
+    cursor: not-allowed;
+    font-weight: 900;
+}
 .x a{
     color: tomato;
 }
