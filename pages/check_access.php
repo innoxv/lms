@@ -87,12 +87,12 @@ if ($result && mysqli_num_rows($result) > 0) { // mysqli_num_rows() returns the 
     
     // Enforces role-based page access control
     if ($role === 'Customer' && $currentPage === 'lenderDashboard.php') { // Prevents Customers from accessing lender dashboard
-        header("Location: unauthorized.php"); // Redirects to the unauthorized page
+        header("Location: signin.html"); // Redirects to the unauthorized page
         exit(); // Stops script execution
     }
     
     if ($role === 'Lender' && $currentPage === 'customerDashboard.php') { // Prevents Lenders from accessing customer dashboard
-        header("Location: unauthorized.php"); // Redirects to the unauthorized page
+        header("Location: signin.html"); // Redirects to the unauthorized page
         exit(); // Stops script execution
     }
 } else {
