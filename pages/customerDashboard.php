@@ -897,6 +897,16 @@ require_once 'customerDashboardData.php'; // has the dashboard data
                         <p>View and update your personal information.</p>
                         </div>
                     </div>
+                    <!-- Messages -->
+                    <?php if (isset($_SESSION['profile_message'])): ?>
+                        <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
+                            <?= htmlspecialchars($_SESSION['profile_message']) ?>
+                        </div>
+                        <?php 
+                        unset($_SESSION['profile_message']);
+                        unset($_SESSION['profile_message_type']);
+                        ?>
+                    <?php endif; ?>
 
                     <div class="profile-container">
                         <div class="profile-details">
@@ -1001,35 +1011,27 @@ require_once 'customerDashboardData.php'; // has the dashboard data
                 <!-- Profile Edit Overlay -->
                 <div class="popup-overlay3" id="profileOverlay">
                     <div class="popup-content3">
-                        <div id="profileMessage" class="message-container">
-                            <?php if (isset($_SESSION['profile_message'])): ?>
-                                <div class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
-                                    <?= htmlspecialchars($_SESSION['profile_message']) ?>
-                                </div>
-                                <?php 
-                                unset($_SESSION['profile_message']);
-                                unset($_SESSION['profile_message_type']);
-                                ?>
-                            <?php endif; ?>
-                        </div>
                         <h2>Edit Profile</h2>
-                        <form id="profileEditForm" action="custUpdateProfile.php" method="post">
+                        <form id="profileEditForm" action="custUpdateProfile.php" method="post" onsubmit="return validateProfileEditForm()">
                             <input type="hidden" name="customer_id" value="<?php echo $customer_id; ?>">
+                            <!-- Error Message -->
+                            <div id="profile_error" style="color: tomato;font-weight:700"></div>
+
                             <div class="form-group">
                                 <label for="editName">Full Name</label>
                                 <input type="text" id="editName" name="name" value="<?php echo htmlspecialchars($customerProfile['name']); ?>">
                             </div>
                             <div class="form-group">
                                 <label for="editEmail">Email</label>
-                                <input type="email" id="editEmail" name="email" value="<?php echo htmlspecialchars($customerProfile['email']); ?>">
+                                <input type="text" id="editEmail" name="email" value="<?php echo htmlspecialchars($customerProfile['email']); ?>">
                             </div>
                             <div class="form-group">
                                 <label for="editPhone">Phone</label>
-                                <input type="tel" id="editPhone" name="phone" value="<?php echo htmlspecialchars($customerProfile['phone']); ?>">
+                                <input type="text" id="editPhone" name="phone" value="<?php echo htmlspecialchars($customerProfile['phone']); ?>">
                             </div>
                             <div class="form-group">
                                 <label for="editAddress">Address</label>
-                                <input id="editAddress" name="address" value="<?php echo htmlspecialchars($customerProfile['address']); ?>">
+                                <input type="text" id="editAddress" name="address" value="<?php echo htmlspecialchars($customerProfile['address']); ?>">
                             </div>
                             <div class="form-group">
                                 <label for="editBankAccount">Bank Account</label>
@@ -1038,6 +1040,35 @@ require_once 'customerDashboardData.php'; // has the dashboard data
                             <div class="form-actions">
                                 <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
                                 <button type="submit" class="save-btn">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+              
+                <!-- Change Password Popup Overlay -->
+                <div class="popup-overlay3" id="changePasswordOverlay" style="display: none;">
+                    <div class="popup-content3">
+                        <h2>Change Password</h2>
+                        <form id="changePasswordForm" action="changePassword.php" method="post" onsubmit="return validateChangePasswordForm()" style="text-align: left;">
+                            <!-- Error Message -->
+                            <div id="password_error" style="color: tomato;font-weight:700"></div>
+
+                            <div class="form-group">
+                                <label for="oldPassword">Old Password</label>
+                                <input type="password" id="oldPassword" name="old_password" style="text-align: left;">
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword">New Password</label>
+                                <input type="password" id="newPassword" name="new_password" style="text-align: left;">
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm Password</label>
+                                <input type="password" id="confirmPassword" name="confirm_password" style="text-align: left;">
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" id="cancelChangePassBtn" class="cancel-btn">Cancel</button>
+                                <button type="submit" class="save-btn">Change Password</button>
                             </div>
                         </form>
                     </div>

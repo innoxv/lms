@@ -154,21 +154,6 @@ function setupEventListeners() {
         document.body.classList.remove('popup-open');
     });
     
-    // Adds a click event listener to the edit profile button, if it exists
-    document.getElementById('editProfileBtn')?.addEventListener('click', function() {
-        // Shows the profile edit popup overlay
-        document.getElementById('profileOverlay').style.display = 'flex';
-        // Adds the popup-open class to the body to prevent scrolling
-        document.body.classList.add('popup-open');
-    });
-    
-    // Adds a click event listener to the cancel edit button, if it exists
-    document.getElementById('cancelEditBtn')?.addEventListener('click', function() {
-        // Hides the profile edit popup overlay
-        document.getElementById('profileOverlay').style.display = 'none';
-        // Removes the popup-open class from the body
-        document.body.classList.remove('popup-open');
-    });
 }
 
 // Calculates monthly installments for a loan based on amount, duration, and interest rate
@@ -638,6 +623,95 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// PROFILE EDIT SECTION
+// Initializes event listeners for the profile edit popup functionality when the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', function () {
+    // Retrieves the Edit Profile button element by its ID
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    // Retrieves the profile edit overlay element by its ID
+    const profileOverlay = document.getElementById('profileOverlay');
+    // Retrieves the Cancel button within the profile edit popup by its ID
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+    // Checks if both the Edit Profile button and profile overlay exist before adding event listeners
+    if (editProfileBtn && profileOverlay) {
+        // Adds a click event listener to the Edit Profile button to show the popup
+        editProfileBtn.addEventListener('click', function () {
+            // Displays the profile overlay as a flex container
+            profileOverlay.style.display = 'flex';
+            // Adds a class to the body to disable scrolling while the popup is open
+            document.body.classList.add('popup-open');
+        });
+    }
+
+    // Checks if both the Cancel button and profile overlay exist before adding event listeners
+    if (cancelEditBtn && profileOverlay) {
+        // Adds a click event listener to the Cancel button to hide the popup and clear the form
+        cancelEditBtn.addEventListener('click', function () {
+            // Hides the profile overlay
+            profileOverlay.style.display = 'none';
+            // Removes the popup-open class from the body to restore scrolling
+            document.body.classList.remove('popup-open');
+            // Retrieves the profile edit form element by its ID
+            const profileForm = document.getElementById('profileEditForm');
+            // Checks if the profile form exists before resetting it
+            if (profileForm) {
+                // Resets all form fields to their initial values
+                profileForm.reset();
+                // Retrieves the error message field by its ID
+                const errorField = document.getElementById('profile_error');
+                // Checks if the error field exists before clearing it
+                if (errorField) errorField.innerText = ''; // Clears any existing error message
+            }
+        });
+    }
+});
+
+// CHANGE PASSWORD POPUP SECTION
+// Initializes event listeners for the change password popup functionality when the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', function () {
+    // Retrieves the Change Password button element by its class
+    const changePassBtn = document.querySelector('.change');
+    // Retrieves the Change Password overlay element by its ID
+    const changePassOverlay = document.getElementById('changePasswordOverlay');
+    // Retrieves the Cancel button within the change password popup by its ID
+    const cancelChangePassBtn = document.getElementById('cancelChangePassBtn');
+
+    // Checks if both the Change Password button and overlay exist before adding event listeners
+    if (changePassBtn && changePassOverlay) {
+        // Adds a click event listener to the Change Password button to show the popup
+        changePassBtn.addEventListener('click', function () {
+            // Displays the change password overlay as a flex container
+            changePassOverlay.style.display = 'flex';
+            // Adds a class to the body to disable scrolling while the popup is open
+            document.body.classList.add('popup-open');
+        });
+    }
+
+    // Checks if both the Cancel button and change password overlay exist before adding event listeners
+    if (cancelChangePassBtn && changePassOverlay) {
+        // Adds a click event listener to the Cancel button to hide the popup and clear the form
+        cancelChangePassBtn.addEventListener('click', function () {
+            // Hides the change password overlay
+            changePassOverlay.style.display = 'none';
+            // Removes the popup-open class from the body to restore scrolling
+            document.body.classList.remove('popup-open');
+            // Retrieves the change password form element by its ID
+            const passwordForm = document.getElementById('changePasswordForm');
+            // Checks if the password form exists before resetting it
+            if (passwordForm) {
+                // Resets all form fields to their initial values
+                passwordForm.reset();
+                // Retrieves the error message field by its ID
+                const errorField = document.getElementById('password_error');
+                // Checks if the error field exists before clearing it
+                if (errorField) errorField.innerText = ''; // Clears any existing error message
+            }
+        });
+    }
+});
+
+
 // INITIALIZATIONS
 // Sets up all dashboard functionalities when the page loads
 document.addEventListener('DOMContentLoaded', function () {
@@ -759,13 +833,6 @@ function initPopups() {
         });
     });
 
-    // Adds a click event listener to the edit profile button, if it exists
-    document.getElementById('editProfileBtn')?.addEventListener('click', function () {
-        // Shows the profile edit popup overlay
-        document.getElementById('profileOverlay').style.display = 'flex';
-        // Adds the popup-open class to the body
-        document.body.classList.add('popup-open');
-    });
 }
 
 // Closes all popups

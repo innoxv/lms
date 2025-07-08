@@ -435,6 +435,7 @@ require_once 'adminDashboardData.php'; // has the dashboard data
                                     <option value="account registration" <?= $activityFilter==='account registration'?'selected':'' ?>>Account Registration</option>
                                     <option value="user registration" <?= $activityFilter==='user registration'?'selected':'' ?>>User Registration</option>
                                     <option value="profile update" <?= $activityFilter==='profile update'?'selected':'' ?>>Profile Update</option>
+                                    <option value="password update" <?= $activityFilter==='password update'?'selected':'' ?>>Password Update</option>
                                     <option value="user restriction" <?= $activityFilter==='user restriction'?'selected':'' ?>>User Restriction</option>
                                     <option value="user block" <?= $activityFilter==='user block'?'selected':'' ?>>User Block</option>
                                     <option value="user unblock" <?= $activityFilter==='user unblock'?'selected':'' ?>>User Unblock</option>
@@ -504,7 +505,17 @@ require_once 'adminDashboardData.php'; // has the dashboard data
                     <h1>Profile</h1>
                     <p>View and update your personal information.</p>
                     
-                    
+                    <!-- Messages -->
+                    <?php if (isset($_SESSION['profile_message'])): ?>
+                        <div id="profileMessage" class="alert <?= $_SESSION['profile_message_type'] ?? 'info' ?>">
+                            <?= htmlspecialchars($_SESSION['profile_message']) ?>
+                        </div>
+                        <?php 
+                        unset($_SESSION['profile_message']);
+                        unset($_SESSION['profile_message_type']);
+                        ?>
+                    <?php endif; ?>
+
                     <div class="profile-container">
                         <div class="profile-details">
                             <h2>Personal Information</h2>
@@ -532,7 +543,33 @@ require_once 'adminDashboardData.php'; // has the dashboard data
                     </div>
                 </div>
 
-                
+                <!-- Change Password Popup Overlay -->
+                <div class="popup-overlay3" id="changePasswordOverlay" style="display: none;">
+                    <div class="popup-content3">
+                        <h2>Change Password</h2>
+                        <form id="changePasswordForm" action="changePassword.php" method="post" onsubmit="return validateChangePasswordForm()" style="text-align: left;">
+                            <!-- Error Message -->
+                            <div id="password_error" style="color: tomato;font-weight:700"></div>
+
+                            <div class="form-group">
+                                <label for="oldPassword">Old Password</label>
+                                <input type="password" id="oldPassword" name="old_password" style="text-align: left;">
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword">New Password</label>
+                                <input type="password" id="newPassword" name="new_password" style="text-align: left;">
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm Password</label>
+                                <input type="password" id="confirmPassword" name="confirm_password" style="text-align: left;">
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" id="cancelChangePassBtn" class="cancel-btn">Cancel</button>
+                                <button type="submit" class="save-btn">Change Password</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
                 <!-- Contact Support -->
                 <div id="contactSupport" class="margin">

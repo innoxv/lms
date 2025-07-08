@@ -1545,6 +1545,7 @@ border-radius: 6px;
 padding: .7em 0;
 margin: .2em 0;
 }
+
 #loanOfferForm input{
     padding: .7em 0;
     margin: .2em;
@@ -1614,6 +1615,7 @@ margin: .2em 0;
     padding: 10px;
     border-radius: 4px;
     margin: 10px 0;
+    width: max-content;
 }
 
 .alert.success {

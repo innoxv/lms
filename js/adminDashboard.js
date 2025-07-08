@@ -144,3 +144,109 @@ window.onclick = function(event) {
         popup.style.display = 'none';
     }
 }
+
+// PROFILE EDIT SECTION
+// Manages the profile editing popup functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Adds a click event listener to the edit profile button
+    document.getElementById('editProfileBtn').addEventListener('click', function() {
+        // Shows the profile edit popup overlay
+        document.getElementById('profileOverlay').style.display = 'block';
+        // Shows the profile edit popup content
+        document.getElementById('profilePopup').style.display = 'block';
+    });
+    
+    // Defines a function to hide the profile edit popup
+    function hideProfilePopup() {
+        // Hides the profile edit popup overlay
+        document.getElementById('profileOverlay').style.display = 'none';
+        // Hides the profile edit popup content
+        document.getElementById('profilePopup').style.display = 'none';
+    }
+    
+    // Adds a click event listener to the profile overlay to close the popup
+    document.getElementById('profileOverlay').addEventListener('click', hideProfilePopup);
+    // Adds a click event listener to the cancel button to close the popup
+    document.getElementById('cancelEditBtn').addEventListener('click', hideProfilePopup);
+    
+    // Adds a click event listener to the profile popup to prevent closing when clicking inside
+    document.getElementById('profilePopup').addEventListener('click', function(e) {
+        // Stops the click event from propagating to the overlay
+        e.stopPropagation();
+    });
+    
+ 
+    // Gets the profile message element
+    const profileMessage = document.getElementById('profileMessage');
+    // Checks if the profile message exists and has content
+    if (profileMessage && profileMessage.textContent.trim() !== '') {
+        // Starts a timer to fade out the message after 3 seconds
+        setTimeout(() => {
+            // Sets the message opacity to 0 for a fade-out effect
+            profileMessage.style.opacity = '0';
+            // Hides the message after the fade-out transition
+            setTimeout(() => {
+                profileMessage.style.display = 'none';
+            }, 500); // Matches the CSS transition duration
+        }, 3000); // Displays for 3 seconds
+    }
+});
+
+// CHANGE PASSWORD POPUP SECTION
+// Initializes event listeners for the change password popup functionality when the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', function () {
+    // Retrieves the Change Password button element by its class
+    const changePassBtn = document.querySelector('.change');
+    // Retrieves the Change Password overlay element by its ID
+    const changePassOverlay = document.getElementById('changePasswordOverlay');
+    // Retrieves the Cancel button within the change password popup by its ID
+    const cancelChangePassBtn = document.getElementById('cancelChangePassBtn');
+
+    // Checks if both the Change Password button and overlay exist before adding event listeners
+    if (changePassBtn && changePassOverlay) {
+        // Adds a click event listener to the Change Password button to show the popup
+        changePassBtn.addEventListener('click', function () {
+            // Displays the change password overlay as a flex container
+            changePassOverlay.style.display = 'flex';
+            // Adds a class to the body to disable scrolling while the popup is open
+            document.body.classList.add('popup-open');
+        });
+    }
+
+    // Checks if both the Cancel button and change password overlay exist before adding event listeners
+    if (cancelChangePassBtn && changePassOverlay) {
+        // Adds a click event listener to the Cancel button to hide the popup and clear the form
+        cancelChangePassBtn.addEventListener('click', function () {
+            // Hides the change password overlay
+            changePassOverlay.style.display = 'none';
+            // Removes the popup-open class from the body to restore scrolling
+            document.body.classList.remove('popup-open');
+            // Retrieves the change password form element by its ID
+            const passwordForm = document.getElementById('changePasswordForm');
+            // Checks if the password form exists before resetting it
+            if (passwordForm) {
+                // Resets all form fields to their initial values
+                passwordForm.reset();
+                // Retrieves the error message field by its ID
+                const errorField = document.getElementById('password_error');
+                // Checks if the error field exists before clearing it
+                if (errorField) errorField.innerText = ''; // Clears any existing error message
+            }
+        });
+    }
+
+    // Gets the profile message element
+    const profileMessage = document.getElementById('profileMessage');
+    // Checks if the profile message exists and has content
+    if (profileMessage && profileMessage.textContent.trim() !== '') {
+        // Starts a timer to fade out the message after 3 seconds
+        setTimeout(() => {
+            // Sets the message opacity to 0 for a fade-out effect
+            profileMessage.style.opacity = '0';
+            // Hides the message after the fade-out transition
+            setTimeout(() => {
+                profileMessage.style.display = 'none';
+            }, 500); // Matches the CSS transition duration
+        }, 3000); // Displays for 3 seconds
+    }
+});

@@ -393,6 +393,7 @@ function validateLoanApplicationForm() {
     return true; // Returns true to indicate all validations passed
 }
 
+// Payment Section
 function displayPaymentError(message, autoClearTimeout = 2000) {
     // Displays an error message in the element with id "payment_error" and optionally clears it after a timeout
     const errorField = document.getElementById('payment_error'); // Gets the DOM element with id "payment_error"
@@ -461,4 +462,193 @@ function validatePaymentForm() {
         return false; // Returns false to indicate validation failure
     }
     return true; // Returns true to indicate all validations passed
+}
+
+// Profile Edit Section
+function displayProfileError(message, autoClearTimeout = 2000) {
+    // Displays an error message in the element with id "profile_error" and optionally clears it after a timeout
+    const errorField = document.getElementById('profile_error'); // Gets the DOM element with id "profile_error"
+    if (errorField) { // Checks if errorField exists
+        errorField.innerText = message; // Sets the text content of the errorField to the provided message
+        if (message && autoClearTimeout > 0) { // Checks if message is non-empty AND autoClearTimeout is positive
+            setTimeout(() => clearProfileError(), autoClearTimeout); // Schedules clearProfileError after the specified timeout
+        }
+    } else { // Executes if errorField is not found
+        console.error("Error div with ID 'profile_error' not found!"); // Logs an error to the console
+    }
+}
+
+function clearProfileError() {
+    // Clears the error message in the element with id "profile_error"
+    const errorField = document.getElementById('profile_error'); // Gets the DOM element with id "profile_error"
+    if (errorField) { // Checks if errorField exists
+        errorField.innerText = ""; // Sets the text content of the errorField to an empty string
+    }
+}
+
+// Validating the profile edit form to ensure all fields meet the required criteria
+function validateProfileEditForm() {
+    displayProfileError(""); // Calls displayProfileError with an empty string to clear any previous error message
+    // Validate Full Name
+    const fullName = document.getElementById("editName").value.trim(); // Retrieves and trims the value of the element with id "editName"
+    if (fullName === "") { // Checks if fullName is strictly equal to an empty string
+        displayProfileError("Please enter your Full Name."); // Displays error if fullName is empty
+        document.getElementById("editName").focus(); // Sets focus to the editName input field
+        return false; // Returns false to indicate validation failure
+    }
+    // Validate Email
+    const email = document.getElementById("editEmail").value.trim(); // Retrieves and trims the value of the element with id "editEmail"
+    if (email === "" || !email.includes("@") || !email.includes(".")) { // Checks if email is empty OR does not include "@" OR does not include "."
+        displayProfileError("Please enter a valid Email address."); // Displays error if email is invalid
+        document.getElementById("editEmail").focus(); // Sets focus to the editEmail input field
+        return false; // Returns false to indicate validation failure
+    }
+    // Validate Phone
+    const phone = document.getElementById("editPhone").value.trim(); // Retrieves and trims the value of the element with id "editPhone"
+    if (phone === "" || phone.length !== 10 || isNaN(phone) || !phone.startsWith("0")) { // Checks if phone is empty OR length is not exactly 10 OR is not a number OR does not start with "0"
+        displayProfileError("Phone number must be exactly 10 digits and start with 0."); // Displays error if phone is invalid
+        document.getElementById("editPhone").focus(); // Sets focus to the editPhone input field
+        return false; // Returns false to indicate validation failure
+    }
+    // Validate Address
+    const address = document.getElementById("editAddress").value.trim(); // Retrieves and trims the value of the element with id "editAddress"
+    if (address === "") { // Checks if address is strictly equal to an empty string
+        displayProfileError("Please enter your Address."); // Displays error if address is empty
+        document.getElementById("editAddress").focus(); // Sets focus to the editAddress input field
+        return false; // Returns false to indicate validation failure
+    }
+    // Validate Bank Account
+    const bankAccount = document.getElementById("editBankAccount").value.trim(); // Retrieves and trims the value of the element with id "editBankAccount"
+    if (bankAccount === "" || isNaN(bankAccount)) { // Checks if bankAccount is empty OR is not a number
+        displayProfileError("Please enter a valid Bank Account number."); // Displays error if bankAccount is invalid
+        document.getElementById("editBankAccount").focus(); // Sets focus to the editBankAccount input field
+        return false; // Returns false to indicate validation failure
+    }
+    return true; // Returns true to indicate all validations passed
+}
+
+
+// Change Password Section
+function displayPasswordError(message, autoClearTimeout = 2000) {
+    // Displays an error message in the element with id "password_error" and optionally clears it after a timeout
+    const errorField = document.getElementById('password_error'); // Gets the DOM element with id "password_error"
+    if (errorField) { // Checks if errorField exists
+        errorField.innerText = message; // Sets the text content of the errorField to the provided message
+        if (message && autoClearTimeout > 0) { // Checks if message is non-empty AND autoClearTimeout is positive
+            setTimeout(() => clearPasswordError(), autoClearTimeout); // Schedules clearPasswordError after the specified timeout
+        }
+    } else { // Executes if errorField is not found
+        console.error("Error div with ID 'password_error' not found!"); // Logs an error to the console
+    }
+}
+
+function clearPasswordError() {
+    // Clears the error message in the element with id "password_error"
+    const errorField = document.getElementById('password_error'); // Gets the DOM element with id "password_error"
+    if (errorField) { // Checks if errorField exists
+        errorField.innerText = ""; // Sets the text content of the errorField to an empty string
+    }
+}
+
+// Validating the change password form to ensure password fields are correctly filled and match
+function validateChangePasswordForm() {
+    displayPasswordError(""); // Calls displayPasswordError with an empty string to clear any previous error message
+    // Retrieve and trim the old password input value
+    const oldPassword = document.getElementById("oldPassword").value.trim();
+    // Check if the old password is empty
+    if (oldPassword === "") {
+        displayPasswordError("Please enter your Old Password.");
+        document.getElementById("oldPassword").focus(); // Set focus to the old password field
+        return false; // Return false to prevent form submission
+    }
+
+    // Retrieve and trim the new password input value
+    const newPassword = document.getElementById("newPassword").value.trim();
+    // Check if the new password is empty
+    if (newPassword === "") {
+        displayPasswordError("Please enter a New Password.");
+        document.getElementById("newPassword").focus(); // Set focus to the new password field
+        return false; // Return false to prevent form submission
+    }
+    // Check if the new password meets the minimum length requirement
+    if (newPassword.length < 8) {
+        displayPasswordError("New Password must be at least 8 characters.");
+        document.getElementById("newPassword").focus(); // Set focus to the new password field
+        return false; // Return false to prevent form submission
+    }
+
+    // Retrieve and trim the confirm password input value
+    const confirmPassword = document.getElementById("confirmPassword").value.trim();
+    // Check if the confirm password is empty
+    if (confirmPassword === "") {
+        displayPasswordError("Please confirm your New Password.");
+        document.getElementById("confirmPassword").focus(); // Set focus to the confirm password field
+        return false; // Return false to prevent form submission
+    }
+    // Check if the new password and confirm password match
+    if (newPassword !== confirmPassword) {
+        displayPasswordError("New Passwords do not match.");
+        document.getElementById("confirmPassword").focus(); // Set focus to the confirm password field
+        return false; // Return false to prevent form submission
+    }
+
+    // If all validations pass, return true to allow form submission
+    return true;
+}
+
+
+// Lenders Section
+// Displays an error message in the element with id "lender_error" and optionally clears it after a timeout
+function displayLenderError(message, autoClearTimeout = 2000) {
+    const errorField = document.getElementById('lender_error'); // Gets the DOM element with id "lender_error"
+    if (errorField) { // Checks if errorField exists
+        errorField.innerText = message; // Sets the text content of the errorField to the provided message
+        if (message && autoClearTimeout > 0) { // Checks if message is non-empty AND autoClearTimeout is positive
+            setTimeout(() => clearLenderError(), autoClearTimeout); // Schedules clearLenderError after the specified timeout
+        }
+    } else { // Executes if errorField is not found
+        console.error("Error div with ID 'lender_error' not found!"); // Logs an error to the console
+    }
+}
+
+function clearLenderError() {
+    // Clears the error message in the element with id "lender_error"
+    const errorField = document.getElementById('lender_error'); // Gets the DOM element with id "lender_error"
+    if (errorField) { // Checks if errorField exists
+        errorField.innerText = ""; // Sets the text content of the errorField to an empty string
+    }
+}
+
+// Validating the lender edit form to ensure all fields meet the required criteria
+function validateLenderProfileForm() {
+    displayLenderError(""); // Calls displayLenderError with an empty string to clear any previous error message
+    // Validate Lender Name
+    const lenderName = document.getElementById("editName").value.trim(); // Retrieves and trims the value of the element with id "editName"
+    if (lenderName === "") { // Checks if lenderName is strictly equal to an empty string
+        displayLenderError("Please enter your Lender Name."); // Displays error if lenderName is empty
+        document.getElementById("editName").focus(); // Sets focus to the editName input field
+        return false; // Returns false to prevent form submission
+    }
+    // Validate Lender Email
+    const lenderEmail = document.getElementById("editEmail").value.trim(); // Retrieves and trims the value of the element with id "editEmail"
+    if (lenderEmail === "" || !lenderEmail.includes("@") || !lenderEmail.includes(".")) { // Checks if lenderEmail is empty OR does not include "@" OR does not include "."
+        displayLenderError("Please enter a valid Email address."); // Displays error if lenderEmail is invalid
+        document.getElementById("editEmail").focus(); // Sets focus to the editEmail input field
+        return false; // Returns false to prevent form submission
+    }
+    // Validate Lender Phone
+    const lenderPhone = document.getElementById("editPhone").value.trim(); // Retrieves and trims the value of the element with id "editPhone"
+    if (lenderPhone === "" || lenderPhone.length !== 10 || isNaN(lenderPhone) || !lenderPhone.startsWith("0")) { // Checks if lenderPhone is empty OR length is not exactly 10 OR is not a number OR does not start with "0"
+        displayLenderError("Phone number must be exactly 10 digits and start with 0."); // Displays error if lenderPhone is invalid
+        document.getElementById("editPhone").focus(); // Sets focus to the editPhone input field
+        return false; // Returns false to prevent form submission
+    }
+    // Validate Lender Address
+    const lenderAddress = document.getElementById("editAddress").value.trim(); // Retrieves and trims the value of the element with id "editAddress"
+    if (lenderAddress === "") { // Checks if lenderAddress is strictly equal to an empty string
+        displayLenderError("Please enter your Address."); // Displays error editAddress is empty
+        document.getElementById("editAddress").focus(); // Sets focus to the editAddress input field
+        return false; // Returns false to prevent form submission
+    }
+    return true; // Returns true to allow form submission if all validations pass
 }

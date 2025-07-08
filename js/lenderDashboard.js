@@ -560,29 +560,7 @@ document.addEventListener('DOMContentLoaded', function() {
         e.stopPropagation();
     });
     
-    // Adds a submit event listener to the profile edit form
-    document.getElementById('profileEditForm').addEventListener('submit', function(e) {
-        // Prevents the default form submission behavior
-        e.preventDefault();
-        
-        // Gets and trims the name input value
-        const name = document.getElementById('editName').value.trim();
-        // Gets and trims the email input value
-        const email = document.getElementById('editEmail').value.trim();
-        // Gets and trims the phone input value
-        const phone = document.getElementById('editPhone').value.trim();
-        
-        // Checks if any required field is empty
-        if (!name || !email || !phone) {
-            // Displays an alert if validation fails
-            alert('Please fill in all required fields');
-            return;
-        }
-        
-        // Submits the form if validation passes
-        this.submit();
-    });
-    
+ 
     // Gets the profile message element
     const profileMessage = document.getElementById('profileMessage');
     // Checks if the profile message exists and has content
@@ -596,5 +574,49 @@ document.addEventListener('DOMContentLoaded', function() {
                 profileMessage.style.display = 'none';
             }, 500); // Matches the CSS transition duration
         }, 3000); // Displays for 3 seconds
+    }
+});
+
+// CHANGE PASSWORD POPUP SECTION
+// Initializes event listeners for the change password popup functionality when the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', function () {
+    // Retrieves the Change Password button element by its class
+    const changePassBtn = document.querySelector('.change');
+    // Retrieves the Change Password overlay element by its ID
+    const changePassOverlay = document.getElementById('changePasswordOverlay');
+    // Retrieves the Cancel button within the change password popup by its ID
+    const cancelChangePassBtn = document.getElementById('cancelChangePassBtn');
+
+    // Checks if both the Change Password button and overlay exist before adding event listeners
+    if (changePassBtn && changePassOverlay) {
+        // Adds a click event listener to the Change Password button to show the popup
+        changePassBtn.addEventListener('click', function () {
+            // Displays the change password overlay as a flex container
+            changePassOverlay.style.display = 'flex';
+            // Adds a class to the body to disable scrolling while the popup is open
+            document.body.classList.add('popup-open');
+        });
+    }
+
+    // Checks if both the Cancel button and change password overlay exist before adding event listeners
+    if (cancelChangePassBtn && changePassOverlay) {
+        // Adds a click event listener to the Cancel button to hide the popup and clear the form
+        cancelChangePassBtn.addEventListener('click', function () {
+            // Hides the change password overlay
+            changePassOverlay.style.display = 'none';
+            // Removes the popup-open class from the body to restore scrolling
+            document.body.classList.remove('popup-open');
+            // Retrieves the change password form element by its ID
+            const passwordForm = document.getElementById('changePasswordForm');
+            // Checks if the password form exists before resetting it
+            if (passwordForm) {
+                // Resets all form fields to their initial values
+                passwordForm.reset();
+                // Retrieves the error message field by its ID
+                const errorField = document.getElementById('password_error');
+                // Checks if the error field exists before clearing it
+                if (errorField) errorField.innerText = ''; // Clears any existing error message
+            }
+        });
     }
 });
