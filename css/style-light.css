@@ -2,15 +2,15 @@ body, html{
     margin: 0;
     background: radial-gradient(
         circle at center,
-    #f5f7fa 10%,
+    #bbdefb 10%,
     #e3f2fd 20%,
     #bbdefb 30%,
     #e3f2fd 40%,
-    #f5f7fa 50%,
+    #bbdefb 50%,
     #e3f2fd 60%,
     #bbdefb 70%,
     #e3f2fd 80%,
-    #f5f7fa 90%
+    #bbdefb 90%
       );
 
 }
@@ -191,7 +191,7 @@ input{
     border: none;
     border-bottom: 1px solid #bbb;
     outline: none;
-    color: #222;
+    color: #444;
     font-size: 1.1em;
     margin: .2em 1em;
     border-radius: 6px;
@@ -211,7 +211,7 @@ input::placeholder{
     border-bottom: 1px solid #bbb;
     outline: none;
     margin: .2em 1.2em;
-    color: #222;
+    color: #444;
     font-size: 1em;
 }
 .signin-submit-action{
@@ -225,6 +225,7 @@ input::placeholder{
 .hidden{
     display: none;
 }
+
 button{
     /* width: 100%; */
     padding: 0.7em;
@@ -319,7 +320,7 @@ main {
     display: flex;
     flex-direction: row;
     align-items: center;
-    color: #222;
+    color: #444;
     justify-content: space-between;
     font-size: 1.1em;
     
@@ -351,7 +352,7 @@ main {
     justify-content: space-between;
 }
 .header4 li a{
-    color: #222;
+    color: #444;
     transition: .2s ease-in-out;
 
 }
@@ -367,14 +368,14 @@ main {
     color: #74C0FC;
 }
 .header3 .no-col{
-    color: #222;
+    color: #444;
 }
 .header3 .no-col:hover{
     color: #74C0FC;
     transition: .2s ease-in-out;
 }
 .header3 li a:hover{
-    color: #222;
+    color: #444;
     transition: .2s ease-in-out;
 
 }
@@ -389,7 +390,7 @@ main {
 }
 .hero-section h1{
     font-size: 5em;
-    color: #222;
+    color: #444;
     margin-bottom: 0;
 }
 .hero-section p{
@@ -495,7 +496,7 @@ transform: translateY(-10px) scale(1.03);
         color: #74C0FC;
     }
     .nav-link{
-        color: #222;
+        color: #444;
     }
     .nav-link:hover{
         color: #74C0FC;
@@ -509,7 +510,7 @@ transform: translateY(-10px) scale(1.03);
 }
 
     .content-section h1, .content-section h2{
-        color: #222;
+        color: #444;
     }
     .content-section p{
         color: #555;
@@ -762,7 +763,7 @@ color: #555;
         bottom: 0;
         left: 0;
         width: 100%;
-        color: #222;
+        color: #444;
         background: #f5f7fa;
     }
     
@@ -851,7 +852,7 @@ color: #555;
 .nav{
     height: 90vh;
     width:15%;
-    outline: 1px solid #1976d2;
+    outline: 1px solid #74C0FC;
     align-self: flex-start;
     border-radius: .8em 0 0 .8em;
 }
@@ -859,8 +860,9 @@ color: #555;
     align-self: flex-start;
     height: 90vh;
     width: 84%;
-    outline: 1px solid #e3f2fd;
-    background-color: rgba(240, 244, 248, 0.85); /* soft, smooth light blue-grey with opacity */
+    outline: 1px solid gray;
+    border-radius: 0 .8em .8em 0;
+
 }
 
 .nav ul{
@@ -910,7 +912,7 @@ color: #555;
 /* Active state for top navigation links */
 .top li a.active {
     color: #74C0FC; 
-    background-color: #e3f2fd;
+    background-color: #3A3A3A;
     border-left: 2px solid #74C0FC; 
     padding-left: 0.5em; 
 }
@@ -990,7 +992,7 @@ color: #555;
 
 
 .display h1{
-    color: #222;
+    color: #444;
 }
 .display p{
     color: #555;
@@ -1001,11 +1003,11 @@ color: #555;
     justify-content: space-between;
 }
 .greeting p{
-    color: #74C0FC;
+    color: #333;
     font-size: 1.2em;
 }
 .span{
-    color: #222;
+    color: #444;
     font-weight: bold;
     font-size: 1.2em;
 }
@@ -1046,7 +1048,7 @@ color: #555;
 .metrics > div:hover {
     /* outline: 1px solid whitesmoke; */
     transition: .2s ease-in-out;
-    background-color: #e0e0e0;
+    background-color: #e5e6e4;
 }
 
 .metrics p {
@@ -1075,7 +1077,7 @@ color: #555;
 
 .metrics .span-2 .percentage {
     /* font-size: 4em;  */
-    color: lightgray;
+    color: gray;
     font-weight: 100;
     margin-left: 0.1em;
 }
@@ -1145,7 +1147,7 @@ color: #555;
 }
 
 .loan-filter ul li p{
-    color: #222;
+    color: #444;
     font-weight: 700;
 
 }
@@ -1275,7 +1277,7 @@ li p{
 #lenderSearch {
     width: 80%;
     padding: .3em ;
-    outline: 1px solid #ccc;
+    outline: 1px solid #444;
     border: none;
     border-radius: .5em 0 0 .5em;
     margin: 0;
@@ -1287,7 +1289,7 @@ li p{
     top: 100%;
     left: 0;
     right: 0;
-    background: lightgrey;
+    background: #e5e6e4;
     border: 1px solid #ccc;
     border-radius: 4px;
     max-height: 200px;
@@ -1350,7 +1352,7 @@ iframe {
 .lender{
     /* height: 35%; */
     width: 100%;
-    outline: .15em solid #3A3A3A;
+    outline: 1px solid #3A3A3A;
     border-radius: .2em;
     display: flex;
     flex-direction: column;
@@ -1360,13 +1362,13 @@ iframe {
 .lender:hover{
    
     outline: 1px solid #bdbdbd;
-    background-color: #f5f7fa;
+    background-color: #e5e6e4;
     transition: .2s ease-in-out;
 }
 .lender:hover span{
     transition: .2s  ease-in-out;
    /* font-weight: 600; */
-   color: #222;
+   color: #444;
 }
 .lender > div{
     display: flex;
@@ -1466,7 +1468,7 @@ iframe {
 
 }
 .popup-content {
-    background-color: #fff;
+    background-color: #e5e6e4;
     padding: 20px;
     border-radius: 8px;
     width: 25%;
@@ -1475,7 +1477,7 @@ iframe {
 }
 
 .popup-content h2 {
-    color: #222;
+    color: #444;
     font-weight: 700;
 }
 .popup-body p{
@@ -1507,7 +1509,7 @@ background: none;
 border: none;
 border-bottom: 1px solid #bbb;
 outline: none;
-color: #222;
+color: #444;
 font-size: 1.1em;
 margin: .2em 0;
 border-radius: 6px;
@@ -1591,7 +1593,7 @@ margin: .2em 0;
     width: 70%;
 }
 .display-info{
-    color: #222;
+    color: #444;
     /* margin-block: .3em 1em; */
     font-weight: 800;
 }
@@ -1671,7 +1673,7 @@ margin: .2em 0;
     z-index: 10;
     padding: .5em 0;
     text-align: left;
-    color: #222;
+    color: #444;
 }
 .simple-loan-table td{
     color: #333;
@@ -1695,7 +1697,7 @@ margin: .2em 0;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: #fff;
+    background-color: #e5e6e4;
     padding: 1.5em;
     width: 20%;
     border-radius: 1em;
@@ -1726,7 +1728,7 @@ margin: .2em 0;
   }
 
 .popup-content3 h2{
-    color: #222;
+    color: #444;
     margin: 0;
 }
 
@@ -1781,7 +1783,7 @@ margin: .2em 0;
     
 }
 .profile-details h2, .additional-settings h2{
-    color: #222;
+    color: #444;
     margin: 0;
 }
 .profile-details button{
@@ -1792,7 +1794,7 @@ margin: .2em 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    outline: 1px solid #3A3A3A;
+    outline: 1px solid #555;
     border-radius: .5em;
     width: 50%;
     margin:  .5em;
@@ -1805,7 +1807,7 @@ margin: .2em 0;
     color: #333;
 }
 .profile-value{
-    color: #222;
+    color: #444;
     font-weight: 700;
 
 }
@@ -1819,7 +1821,7 @@ margin: .2em 0;
 
 }
 .additional-settings .change:hover{
-    color: #222;
+    color: #444;
     font-weight: 700;
     cursor: pointer;
     transition: .2s ease-in-out;
@@ -1859,7 +1861,7 @@ margin: .2em 0;
     z-index: 10;
     padding: .5em 0;
     text-align: left;
-    color: #222;
+    color: #444;
 }
 .active-loans-table td{
     color: #333;
@@ -1917,7 +1919,7 @@ margin: .2em 0;
     width: 100%;
 }
 .loan-slot h3{
-    color: #222;
+    color: #444;
 }
 .loan-slot th{
     position: sticky;
@@ -1926,7 +1928,7 @@ margin: .2em 0;
     z-index: 10;
     padding: .5em 0;
     text-align: left;
-    color: #222;
+    color: #444;
 
 }
 .loan-slot td{
@@ -1992,7 +1994,7 @@ margin: .2em 0;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: #fff;
+    background-color: #e5e6e4;
     padding: 1.5em;
     width: 20%;
     border-radius: 1em;
@@ -2001,12 +2003,12 @@ margin: .2em 0;
     z-index: 1001;
 }
 .edit-popup h3{
-    color: #222;
+    color: #444;
 }
 /* Form Elements */
 .edit-popup span {
     width: 90%;
-    color: #222;
+    color: #444;
     font-weight: 700;
     font: 2em;
     margin: 1.5em 1em;
@@ -2111,7 +2113,7 @@ margin: .2em 0;
     z-index: 10;
     padding: .5em 0;
     text-align: left;
-    color: #222;
+    color: #444;
 }
 .loan-requests-table td{
     color: #333;
@@ -2189,7 +2191,7 @@ margin: .2em 0;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: #fff;
+    background-color: #e5e6e4;
     padding: 1.5em;
     width: 20%;
     border-radius: 1em;
@@ -2198,7 +2200,7 @@ margin: .2em 0;
     z-index: 1001;
 }
 .view-popup h2{
-    color: #222;
+    color: #444;
     margin: 0 0 .5em 0;
 }
 
@@ -2417,7 +2419,7 @@ margin: .2em 0;
     z-index: 10;
     padding: .5em 0;
     text-align: left;
-    color: #222;
+    color: #444;
     border: none;
     
 }
@@ -2495,7 +2497,7 @@ margin: .2em 0;
     z-index: 10;
     padding: .5em 0;
     text-align: left;
-    color: #222;
+    color: #444;
     border: none;
     
 }
@@ -2553,7 +2555,7 @@ border-bottom: 1px solid #333;
     z-index: 10;
     padding: .5em 0;
     text-align: left;
-    color: #222;
+    color: #444;
     border: none;
     
 }
@@ -2600,7 +2602,8 @@ border-bottom: 1px solid #333;
     background: #3A3A3A;
     color: #fff;
 }
-.table tbody tr:nth-child(even),
+
+/* .table tbody tr:nth-child(even),
 .simple-loan-table tbody tr:nth-child(even),
 .active-loans-table tbody tr:nth-child(even),
 .loan-slot tbody tr:nth-child(even),
@@ -2619,4 +2622,4 @@ border-bottom: 1px solid #333;
 .activity-table tbody tr:nth-child(odd),
 .recent-activity-table tbody tr:nth-child(odd) {
     background: #fff;
-}
+} */
