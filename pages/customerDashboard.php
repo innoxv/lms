@@ -105,7 +105,7 @@ require_once 'customerDashboardData.php'; // has the dashboard data
                     <!-- Filters -->
                     <div class="loan-right">
                         <div class="loan-filter">
-                            <p style="color: whitesmoke; font-weight: 900; line-height: 1;">Filters</p>
+                            <p style="font-weight: 900; line-height: 1;">Filters</p>
                             <form method="GET" action="fetchLenders.php" id="loanFilterForm">
                                 <div>
                                     <ul>
