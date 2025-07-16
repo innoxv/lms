@@ -361,9 +361,10 @@ main {
 .header4 li a:hover{
     color: #74C0FC;
 }
-.header3 ul li{
+.header3 ul li, .header4 ul li{
     margin-inline: .5em;
     align-self: center;
+    display: flex;
 }
 .header3 li a{
     color: #74C0FC;
@@ -821,7 +822,24 @@ color: lightgray;
     }
 
 
-
+/* Theme Toggle */
+#toggleTheme{
+    background: transparent;
+    outline: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    color: #74C0FC;
+    gap: .5em;
+}
+.theme-icon img{
+    height: 20px;
+    width: 20px;
+}
+.dark-icon{
+    display: none;
+}
 
 /* Customer DashBoard */
 .customer-content{

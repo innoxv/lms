@@ -40,7 +40,16 @@ require_once 'adminDashboardData.php'; // has the dashboard data
           
                 <div>
                     <ul>
-                        <li><button id="toggleTheme" style="margin-right:1em;cursor:pointer;">Light/Dark Mode</button></li>
+                        <li>
+                            <button id="toggleTheme"> <code>Theme</code> 
+                                <span class="theme-icon light-icon">
+                                    <img src="../icons/light.svg" alt="" srcset="">
+                                </span>
+                                <span class="theme-icon dark-icon">
+                                    <img src="../icons/dark2.svg" alt="" srcset="">
+                                </span>     
+                            </button>
+                        </li>
                         <li><a href="logoutbtn.php" id="logout" class="no-col">Log Out</a></li>
                     </ul>
                 </div>
@@ -890,25 +899,40 @@ function initializePieChart() {
 // Initializes the pie chart when the page is fully loaded
 document.addEventListener('DOMContentLoaded', initializePieChart);
 </script>
+
+<!-- THEME TOGGLE -->
 <script>
+// Initializes the theme toggle functionality by selecting DOM elements and setting up event listeners
+// Selects the <link> element with the ID 'themeStylesheet' from the DOM
 const themeStylesheet = document.getElementById('themeStylesheet');
+// Selects the <button> element with the ID 'toggleTheme' from the DOM
 const toggleBtn = document.getElementById('toggleTheme');
 
-// Set theme on load based on localStorage
+// Sets the theme on page load based on the user's saved preference in localStorage
+// Checks if the stored theme in localStorage is 'light'
 if (localStorage.getItem('theme') === 'light') {
+    // Sets the href attribute of the themeStylesheet to the light mode stylesheet
     themeStylesheet.href = '../css/style-light.css';
 } else {
+    // Sets the href attribute of the themeStylesheet to the dark mode stylesheet
     themeStylesheet.href = '../css/style.css';
 }
 
-// Toggle theme on button click
+// Handles the theme toggle when the user clicks the toggle button
+// Checks if the toggleBtn element exists to prevent errors
 if (toggleBtn) {
+    // Adds a click event listener to the toggle button to switch themes
     toggleBtn.addEventListener('click', function() {
+        // Checks if the current stylesheet href includes 'style.css' and does not include 'style-light.css'
         if (themeStylesheet.getAttribute('href').includes('style.css') && !themeStylesheet.getAttribute('href').includes('style-light.css')) {
+            // Switches to light mode by setting the stylesheet to the light mode CSS file
             themeStylesheet.href = '../css/style-light.css';
+            // Saves the 'light' theme preference to localStorage for persistence
             localStorage.setItem('theme', 'light');
         } else {
+            // Switches to dark mode by setting the stylesheet to the dark mode CSS file
             themeStylesheet.href = '../css/style.css';
+            // Saves the 'dark' theme preference to localStorage for persistence
             localStorage.setItem('theme', 'dark');
         }
     });
