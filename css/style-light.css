@@ -2,15 +2,15 @@ body, html{
     margin: 0;
     background: radial-gradient(
         circle at center,
-        #1D1E20 10%,
-        #2C2C2C 20%,
-        #3A3A3A 30%,
-        #2C2C2C 40%,
-        #1D1E20 50%,
-        #2C2C2C 60%,
-        #3A3A3A 70%,
-        #2C2C2C 80%,
-        #1D1E20 90%
+    #f5f7fa 10%,
+    #e3f2fd 20%,
+    #bbdefb 30%,
+    #e3f2fd 40%,
+    #f5f7fa 50%,
+    #e3f2fd 60%,
+    #bbdefb 70%,
+    #e3f2fd 80%,
+    #f5f7fa 90%
       );
 
 }
@@ -43,8 +43,8 @@ body{
     height: auto;
     padding: 1rem;
     border-radius: .5em;
-    background-color: rgba(0, 0, 0, 0.3);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background-color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 /* Table responsiveness */
@@ -181,7 +181,7 @@ transform: translateY(-2px) scale(1);
 }
 
 label{
-    color: lightgray;
+    color: #333;
     font-size: 1em;
     font-weight: 900;
 }
@@ -189,9 +189,9 @@ input{
     padding: .7em;
     background: none;
     border: none;
-    border-bottom: 1px solid whitesmoke;
+    border-bottom: 1px solid #bbb;
     outline: none;
-    color: white;
+    color: #222;
     font-size: 1.1em;
     margin: .2em 1em;
     border-radius: 6px;
@@ -200,18 +200,18 @@ input{
 
 }
 input::placeholder{
-    color:gray;
+    color:#888;
     font-size: .9em;
     text-align: start;
 }
 .select{
     padding: .7em 0;
-    background: #28282B;
+    background: #f5f7fa;
     border: none;
-    border-bottom: 1px solid whitesmoke;
+    border-bottom: 1px solid #bbb;
     outline: none;
     margin: .2em 1.2em;
-    color: white;
+    color: #222;
     font-size: 1em;
 }
 .signin-submit-action{
@@ -231,20 +231,20 @@ button{
     border-radius: .5em;
     border: none;
     background: #74C0FC;
-    color: #1D1E20;
+    color: #fff;
     cursor: pointer;
     font-weight: 700;
     
 }
 button:hover{
     color: #74C0FC;
-    background: transparent;
+    background: #e3f2fd;
     outline: 1px solid #74C0FC;
     transition: .2s ease-in-out;
 
 }
 .alt{
-    color: lightgray;
+    color: #333;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -267,7 +267,7 @@ a{
     color: #74C0FC;
 }
 .signup-alt{
-    color: lightgray;
+    color: #333;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -319,7 +319,7 @@ main {
     display: flex;
     flex-direction: row;
     align-items: center;
-    color: whitesmoke;
+    color: #222;
     justify-content: space-between;
     font-size: 1.1em;
     
@@ -337,14 +337,9 @@ main {
 .header2 ul, .header3 ul, .header4 ul{
     list-style: none;
     display: flex;
-    align-items: center;
 }
 .header2 ul li{
     margin-inline: 2em;
-}
-.header3{
-    display: flex;
-    align-items: center;
 }
 .header4{
     /* outline: 1px solid red; */
@@ -354,7 +349,7 @@ main {
     justify-content: space-between;
 }
 .header4 li a{
-    color: whitesmoke;
+    color: #222;
     transition: .2s ease-in-out;
 
 }
@@ -363,20 +358,19 @@ main {
 }
 .header3 ul li{
     margin-inline: .5em;
-    align-self: center;
 }
 .header3 li a{
     color: #74C0FC;
 }
 .header3 .no-col{
-    color: whitesmoke;
+    color: #222;
 }
 .header3 .no-col:hover{
     color: #74C0FC;
     transition: .2s ease-in-out;
 }
 .header3 li a:hover{
-    color: whitesmoke;
+    color: #222;
     transition: .2s ease-in-out;
 
 }
@@ -391,12 +385,12 @@ main {
 }
 .hero-section h1{
     font-size: 5em;
-    color: whitesmoke;
+    color: #222;
     margin-bottom: 0;
 }
 .hero-section p{
     font-size: 1.5em;
-    color: lightgray;
+    color: #555;
 }
 .left, .right{
     width: 50%;
@@ -497,7 +491,7 @@ transform: translateY(-10px) scale(1.03);
         color: #74C0FC;
     }
     .nav-link{
-        color: whitesmoke;
+        color: #222;
     }
     .nav-link:hover{
         color: #74C0FC;
@@ -506,18 +500,18 @@ transform: translateY(-10px) scale(1.03);
     }
     .nav-link.active {
     color: #74C0FC;
-    border-bottom: 2px solid lightgray;
+    border-bottom: 2px solid #bbb;
     padding-bottom: .2em;
 }
 
     .content-section h1, .content-section h2{
-        color: whitesmoke;
+        color: #222;
     }
     .content-section p{
-        color: lightgray;
+        color: #555;
     }
     .content-section h3{
-        color: lightgray;
+        color: #555;
     }
     /* Features grid */
     .features-grid {
@@ -535,7 +529,7 @@ transform: translateY(-10px) scale(1.03);
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .feature-card:hover {
-        background: #2C2C2C;
+        background: #e3f2fd;
     }
     .feature-card img{
         height: 50px;
@@ -567,7 +561,7 @@ transform: translateY(-10px) scale(1.03);
 
     }
     .sec:hover{
-        background: #2C2C2C;
+        background: #f5f7fa;
         transition: .2s ease-in-out;
     }
     .sec p{
@@ -612,9 +606,9 @@ transform: translateY(-10px) scale(1.03);
         width: 50px;
     }
     .team:hover {
-        background: #2C2C2C;
+        background: #e3f2fd;
         transform: translateY(-10px) scale(1.04);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
         transition: transform 0.2s cubic-bezier(.4,2,.6,1), box-shadow 0.2s;
     }
 
@@ -637,7 +631,7 @@ transform: translateY(-10px) scale(1.03);
         cursor: pointer;
     }
     .stat:hover{
-        background: #2C2C2C;
+        background: #e0e0e0;
         transition: .2s ease-in-out;
     }
     .stat-number{
@@ -647,7 +641,7 @@ transform: translateY(-10px) scale(1.03);
         font-weight: 900;
     }
     .stat-label{
-        color: lightgray;
+        color: #555;
         text-align: center;
 
     }
@@ -691,7 +685,7 @@ transform: translateY(-10px) scale(1.03);
         gap: 2rem;
     }
     .contact > h1, h2, h3{
-        color: lightgray;
+        color: #555;
     }
     .contact-info,
     .social-media {
@@ -723,7 +717,7 @@ transform: translateY(-10px) scale(1.03);
 
 }
 .social-media-links a:hover, .contact-details a:hover{
-color: lightgray;
+color: #555;
 }
 .social-media-links img{
     width: 20px;
@@ -764,14 +758,15 @@ color: lightgray;
         bottom: 0;
         left: 0;
         width: 100%;
-        color: whitesmoke;
+        color: #222;
+        background: #f5f7fa;
     }
     
     .footer-container {
         display: flex;
         justify-content: space-between;
         margin: 0 3em;
-        border-top: 1px solid #555;
+        border-top: 1px solid #e3f2fd;
         /* background: rgba(44, 44, 44, 0.7); */
 
 
@@ -806,14 +801,14 @@ color: lightgray;
         transform: translateY(-5px) scale(1.08);
     }
     .footer h4{
-        color: gray;
+        color: #888;
         font-weight: 900;
     }
     .footer .logo{
         color: #74C0FC;
     }
     .footer a{
-        color: lightgray;
+        color: #555;
         font-weight: 100;
     }
     .footer a:hover{
@@ -822,7 +817,7 @@ color: lightgray;
 
 
 
-
+/* ///////////////////////////////////////////////////////////// */
 /* Customer DashBoard */
 .customer-content{
     align-items: center;
@@ -836,7 +831,7 @@ color: lightgray;
 .nav{
     height: 90vh;
     width:15%;
-    outline: 1px solid #74C0FC;
+    outline: 1px solid #1976d2;
     align-self: flex-start;
     border-radius: .8em 0 0 .8em;
 }
@@ -844,9 +839,8 @@ color: lightgray;
     align-self: flex-start;
     height: 90vh;
     width: 84%;
-    outline: 1px solid gray;
-    background-color: rgba(0, 0, 0, 0.4);
-    border-radius: 0 .8em .8em 0;
+    outline: 1px solid #e3f2fd;
+    background-color: rgba(240, 244, 248, 0.85); /* soft, smooth light blue-grey with opacity */
 }
 
 .nav ul{
@@ -874,7 +868,7 @@ color: lightgray;
     display: none; /* Hide all content sections by default */
 }
 .top li a{
-    color: lightgray;
+    color: #333;
     font-weight: 700;
     padding: .3em .1em;
 }
@@ -888,7 +882,7 @@ color: lightgray;
     transition: .2s ease-in-out;
 }
 .bottom li a:hover{
-    color: lightgray;
+    color: #333;
     transition: .2s ease-in-out;
 
 }
@@ -896,16 +890,16 @@ color: lightgray;
 /* Active state for top navigation links */
 .top li a.active {
     color: #74C0FC; 
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: #e3f2fd;
     border-left: 2px solid #74C0FC; 
     padding-left: 0.5em; 
 }
 
 /* Active state for bottom navigation links */
 .bottom li a.active {
-    color: lightgray; 
-    background-color: rgba(0, 0, 0, 0.3);
-    border-left: 2px solid lightgray; 
+    color: #333; 
+    background-color: #e3f2fd;
+    border-left: 2px solid #bbb; 
     padding-left: 0.5em; 
 
 }
@@ -917,7 +911,7 @@ color: lightgray;
 
 .badge {
     background:  #74C0FC;
-    color: #1D1E20;
+    color: #fff;
     font-size: 0.85em;
     font-weight: bold;
     border-radius: 1em;
@@ -976,10 +970,10 @@ color: lightgray;
 
 
 .display h1{
-    color: whitesmoke;
+    color: #222;
 }
 .display p{
-    color: lightgray;
+    color: #555;
 }
 .dash-header{
     display: flex;
@@ -991,7 +985,7 @@ color: lightgray;
     font-size: 1.2em;
 }
 .span{
-    color: whitesmoke;
+    color: #222;
     font-weight: bold;
     font-size: 1.2em;
 }
@@ -1032,7 +1026,7 @@ color: lightgray;
 .metrics > div:hover {
     /* outline: 1px solid whitesmoke; */
     transition: .2s ease-in-out;
-    background-color: #2C2C2C;
+    background-color: #e0e0e0;
 }
 
 .metrics p {
@@ -1126,12 +1120,12 @@ color: lightgray;
 .loan-filter ul li{
     display: flex;
     flex-direction: column;
-    color: lightgray;
+    color: #333;
 
 }
 
 .loan-filter ul li p{
-    color: whitesmoke;
+    color: #222;
     font-weight: 700;
 
 }
@@ -1225,7 +1219,7 @@ input[type="radio"] {
 }
 .res{
     background: transparent;
-    color: lightgray;
+    color: #333;
     padding: .6em .9em;
     border-radius: 0 .5em .5em 0;
     outline: 1px solid #3A3A3A;
@@ -1265,7 +1259,7 @@ li p{
     border: none;
     border-radius: .5em 0 0 .5em;
     margin: 0;
-    color: lightgray;
+    color: #333;
 }
 
 .suggestions {
@@ -1291,7 +1285,7 @@ li p{
 }
 
 .suggestion-item:hover {
-    background: #f0f0f0;
+    background: #e3f2fd;
 }
 
 .suggestion-type {
@@ -1345,21 +1339,21 @@ iframe {
 }
 .lender:hover{
    
-    outline: 1px solid gray;
-    background-color: #2C2C2C;
+    outline: 1px solid #bdbdbd;
+    background-color: #f5f7fa;
     transition: .2s ease-in-out;
 }
 .lender:hover span{
     transition: .2s  ease-in-out;
    /* font-weight: 600; */
-   color: whitesmoke;
+   color: #222;
 }
 .lender > div{
     display: flex;
     flex-direction: column;
 }
 .lender span{
-    color: lightgray;
+    color: #333;
 }
 .lender a{
     color: #74C0FC;
@@ -1452,16 +1446,16 @@ iframe {
 
 }
 .popup-content {
-    background-color: #28282B;
+    background-color: #fff;
     padding: 20px;
     border-radius: 8px;
     width: 25%;
     /* max-width: 500px; */
-    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
 }
 
 .popup-content h2 {
-    color: whitesmoke;
+    color: #222;
     font-weight: 700;
 }
 .popup-body p{
@@ -1477,7 +1471,7 @@ iframe {
 }
 .form-group label{
     font-weight: 100;
-    color: lightgray;
+    color: #333;
 }
 .form-actions{
     display: flex;
@@ -1491,9 +1485,9 @@ iframe {
 padding: .7em 0;
 background: none;
 border: none;
-border-bottom: 1px solid whitesmoke;
+border-bottom: 1px solid #bbb;
 outline: none;
-color: white;
+color: #222;
 font-size: 1.1em;
 margin: .2em 0;
 border-radius: 6px;
@@ -1577,7 +1571,7 @@ margin: .2em 0;
     width: 70%;
 }
 .display-info{
-    color: whitesmoke;
+    color: #222;
     /* margin-block: .3em 1em; */
     font-weight: 800;
 }
@@ -1608,7 +1602,7 @@ margin: .2em 0;
     height: 3em;
     /* width: 100%; */
     outline: none;
-    background-color: lightgray;
+    background-color: #f5f7fa;
     font-size: 1.2em;
     margin-top: 2%;
     color: #1D1E20;
@@ -1657,10 +1651,10 @@ margin: .2em 0;
     z-index: 10;
     padding: .5em 0;
     text-align: left;
-    color: whitesmoke;
+    color: #222;
 }
 .simple-loan-table td{
-    color: lightgray;
+    color: #333;
     text-align: left;
 
 }
@@ -1681,11 +1675,11 @@ margin: .2em 0;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: #28282B;
+    background-color: #fff;
     padding: 1.5em;
     width: 20%;
     border-radius: 1em;
-    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    box-shadow: 0 0 15px rgba(0,0,0,0.08);
     display: block;
     z-index: 1001;
     
@@ -1708,10 +1702,11 @@ margin: .2em 0;
     color: tomato;
     outline: none;
     transition: .2s ease-in-out;
+    background: transparent;
   }
 
 .popup-content3 h2{
-    color: whitesmoke;
+    color: #222;
     margin: 0;
 }
 
@@ -1733,7 +1728,7 @@ margin: .2em 0;
     padding: .7em;
     border: none;
     outline: none;
-    background-color: lightgray;
+    background-color: #f5f7fa;
     color: #28282B;
     border-radius: .5em 0 0 .5em ;
 }
@@ -1766,7 +1761,7 @@ margin: .2em 0;
     
 }
 .profile-details h2, .additional-settings h2{
-    color: whitesmoke;
+    color: #222;
     margin: 0;
 }
 .profile-details button{
@@ -1787,10 +1782,10 @@ margin: .2em 0;
     text-align: right;
 }
 .profile-label{
-    color: lightgray;
+    color: #333;
 }
 .profile-value{
-    color: whitesmoke;
+    color: #222;
     font-weight: 700;
 
 }
@@ -1804,7 +1799,7 @@ margin: .2em 0;
 
 }
 .additional-settings .change:hover{
-    color: whitesmoke;
+    color: #222;
     font-weight: 700;
     cursor: pointer;
     transition: .2s ease-in-out;
@@ -1844,10 +1839,10 @@ margin: .2em 0;
     z-index: 10;
     padding: .5em 0;
     text-align: left;
-    color: whitesmoke;
+    color: #222;
 }
 .active-loans-table td{
-    color: lightgray;
+    color: #333;
     text-align: left;
 
 }
@@ -1902,7 +1897,7 @@ margin: .2em 0;
     width: 100%;
 }
 .loan-slot h3{
-    color: whitesmoke;
+    color: #222;
 }
 .loan-slot th{
     position: sticky;
@@ -1911,11 +1906,11 @@ margin: .2em 0;
     z-index: 10;
     padding: .5em 0;
     text-align: left;
-    color: whitesmoke;
+    color: #222;
 
 }
 .loan-slot td{
-    color: lightgray;
+    color: #333;
     text-align: start;
 
 }
@@ -1977,21 +1972,21 @@ margin: .2em 0;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: #28282B;
+    background-color: #fff;
     padding: 1.5em;
     width: 20%;
     border-radius: 1em;
-    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    box-shadow: 0 0 15px rgba(0,0,0,0.08);
     display: none;
     z-index: 1001;
 }
 .edit-popup h3{
-    color: whitesmoke;
+    color: #222;
 }
 /* Form Elements */
 .edit-popup span {
     width: 90%;
-    color: whitesmoke;
+    color: #222;
     font-weight: 700;
     font: 2em;
     margin: 1.5em 1em;
@@ -2096,10 +2091,10 @@ margin: .2em 0;
     z-index: 10;
     padding: .5em 0;
     text-align: left;
-    color: whitesmoke;
+    color: #222;
 }
 .loan-requests-table td{
-    color: lightgray;
+    color: #333;
     text-align: left;
 }
 .loan-requests-table .action-buttons{
@@ -2174,16 +2169,16 @@ margin: .2em 0;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: #28282B;
+    background-color: #fff;
     padding: 1.5em;
     width: 20%;
     border-radius: 1em;
-    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    box-shadow: 0 0 15px rgba(0,0,0,0.08);
     display: none;
     z-index: 1001;
 }
 .view-popup h2{
-    color: whitesmoke;
+    color: #222;
     margin: 0 0 .5em 0;
 }
 
@@ -2198,10 +2193,10 @@ margin: .2em 0;
 
 }
 .detail-label{
-    color: lightgray;
+    color: #333;
 }
 .detail-value{
-    color: lightgray;
+    color: #333;
     font-weight: 600;
 
 }
@@ -2251,7 +2246,7 @@ margin: .2em 0;
 .filter-group select {
     padding: .7em;
     border: none;
-    background-color: lightgray;
+    background-color: #f5f7fa;
     color: #28282B;
     border-radius: .5em ;
     outline: none;
@@ -2365,7 +2360,7 @@ margin: .2em 0;
 .user-filter select{
     padding: .7em;
     border: none;
-    background-color: lightgray;
+    background-color: #f5f7fa;
     color: #28282B;
     border-radius: .5em 0 0 .5em ;
     outline: none;
@@ -2402,12 +2397,12 @@ margin: .2em 0;
     z-index: 10;
     padding: .5em 0;
     text-align: left;
-    color: whitesmoke;
+    color: #222;
     border: none;
     
 }
 .users-table td{
-    color: lightgray;
+    color: #333;
     text-align: left;
     padding: .2em 0 ;
     
@@ -2424,14 +2419,14 @@ margin: .2em 0;
 
 }
 .users-table .action-buttons .unrestrict-btn{
-    background-color: whitesmoke;
+    background-color: #f5f7fa;
     border-radius: .5em 0 0 .5em;
 
 }
 .users-table .action-buttons .unrestrict-btn:hover{
     background: transparent;
-    color: whitesmoke;
-    outline: 1px solid whitesmoke
+    color: #333;
+    outline: 1px solid #333
 }
 .users-table .action-buttons .block-btn{
     background-color: tomato;
@@ -2480,12 +2475,12 @@ margin: .2em 0;
     z-index: 10;
     padding: .5em 0;
     text-align: left;
-    color: whitesmoke;
+    color: #222;
     border: none;
     
 }
 .activity-table td{
-    color: lightgray;
+    color: #333;
     text-align: left;
     padding: .2em 0 ;
 
@@ -2515,8 +2510,8 @@ margin: .2em 0;
 padding: .5em;
 margin: unset;
 background: transparent;
-color: lightgray;
-border-bottom: 1px solid lightgray;
+color: #333;
+border-bottom: 1px solid #333;
 }
 .admin-visuals button:hover{
     background: transparent;
@@ -2538,12 +2533,12 @@ border-bottom: 1px solid lightgray;
     z-index: 10;
     padding: .5em 0;
     text-align: left;
-    color: whitesmoke;
+    color: #222;
     border: none;
     
 }
 .recent-activity-table td{
-    color: lightgray;
+    color: #333;
     text-align: left;
     padding: .2em 0 ;
 
@@ -2552,7 +2547,7 @@ border-bottom: 1px solid lightgray;
 .activity-filter select {
     padding: .7em;
     border: none;
-    background-color: lightgray;
+    background-color: #f5f7fa;
     color: #28282B;
     border-radius: .5em 0 0 .5em ;
     outline: none;
@@ -2572,4 +2567,36 @@ border-bottom: 1px solid lightgray;
 .activity-filter label{
     font-size: 1em;
 
+}
+/* Table header and row striping for light mode */
+.table thead th,
+.simple-loan-table thead th,
+.active-loans-table thead th,
+.loan-slot th,
+.loan-requests-table thead th,
+.users-table thead th,
+.activity-table thead th,
+.recent-activity-table thead th {
+    background: #3A3A3A;
+    color: #fff;
+}
+.table tbody tr:nth-child(even),
+.simple-loan-table tbody tr:nth-child(even),
+.active-loans-table tbody tr:nth-child(even),
+.loan-slot tbody tr:nth-child(even),
+.loan-requests-table tbody tr:nth-child(even),
+.users-table tbody tr:nth-child(even),
+.activity-table tbody tr:nth-child(even),
+.recent-activity-table tbody tr:nth-child(even) {
+    background: #f5f5f5;
+}
+.table tbody tr:nth-child(odd),
+.simple-loan-table tbody tr:nth-child(odd),
+.active-loans-table tbody tr:nth-child(odd),
+.loan-slot tbody tr:nth-child(odd),
+.loan-requests-table tbody tr:nth-child(odd),
+.users-table tbody tr:nth-child(odd),
+.activity-table tbody tr:nth-child(odd),
+.recent-activity-table tbody tr:nth-child(odd) {
+    background: #fff;
 }

@@ -14,7 +14,7 @@ require_once 'customerDashboardData.php'; // has the dashboard data
         initial-scale=1.0: sets the initial zoom level when the page is first loaded by the browser.
     -->
     <title>Customer's Dashboard</title> <!-- Sets the title of the page, shown in the browser tab -->
-    <link rel="stylesheet" href="../css/style.css">
+    <link id="themeStylesheet" rel="stylesheet" href="../css/style.css">
     <!-- 
         The link tag links an external CSS stylesheet to the HTML document.
         rel="stylesheet": specifies the relationship as a stylesheet.
@@ -29,6 +29,7 @@ require_once 'customerDashboardData.php'; // has the dashboard data
             </div>
             <div class="header3">
                 <ul>
+                    <li><button id="toggleTheme" style="cursor:pointer;">Light/Dark Mode</button></li>
                     <li><a href="logoutbtn.php" id="logout" class="no-col">Log Out</a></li>
                 </ul>
             </div>
@@ -1242,7 +1243,7 @@ function initializeBarChart() {
     loanTypes.forEach((type, index) => {
         // Creates a short label by taking the first two characters of the loan type and capitalizing them
         const label = type.substring(0, 2).toUpperCase();
-        // Calculates the x-coordinate for the label, slightly offset from the bar’s left edge
+        // Calculates the x-coordinate for the label, slightly offset from the bar's left edge
         const x = startX + (barWidth + barSpacing) * index + barWidth / 5;
         // Draws the label below the bar (20px below the chart base)
         barCtx.fillText(label, x, startY + 20);
@@ -1325,8 +1326,8 @@ function initializePieChart() {
     const total = values.reduce((sum, value) => sum + value, 0);
 
     // Defines chart configuration for the donut chart
-    const centerX = pieCanvas.width / 4; // Sets the x-coordinate of the chart’s center
-    const centerY = pieCanvas.height / 2; // Sets the y-coordinate of the chart’s center
+    const centerX = pieCanvas.width / 4; // Sets the x-coordinate of the chart's center
+    const centerY = pieCanvas.height / 2; // Sets the y-coordinate of the chart's center
     const radius = Math.min(pieCanvas.width / 3, pieCanvas.height / 2) - 10; // Calculates the radius to fit within the canvas
     const lineWidth = 20; // Sets the thickness of the donut rings
     const animationDuration = 1000; // Sets the animation duration in milliseconds
@@ -1415,7 +1416,7 @@ function initializePieChart() {
             }
         });
 
-        // Draws a filled circle in the center to maintain the donut’s hollow effect
+        // Draws a filled circle in the center to maintain the donut's hollow effect
         pieCtx.beginPath();
         pieCtx.arc(centerX, centerY, radius - lineWidth, 0, 2 * Math.PI);
         pieCtx.fillStyle = '#1a2526'; // Matches the canvas background color (adjust as needed)
@@ -1446,6 +1447,30 @@ function initializePieChart() {
 
 // Initializes the pie chart when the page is fully loaded
 document.addEventListener('DOMContentLoaded', initializePieChart);
+</script>
+<script>
+const themeStylesheet = document.getElementById('themeStylesheet');
+const toggleBtn = document.getElementById('toggleTheme');
+
+// Set theme on load based on localStorage
+if (localStorage.getItem('theme') === 'light') {
+    themeStylesheet.href = '../css/style-light.css';
+} else {
+    themeStylesheet.href = '../css/style.css';
+}
+
+// Toggle theme on button click
+if (toggleBtn) {
+    toggleBtn.addEventListener('click', function() {
+        if (themeStylesheet.getAttribute('href').includes('style.css') && !themeStylesheet.getAttribute('href').includes('style-light.css')) {
+            themeStylesheet.href = '../css/style-light.css';
+            localStorage.setItem('theme', 'light');
+        } else {
+            themeStylesheet.href = '../css/style.css';
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+}
 </script>
 </body>
 </html>
