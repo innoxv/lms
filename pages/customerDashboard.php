@@ -1085,18 +1085,37 @@ require_once 'customerDashboardData.php'; // has the dashboard data
                     <div class="dash-header">
                         <div>
                         <h1>Contact Support</h1>
-                        <p>Reach out to our support team for assistance.</p>
-                        </div>
-                        <div class="greeting">
-                            <p>
-                                <code>
-                                    <span><?php echo $message; ?></span>
-                                    <span class="span"><?php echo $_SESSION['user_name']; ?>!</span>
-                                </code>
-                            </p>
                         </div>
                     </div>
-
+                    <div class="contact-container" id="contactContainer">
+                        <div class="contact-info">
+                            <h2>Get in Touch</h2>
+                            <p>Have questions or need assistance? Our team is here to help.</p>
+                            
+                            <div class="contact-details">
+                                <p><img src="../icons/mail.svg" alt="" srcset=""> <a href="mailto:innocentmukabwa@gmail.com">support@loansqr.com</a></p>
+                                <p><img src="../icons/phone.svg" alt="" srcset=""> <a href="tel:+254705036698">+254 705 036 698</a></p>
+                                <p><img src="../icons/map2.svg" alt="" srcset=""> <a href="https://www.google.com/maps/search/?api=1&query=125+Ongata+Rongai,+Kajiado,+Kenya" target="_blank" rel="noopener">125 Ongata Rongai, Kajiado, Kenya</a></p>
+                            </div>
+                            
+                            <div class="business-hours">
+                                <h3>Business Hours</h3>
+                                <p>Monday - Friday: 8:00 AM - 5:00 PM</p>
+                                <p>Saturday: 9:00 AM - 1:00 PM</p>
+                                <p>Sunday: Closed</p>
+                            </div>
+                        </div>
+                        <div class="social-media">
+                            <h2>Social Media Platforms</h2>
+                            <div class="social-media-links">
+                                <a href="https://www.instagram.com/innoxv/" ><img src="../icons/instagram.svg" alt="">Instagram</a>
+                                <a href="https://github.com/innoxv/" ><img src="../icons/github.svg" alt="">Github</a>
+                                <a href="https://wa.me/254705036698?text=hi, (wink)" ><img src="../icons/whatsapp.svg" alt="">Whatsapp</a>
+                                <a href="" ><img src="../icons/x.svg" alt="">X</a>
+                                <a href="" ><img src="../icons/linkedin.svg" alt="">LinkedIn</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Dashboard -->
