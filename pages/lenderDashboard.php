@@ -12,7 +12,7 @@ require_once 'lenderDashboardData.php'; // has the dashboard data
         initial-scale=1.0: sets the initial zoom level when the page is first loaded by the browser.
     -->
     <title>Lender's Dashboard</title> <!-- Sets the title of the page, shown in the browser tab -->
-    <link rel="stylesheet" href="../css/style.css">
+    <link id="themeStylesheet" rel="stylesheet" href="../css/style.css">
     <!-- 
         The link tag links an external CSS stylesheet to the HTML document.
         rel="stylesheet": specifies the relationship as a stylesheet.
@@ -25,6 +25,7 @@ require_once 'lenderDashboardData.php'; // has the dashboard data
             <div class="header2">
                 <div class="logo">loanSqr</div>
             </div>
+
             <div class="header4">
                 <div>
                     <?php if ($loan_message): ?>
@@ -35,6 +36,8 @@ require_once 'lenderDashboardData.php'; // has the dashboard data
                 </div>
                 <div>
                 <ul>
+                    <li><button id="toggleTheme" style="margin-right:1em;cursor:pointer;">Light/Dark Mode</button></li>
+
                     <li><a href="logoutbtn.php" class="no-col">Log Out</a></li>
                 </ul>
                 </div>
@@ -1294,7 +1297,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-    </script>
+</script>
+<script>
+const themeStylesheet = document.getElementById('themeStylesheet');
+const toggleBtn = document.getElementById('toggleTheme');
 
+// Set theme on load based on localStorage
+if (localStorage.getItem('theme') === 'light') {
+    themeStylesheet.href = '../css/style-light.css';
+} else {
+    themeStylesheet.href = '../css/style.css';
+}
+
+// Toggle theme on button click
+if (toggleBtn) {
+    toggleBtn.addEventListener('click', function() {
+        if (themeStylesheet.getAttribute('href').includes('style.css') && !themeStylesheet.getAttribute('href').includes('style-light.css')) {
+            themeStylesheet.href = '../css/style-light.css';
+            localStorage.setItem('theme', 'light');
+        } else {
+            themeStylesheet.href = '../css/style.css';
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+}
+</script>
 </body>
 </html>
