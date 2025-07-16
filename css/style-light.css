@@ -337,6 +337,8 @@ main {
 .header2 ul, .header3 ul, .header4 ul{
     list-style: none;
     display: flex;
+    align-items: center;
+
 }
 .header2 ul li{
     margin-inline: 2em;
@@ -356,8 +358,10 @@ main {
 .header4 li a:hover{
     color: #74C0FC;
 }
-.header3 ul li{
+.header3 ul li, .header4 ul li{
     margin-inline: .5em;
+    align-self: center;
+    display: flex;
 }
 .header3 li a{
     color: #74C0FC;
@@ -815,9 +819,25 @@ color: #555;
         color: #74C0FC;
     }
 
+/* Theme Toggle */
+#toggleTheme{
+    background: transparent;
+    outline: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    color: #333;
+    gap: .5em;
+}
+.theme-icon img{
+    height: 20px;
+    width: 20px;
+}
+.light-icon{
+    display: none;
+}
 
 
-/* ///////////////////////////////////////////////////////////// */
 /* Customer DashBoard */
 .customer-content{
     align-items: center;
