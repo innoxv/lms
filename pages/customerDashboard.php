@@ -1455,8 +1455,12 @@ function initializePieChart() {
     }
 }
 
-// Initializes the pie chart when the page is fully loaded
-document.addEventListener('DOMContentLoaded', initializePieChart);
+// Initializes the bar graph and pie chart when the page is fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializePieChart();
+    initializeBarChart();
+});
+
 </script>
 
 <!-- THEME TOGGLE -->

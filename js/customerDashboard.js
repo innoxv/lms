@@ -3,8 +3,8 @@
 function updateActiveNavLink() {
     // Selects all anchor tags (<a>) inside list items within the navigation menu (.nav ul li a)
     const navLinks = document.querySelectorAll('.nav ul li a');
-    // Gets the current URL hash or defaults to '#dashboard' if no hash is present
-    const currentHash = window.location.hash || '#dashboard';
+    // Gets the current URL hash - no default to prevent dashboard flash
+    const currentHash = window.location.hash;
 
     // Loops through all navigation links to remove the 'active' CSS class, resetting their appearance
     navLinks.forEach(link => link.classList.remove('active'));
@@ -15,29 +15,37 @@ function updateActiveNavLink() {
     if (activeLink) {
         // Adds the 'active' CSS class to the matching link to highlight it visually
         activeLink.classList.add('active');
-    } else {
-        // If no matching link is found, defaults to highlighting the Dashboard link
+    } else if (!currentHash) {
+        // Only defaults to dashboard if no hash exists (initial load)
         document.querySelector('.nav ul li a[href="#dashboard"]').classList.add('active');
     }
+
 }
 
 // Sets up navigation link behavior when the page loads or the URL hash changes
 document.addEventListener('DOMContentLoaded', function() {
+    // Ensures hash exists immediately to prevent dashboard flash
+    if (!window.location.hash) {
+        // Sets dashboard hash without adding to browser history
+        history.replaceState(null, null, '#dashboard');
+    }
+
     // Calls updateActiveNavLink to set the initial active link when the page loads
     updateActiveNavLink();
 
-    // Adds an event listener to detect changes in the URL hash (when user navigates)
+    // Adds an event listener to detect changes in the URL hash (when the user navigates)
     window.addEventListener('hashchange', updateActiveNavLink);
 
-    // Loops through all navigation links to add click event listeners
-    document.querySelectorAll('.nav ul li a').forEach(link => {
-        // Adds a click event listener to each navigation link
-        link.addEventListener('click', function() {
-            // Removes the 'active' class from all navigation links to ensure only one is highlighted
+    // Uses event delegation for more efficient click handling
+    document.querySelector('.nav').addEventListener('click', function(e) {
+        // Checks if clicked element is a navigation link
+        const navLink = e.target.closest('a');
+        if (navLink && navLink.getAttribute('href').startsWith('#')) {
+            // Removes the 'active' class from all navigation links
             document.querySelectorAll('.nav ul li a').forEach(l => l.classList.remove('active'));
-            // Adds the 'active' class to the clicked link for visual feedback
-            this.classList.add('active');
-        });
+            // Adds the 'active' class to the clicked link
+            navLink.classList.add('active');
+        }
     });
 });
 
