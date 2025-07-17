@@ -913,7 +913,6 @@ color: lightgray;
 /* dynamic content display */
 .display > div {
     display: none;
-    height: 100%;
 }
 
 /* Only show the target section - no fallback */
@@ -958,7 +957,7 @@ color: lightgray;
     padding: 0 .3em;
 }
 
-#applyLoan{
+#dashboard, #applyLoan{
     height: 100%;
 }
 /* Scrollbar Track */
