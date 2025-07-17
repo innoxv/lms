@@ -885,10 +885,24 @@ color: #555;
     justify-content: space-between;
     height: 95%;
 }
+
 /* dynamic content display */
 .display > div {
-    display: none; /* Hide all content sections by default */
+    display: none;
+    height: 100%;
 }
+
+/* Only show the target section - no fallback */
+.display > div:target {
+    display: block;
+}
+
+/* Hide dashboard when not target */
+#dashboard:not(:target) {
+    display: none !important;
+}
+
+
 .top li a{
     color: #333;
     font-weight: 700;
@@ -939,12 +953,7 @@ color: #555;
     border-radius: 1em;
     padding: 0 .3em;
 }
-/* Show the Dashboard section by default */
-#dashboard {
-    display: block;
-    height: 100%;
-    /* outline: 1px solid red; */
-}
+
 #applyLoan{
     height: 100%;
 }
@@ -980,15 +989,7 @@ color: #555;
     margin: 0 1em;
     overflow-y: auto;
 }
-/* Show the targeted content section */
-.display > div:target {
-    display: block;
-}
 
-/* Hide the Dashboard section when another section is targeted */
-.display > div:target ~ #dashboard {
-    display: none;
-}
 
 
 .display h1{

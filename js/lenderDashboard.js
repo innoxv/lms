@@ -1,10 +1,10 @@
 // ACTIVE NAV LINK SECTION
-// This function manages the visual indication of the active navigation link based on the current URL hash
+// Manages the visual indication of the active navigation link based on the current URL hash
 function updateActiveNavLink() {
     // Selects all anchor tags (<a>) inside list items within the navigation menu (.nav ul li a)
     const navLinks = document.querySelectorAll('.nav ul li a');
-    // Gets the current URL hash or defaults to '#dashboard' if no hash is present
-    const currentHash = window.location.hash || '#dashboard';
+    // Gets the current URL hash - no default to prevent dashboard flash
+    const currentHash = window.location.hash;
 
     // Loops through all navigation links to remove the 'active' CSS class, resetting their appearance
     navLinks.forEach(link => link.classList.remove('active'));
@@ -15,31 +15,79 @@ function updateActiveNavLink() {
     if (activeLink) {
         // Adds the 'active' CSS class to the matching link to highlight it visually
         activeLink.classList.add('active');
-    } else {
-        // If no matching link is found, defaults to highlighting the Dashboard link
+    } else if (!currentHash) {
+        // Only defaults to dashboard if no hash exists (initial load)
         document.querySelector('.nav ul li a[href="#dashboard"]').classList.add('active');
     }
+
 }
 
 // Sets up navigation link behavior when the page loads or the URL hash changes
 document.addEventListener('DOMContentLoaded', function() {
+    // Ensures hash exists immediately to prevent dashboard flash
+    if (!window.location.hash) {
+        // Sets dashboard hash without adding to browser history
+        history.replaceState(null, null, '#dashboard');
+    }
+
     // Calls updateActiveNavLink to set the initial active link when the page loads
     updateActiveNavLink();
 
-    // Adds an event listener to detect changes in the URL hash (when user navigates)
+    // Adds an event listener to detect changes in the URL hash (when the user navigates)
     window.addEventListener('hashchange', updateActiveNavLink);
 
-    // Loops through all navigation links to add click event listeners
-    document.querySelectorAll('.nav ul li a').forEach(link => {
-        // Adds a click event listener to each navigation link
-        link.addEventListener('click', function() {
-            // Removes the 'active' class from all navigation links to ensure only one is highlighted
+    // Uses event delegation for more efficient click handling
+    document.querySelector('.nav').addEventListener('click', function(e) {
+        // Checks if clicked element is a navigation link
+        const navLink = e.target.closest('a');
+        if (navLink && navLink.getAttribute('href').startsWith('#')) {
+            // Removes the 'active' class from all navigation links
             document.querySelectorAll('.nav ul li a').forEach(l => l.classList.remove('active'));
-            // Adds the 'active' class to the clicked link for visual feedback
-            this.classList.add('active');
-        });
+            // Adds the 'active' class to the clicked link
+            navLink.classList.add('active');
+        }
     });
 });
+
+// METRICS FONT SIZE ADJUSTMENT
+// Adjusts the font size of metric values to prevent text overflow in containers
+function adjustMetricsFontSize() {
+    // Selects all metric value elements with class 'span-2' inside .metrics
+    const metricValues = document.querySelectorAll('.metrics .span-2');
+    
+    // Defines a function to adjust font sizes based on container width
+    function adjustSizes() {
+        // Loops through each metric value element
+        metricValues.forEach(span => {
+            // Resets font size to default for accurate measurement
+            span.style.fontSize = '';
+            // Gets the parent container of the metric value
+            const container = span.closest('.metrics > div');
+            // Gets the container’s width in pixels
+            const containerWidth = container.offsetWidth;
+            // Gets the width of the text content in pixels
+            const textWidth = span.scrollWidth;
+            
+            // Checks if the text width exceeds the container width (with a 10px buffer)
+            if (textWidth > containerWidth - 10) {
+                // Calculates the scale ratio to fit the text within the container
+                const scaleRatio = (containerWidth - 10) / textWidth;
+                // Calculates a new font size, ensuring it’s at least 2em
+                const newSize = Math.max(2, 4 * scaleRatio);
+                // Sets the font size to the calculated value
+                span.style.fontSize = `${newSize}em`;
+            } else {
+                // Resets font size to default (4em) if no overflow
+                span.style.fontSize = '4em';
+            }
+        });
+    }
+    
+    // Runs adjustSizes on page load
+    adjustSizes();
+    // Adds a resize event listener to adjust sizes when the window is resized
+    window.addEventListener('resize', adjustSizes);
+}
 
 // LOAN OFFERS SECTION
 // Manages the editing of loan offers through a popup form
@@ -620,3 +668,4 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
