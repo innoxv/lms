@@ -389,6 +389,8 @@ require_once 'customerDashboardData.php'; // has the dashboard data
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
+                
+                
                                 </div>
                                 <div class="filter-group">
                                     <label for="date_range">Date Range:</label>

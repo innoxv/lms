@@ -257,3 +257,5 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 3000); // Displays for 3 seconds
     }
 });
+
+

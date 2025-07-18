@@ -59,34 +59,60 @@ function adjustMetricsFontSize() {
     function adjustSizes() {
         // Loops through each metric value element
         metricValues.forEach(span => {
-            // Resets font size to default for accurate measurement
-            span.style.fontSize = '';
-            // Gets the parent container of the metric value
-            const container = span.closest('.metrics > div');
-            // Gets the container’s width in pixels
-            const containerWidth = container.offsetWidth;
-            // Gets the width of the text content in pixels
-            const textWidth = span.scrollWidth;
+            // Get the metric-value-container (the actual container we need to fit within)
+            const container = span.closest('.metric-value-container');
+            if (!container) return;
             
-            // Checks if the text width exceeds the container width (with a 10px buffer)
-            if (textWidth > containerWidth - 10) {
-                // Calculates the scale ratio to fit the text within the container
-                const scaleRatio = (containerWidth - 10) / textWidth;
-                // Calculates a new font size, ensuring it’s at least 2em
-                const newSize = Math.max(2, 4 * scaleRatio);
-                // Sets the font size to the calculated value
+            // Reset font size to default for accurate measurement
+            span.style.fontSize = '4em';
+            
+            // Force a reflow to ensure the reset takes effect
+            container.offsetHeight;
+            
+            // Get container dimensions (accounting for padding)
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            // Get text dimensions
+            const textWidth = span.scrollWidth;
+            const textHeight = span.scrollHeight;
+            
+            // Calculate scale ratios for both width and height
+            const widthRatio = containerWidth / textWidth;
+            const heightRatio = containerHeight / textHeight;
+            
+            // Use the smaller ratio to ensure content fits in both dimensions
+            const scaleRatio = Math.min(widthRatio, heightRatio);
+            
+            // Only scale down if content is too large (scaleRatio < 1)
+            if (scaleRatio < 1) {
+                // Calculate new font size (start from 4em and scale down)
+                const newSize = Math.max(1, 4 * scaleRatio * 0.9); // 0.9 for safety margin
                 span.style.fontSize = `${newSize}em`;
-            } else {
-                // Resets font size to default (4em) if no overflow
-                span.style.fontSize = '4em';
             }
+            // If scaleRatio >= 1, keep the default 4em size
         });
     }
     
-    // Runs adjustSizes on page load
-    adjustSizes();
-    // Adds a resize event listener to adjust sizes when the window is resized
-    window.addEventListener('resize', adjustSizes);
+    // Debounce function to prevent excessive calls during resize
+    let resizeTimeout;
+    function debouncedAdjustSizes() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(adjustSizes, 100);
+    }
+    
+    // Run on page load with a small delay to ensure layout is complete
+    setTimeout(adjustSizes, 100);
+    
+    // Add resize event listener with debouncing
+    window.addEventListener('resize', debouncedAdjustSizes);
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', adjustMetricsFontSize);
+} else {
+    adjustMetricsFontSize();
 }
 
 // LOAN APPLICATION SECTION
@@ -724,7 +750,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // Sets up all dashboard functionalities when the page loads
 document.addEventListener('DOMContentLoaded', function () {
     // Initializes the metrics font size adjustment
-    adjustMetricsFontSize();
+    // adjustMetricsFontSize(); // This line is now redundant as it's called in DOMContentLoaded
 
     // Initializes the bar chart 
     initializeBarChart();
