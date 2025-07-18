@@ -94,7 +94,7 @@ require_once 'customerDashboardData.php'; // has the dashboard data
                             <!-- last JS script and searchSuggestions.php-->
                             <div class="search-container">
                                 <div style="display:flex; gap:1px;">
-                                    <input type="text" id="lenderSearch" placeholder="🔍︎ Search lenders or loan types..." autocomplete="off" value="<?= htmlspecialchars($_SESSION['search_query'] ?? '') ?>">
+                                    <input type="text" id="lenderSearch" placeholder="🔍︎ Search lenders or loan types..."  value="<?= htmlspecialchars($_SESSION['search_query'] ?? '') ?>">
                                     <button type="button" class="res x" style="outline:1px solid tomato;"><a href="fetchLenders.php?reset_filters=true">X</a></button>
                                 </div>          
                                 <div id="suggestions" class="suggestions"></div>
@@ -1431,7 +1431,7 @@ function initializePieChart() {
         // Draws a filled circle in the center to maintain the donut's hollow effect
         pieCtx.beginPath();
         pieCtx.arc(centerX, centerY, radius - lineWidth, 0, 2 * Math.PI);
-        pieCtx.fillStyle = '#1a2526'; // Matches the canvas background color (adjust as needed)
+        pieCtx.fillStyle = '#1a2526'; // Matches the canvas background color 
         pieCtx.fill();
 
         // Draws the legend for the static donut chart
