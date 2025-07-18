@@ -1045,11 +1045,10 @@ color: lightgray;
     flex-direction: column;
     justify-content: space-between;
     padding-bottom: 1em;
-    container-type: inline-size;
+    /* container-type: inline-size;  18jul1441hrs */
 }
 
 .metrics > div:hover {
-    /* outline: 1px solid whitesmoke; */
     transition: .2s ease-in-out;
     background-color: #2C2C2C;
 }
@@ -1059,30 +1058,29 @@ color: lightgray;
     text-align: start;
 }
 .metrics .span-2{
-    font-size: 4em; /* Default size */
+    font-size: 4em; 
     color: #74C0FC;
-    font-weight: 900;
-    padding: .2em;
+    font-weight: 500;
+    padding: .1em 0; 
     line-height: 1;
     white-space: nowrap;
     display: inline-block; /* Required for width calculations */
     max-width: 100%;
     overflow: hidden;
-    transition: font-size 0.3s ease;    
+    transition: font-size 0.3s ease;
+    box-sizing: border-box; /* Include padding in width calculation */
 }
 .metric-value-container {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 0; /* Allows proper shrinking */
+    padding: 0.5em; 
 }
-
 .metrics .span-2 .percentage {
-    /* font-size: 4em;  */
     color: lightgray;
     font-weight: 100;
-    margin-left: 0.1em;
+    margin-left: 0;
 }
 
 
