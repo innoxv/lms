@@ -339,7 +339,7 @@ require_once 'lenderDashboardData.php'; // has the dashboard data
                                         <td style="text-align: center"><?php echo htmlspecialchars($request['duration']); ?></td>
                                         <td style="text-align: center"><?php echo htmlspecialchars($request['collateral_value']); ?></td>
                                         <td>
-                                            <span class="status-badge status-<?php echo strtolower(htmlspecialchars($request['status'])); ?>">
+                                            <span class="loan-status <?php echo strtolower(htmlspecialchars($request['status'])); ?>">
                                                 <?php echo htmlspecialchars($request['status']); ?>
                                             </span>
                                         </td>

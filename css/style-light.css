@@ -1092,6 +1092,8 @@ color: #555;
     align-items: center;
     justify-content: space-between;
     width: 90%;
+   background: #333;
+   border-radius: 1em;
    
 }
 
@@ -1661,6 +1663,29 @@ margin: .2em 0;
     border: 1px solid #bee5eb;
 }
 
+/* Loan Status Badges */
+.loan-status {
+    font-weight: 700;
+    background-color: #444;
+}
+
+.rejected {
+    color: tomato;
+}
+
+.pending {
+    color: #74C0FC;
+}
+
+.disbursed {
+    color: lightgreen;
+
+}
+
+.submitted {
+    color: lightgray;
+
+}
 
 .simple-loan-table {
     width: 99%;

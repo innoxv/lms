@@ -35,7 +35,7 @@ require_once 'customerDashboardData.php'; // has the dashboard data
                                 <img src="../icons/light.svg" alt="" srcset="">
                             </span>
                             <span class="theme-icon dark-icon">
-                                <img src="../icons/dark2.svg" alt="" srcset="">
+                                <img src="../icons/dark3.svg" alt="" srcset="">
                             </span>     
                         </button>
                     </li>
