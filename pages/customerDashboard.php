@@ -30,12 +30,12 @@ require_once 'customerDashboardData.php'; // has the dashboard data
             <div class="header3">
                 <ul>
                     <li>
-                        <button id="toggleTheme"> <code>Theme</code> 
+                        <button id="toggleTheme"> 
                             <span class="theme-icon light-icon">
                                 <img src="../icons/light.svg" alt="" srcset="">
                             </span>
                             <span class="theme-icon dark-icon">
-                                <img src="../icons/dark3.svg" alt="" srcset="">
+                                <img src="../icons/dark2.svg" alt="" srcset="">
                             </span>     
                         </button>
                     </li>

@@ -41,7 +41,7 @@ require_once 'adminDashboardData.php'; // has the dashboard data
                 <div>
                     <ul>
                         <li>
-                            <button id="toggleTheme"> <code>Theme</code> 
+                            <button id="toggleTheme">  
                                 <span class="theme-icon light-icon">
                                     <img src="../icons/light.svg" alt="" srcset="">
                                 </span>
