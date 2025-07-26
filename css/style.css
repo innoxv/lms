@@ -1661,6 +1661,29 @@ margin: .2em 0;
     border: 1px solid #bee5eb;
 }
 
+/* Loan Status Badges */
+.loan-status {
+    font-weight: 700;
+}
+
+.rejected {
+    color: tomato;
+}
+
+.pending {
+    color: #74C0FC;
+}
+
+.disbursed {
+    color: lightgreen;
+
+}
+
+.submitted {
+    color: lightgray;
+
+}
+
 
 .simple-loan-table {
     width: 99%;
@@ -2155,35 +2178,7 @@ margin: .2em 0;
     opacity: .3;
     cursor: not-allowed;
 }
-/* Risk Level Badges */
-.risk-badge {
-    padding: 4px 8px;
-    font-size: 0.85em;
-    font-weight: 700;
-}
 
-.risk-high {
-    color: tomato;
-    outline: 1px solid tomato;
-}
-
-.risk-medium {
-    color: #74C0FC;
-    outline: 1px solid #74C0FC;
-
-}
-
-.risk-low {
-    color: lightgreen;
-    outline: 1px solid lightgreen;
-
-}
-
-.risk-submitted {
-    color: lightgray;
-    outline: 1px solid lightgray
-
-}
 
 /* View Loan Popup Styles */
 .view-popup {
