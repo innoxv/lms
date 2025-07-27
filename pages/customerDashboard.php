@@ -374,6 +374,7 @@ require_once 'customerDashboardData.php'; // has the dashboard data
                                     <label for="status">Status:</label>
                                     <select name="status" id="status" onchange="this.form.submit()">
                                         <option value="">All Loans</option>
+                                        <option value="submitted" <?= ($statusFilter === 'submitted') ? 'selected' : '' ?>>Submitted</option>
                                         <option value="pending" <?= ($statusFilter === 'pending') ? 'selected' : '' ?>>Pending</option>
                                         <option value="disbursed" <?= ($statusFilter === 'disbursed') ? 'selected' : '' ?>>Disbursed</option>
                                         <option value="rejected" <?= ($statusFilter === 'rejected') ? 'selected' : '' ?>>Rejected</option>
@@ -455,7 +456,7 @@ require_once 'customerDashboardData.php'; // has the dashboard data
                             <td><?= htmlspecialchars($loan['interest_rate'] ?? '') ?>%</td>
                             <td>
                                 <span class="loan-status <?= strtolower($loan['loan_status'] ?? '') ?>">
-                                    <?= htmlspecialchars($loan['loan_status'] ?? '') ?>
+                                    <?= htmlspecialchars(ucfirst($loan['loan_status'] ?? '')) ?>
                                 </span>
                             </td>
                             <td><?= date('j M Y', strtotime($loan['application_date'] ?? 'now')) ?></td>
@@ -816,6 +817,7 @@ require_once 'customerDashboardData.php'; // has the dashboard data
                                         <tr>
                                             <th>Payment ID</th>
                                             <th>Loan ID</th>
+                                            <th>Lender</th>
                                             <th>Amount</th>
                                             <th>Method</th>
                                             <th>Type</th>
@@ -837,6 +839,7 @@ require_once 'customerDashboardData.php'; // has the dashboard data
                                             <tr>
                                                 <td><?= htmlspecialchars($trans_payment_id) ?></td>
                                                 <td><?= htmlspecialchars($trans_loan_id) ?></td>
+                                                <td><?= htmlspecialchars($trans_lender_name) ?></td>
                                                 <td><?= number_format($trans_amount, 2) ?></td>
                                                 <td><?= htmlspecialchars(ucwords(str_replace('_', ' ', $trans_payment_method))) ?></td>
                                                 <td>

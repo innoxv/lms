@@ -54,7 +54,7 @@ $_SESSION['customer_id'] = $customerProfile['customer_id']; // Store customer ID
 $customer_id = $_SESSION['customer_id']; // $customer_id holds the current customer's ID
 
 // Determines the loan status filter from GET parameters, only allowing specific values
-$statusFilter = isset($_GET['status']) && in_array($_GET['status'], ['disbursed', 'pending', 'rejected']) 
+$statusFilter = isset($_GET['status']) && in_array($_GET['status'], ['disbursed', 'pending', 'rejected', 'submitted']) 
     ? $_GET['status'] // Use status from GET if valid
     : ''; // Otherwise, no filter
 

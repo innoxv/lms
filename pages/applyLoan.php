@@ -161,7 +161,7 @@ if ($existing_loan_check && $existing_loan_check->num_rows > 0) { // Checks if q
     $status = $loan['status']; // Assigns loan status to variable
     $message = $status === 'disbursed' 
         ? "This loan is '$status'. Settle it before reapplying."
-        : "This applicaton is '$status'. Wait for approval before reapplying."; // Sets message based on loan status
+        : "This applicaton is already '$status'."; // Sets message based on loan status
     $_SESSION['loan_message'] = $message; // Sets error message in session
     $_SESSION['message_type'] = "error"; // Sets the message type to error
     header("Location: customerDashboard.php#applyLoan"); // Redirects to applyLoan section
@@ -200,7 +200,7 @@ if (!$unpaid_loans_result) { // Checks if query failed
 $unpaid_count = $unpaid_loans_result->fetch_assoc()['unpaid_count']; // Fetches the count of unpaid loans
 
 if ($unpaid_count > 2) { // Checks if unpaid loan count exceeds 2
-    $_SESSION['loan_message'] = "You have more than 2 unpaid loans. Settle them to apply."; // Sets error message for too many unpaid loans
+    $_SESSION['loan_message'] = "Settle unpaid loans to apply."; // Sets error message for too many unpaid loans
     $_SESSION['message_type'] = "error"; // Sets the message type to error
     header("Location: customerDashboard.php#applyLoan"); // Redirects to applyLoan section
     exit; // Terminates script execution after redirection
