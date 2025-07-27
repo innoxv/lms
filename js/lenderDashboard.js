@@ -349,7 +349,7 @@ function showViewLoanPopup(loanId, customer, loanType, amount, interestRate, dur
     // Appends ' months' to the duration and sets it
     document.getElementById('viewDuration').textContent = duration + ' months';
     // Sets the text content of the element with ID 'viewCollateralValue'
-    document.getElementById('viewCollateralValue').textContent = collateralValue;
+    document.getElementById('viewCollateralValue').textContent = parseFloat(collateralValue).toLocaleString(undefined, {minimumFractionDigits: 2});;
     // Sets the text content of the element with ID 'viewCollateralDesc'
     document.getElementById('viewCollateralDesc').textContent = collateralDesc;
     
@@ -359,10 +359,10 @@ function showViewLoanPopup(loanId, customer, loanType, amount, interestRate, dur
     statusElement.innerHTML = '';
     // Creates a new span element for the status badge
     const statusBadge = document.createElement('span');
-    // Sets the class of the badge based on the status (status-pending)
-    statusBadge.className = `status-badge status-${status.toLowerCase()}`;
-    // Sets the text content of the badge to the status
-    statusBadge.textContent = status;
+    // Sets the class of the badge based on the status (loan-status pending)
+    statusBadge.className = `loan-status ${status.toLowerCase()}`;
+    // Capitalizes the first letter of the status and sets it as the badge text
+    statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
     // Appends the status badge to the status element
     statusElement.appendChild(statusBadge);
     

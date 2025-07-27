@@ -118,11 +118,11 @@ function openLoanPopup(loan) {
     // Sets the text content of the element with ID 'popup-customer-name' to the customer’s name
     document.getElementById('popup-customer-name').textContent = loan.customer_name;
     // Formats the loan amount to two decimal places and sets it
-    document.getElementById('popup-amount').textContent = parseFloat(loan.amount).toFixed(2);
+    document.getElementById('popup-amount').textContent = parseFloat(loan.amount).toLocaleString(undefined, {minimumFractionDigits: 2});
     // Sets the text content of the element with ID 'popup-duration' to the loan duration
     document.getElementById('popup-duration').textContent = loan.duration;
     // Formats the collateral value to two decimal places and sets it
-    document.getElementById('popup-collateral-value').textContent = parseFloat(loan.collateral_value).toFixed(2);
+    document.getElementById('popup-collateral-value').textContent = parseFloat(loan.collateral_value).toLocaleString(undefined, {minimumFractionDigits: 2});
     // Sets the text content of the element with ID 'popup-collateral-desc' to the collateral description
     document.getElementById('popup-collateral-desc').textContent = loan.collateral_description;
     // Sets the src attribute of the element with ID 'popup-collateral-image' to the collateral image URL, or empty string if none

@@ -398,15 +398,15 @@ function showLoanDetailsPopup(loanId, loanType, lenderName, amount, interestRate
     // Sets the text content of the element with ID 'viewLenderName' to the lender name
     document.getElementById('viewLenderName').textContent = lenderName;
     // Formats the amount with KES prefix and two decimal places
-    document.getElementById('viewAmount').textContent = 'KES ' + parseFloat(amount).toLocaleString(undefined, {minimumFractionDigits: 2});
+    document.getElementById('viewAmount').textContent = parseFloat(amount).toLocaleString(undefined, {minimumFractionDigits: 2});
     // Appends a percentage sign to the interest rate
     document.getElementById('viewInterestRate').textContent = parseFloat(interestRate) + '%';
     // Appends ' months' to the duration
     document.getElementById('viewDuration').textContent = duration + ' months';
     // Formats the installments with KES prefix and two decimal places
-    document.getElementById('viewInstallments').textContent = 'KES ' + parseFloat(installments).toLocaleString(undefined, {minimumFractionDigits: 2});
+    document.getElementById('viewInstallments').textContent = parseFloat(installments).toLocaleString(undefined, {minimumFractionDigits: 2});
     // Formats the collateral value with KES prefix and two decimal places
-    document.getElementById('viewCollateralValue').textContent = 'KES ' + parseFloat(collateralValue).toLocaleString(undefined, {minimumFractionDigits: 2});
+    document.getElementById('viewCollateralValue').textContent = parseFloat(collateralValue).toLocaleString(undefined, {minimumFractionDigits: 2});
     // Sets the text content of the element with ID 'viewCollateralDescription'
     document.getElementById('viewCollateralDescription').textContent = collateralDescription;
 
@@ -434,12 +434,12 @@ function showLoanDetailsPopup(loanId, loanType, lenderName, amount, interestRate
         minute: '2-digit'
     });
 
-    // Adds a delete button for pending or rejected loans
+    // Adds a delete button for submitted loans
     const actionButtons = document.getElementById('loanActionButtons');
     // Clears any existing content in the action buttons container
     actionButtons.innerHTML = '';
-    // Checks if the loan status is pending or rejected
-    if (['pending', 'rejected'].includes(status.toLowerCase())) {
+    // Checks if the loan status is submitted
+    if (['submitted'].includes(status.toLowerCase())) {
         // Creates a form for deleting the loan application
         const deleteForm = document.createElement('form');
         // Sets the form’s action to the PHP script for deletion
@@ -561,12 +561,12 @@ function closePaymentPopup() {
     document.body.classList.remove('popup-open');
 }
 
-// Formats a number as Kenyan Shilling currency
+// Formats a number
 function formatCurrency(x) {
     // Rounds up the number to two decimal places
     const roundedUp = Math.ceil(parseFloat(x) * 100) / 100;
-    // Formats the number with KES and two decimal places
-    return roundedUp.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // Formats the number with two decimal places
+    return roundedUp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 // TRANSACTION HISTORY SECTION
@@ -578,8 +578,8 @@ function showTransPaymentDetailsPopup(paymentId, loanId, lenderName, amount, pay
     document.getElementById('transViewLoanId').textContent = loanId;
     // Sets the text content of the element with ID 'transViewLenderName' to the lender name
     document.getElementById('transViewLenderName').textContent = lenderName;
-    // Formats the amount with KES prefix and two decimal places, or sets 'N/A' if invalid
-    document.getElementById('transViewAmount').textContent = amount ? 'KES ' + amount.toLocaleString('en-US', {minimumFractionDigits: 2}) : 'N/A';
+    // Formats the amount with two decimal places, or sets 'N/A' if invalid
+    document.getElementById('transViewAmount').textContent = parseFloat(amount).toLocaleString(undefined, {minimumFractionDigits: 2});
     // Formats the payment method ('credit_card' to 'Credit Card')
     document.getElementById('transViewPaymentMethod').textContent = paymentMethod.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 

@@ -340,7 +340,7 @@ require_once 'lenderDashboardData.php'; // has the dashboard data
                                         <td style="text-align: center"><?php echo htmlspecialchars($request['collateral_value']); ?></td>
                                         <td>
                                             <span class="loan-status <?php echo strtolower(htmlspecialchars($request['status'])); ?>">
-                                                <?php echo htmlspecialchars($request['status']); ?>
+                                                <?php echo htmlspecialchars(ucfirst($request['status'])); ?>
                                             </span>
                                         </td>
                                         <td style="text-align: center"><?php echo date('j M Y', strtotime($request['application_date'])); ?></td>
@@ -647,12 +647,10 @@ require_once 'lenderDashboardData.php'; // has the dashboard data
                                     <label for="payment_method">Payment Method:</label>
                                     <select name="payment_method" id="payment_method" onchange="this.form.submit()">
                                         <option value="">All Methods</option>
-                                        <?php foreach ($paymentMethods as $method): ?>
-                                            <option value="<?php echo htmlspecialchars($method); ?>" 
-                                                    <?php echo ($paymentMethodFilter === $method) ? 'selected' : ''; ?>>
-                                                <?php echo htmlspecialchars($method); ?>
-                                            </option>
-                                        <?php endforeach; ?>
+                                        <option value="mpesa" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'mpesa' ? 'selected' : '' ?>>M-Pesa</option>
+                                        <option value="bank_transfer" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'bank_transfer' ? 'selected' : '' ?>>Bank Transfer</option>
+                                        <option value="credit_card" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'credit_card' ? 'selected' : '' ?>>Credit Card</option>
+                                        <option value="debit_card" <?= isset($_GET['payment_method']) && $_GET['payment_method'] === 'debit_card' ? 'selected' : '' ?>>Debit Card</option>
                                     </select>
                                 </div>
                 
@@ -710,8 +708,8 @@ require_once 'lenderDashboardData.php'; // has the dashboard data
                                         <td><?php echo htmlspecialchars($payment['customer_name']); ?></td>
                                         <td><?php echo htmlspecialchars($payment['loan_type']); ?></td>
                                         <td><?php echo number_format($payment['amount'], 2); ?></td>
-                                        <td><?php echo htmlspecialchars($payment['payment_method']); ?></td>
-                                        <td><?php echo htmlspecialchars($payment['payment_type']); ?></td>
+                                        <td><?= htmlspecialchars(ucwords(str_replace('_', ' ', $payment['payment_method']))) ?></td>
+                                        <td><?php echo htmlspecialchars(ucfirst($payment['payment_type'])); ?></td>
                                         <td><?php echo date('j M Y', strtotime($payment['payment_date'])); ?></td>
                                         <td class="action-buttons">
                                             <button class="view" 

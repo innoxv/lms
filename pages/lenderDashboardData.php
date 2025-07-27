@@ -259,6 +259,7 @@ if (isset($_GET['collateral_range']) && $_GET['collateral_range']) { // Checks i
     }
 }
 
+
 // Adds sorting to the query
 $loanRequestsQuery .= " ORDER BY loans.application_date DESC"; // Orders results by application date, newest first
 

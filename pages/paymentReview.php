@@ -46,7 +46,6 @@ if (!$myconn) { // Checks if $myconn is null or false
     }
 
     // Retrieves filter parameters from GET request
-    $paymentTypeFilter = $_GET['payment_type'] ?? ''; // Gets payment_type filter, defaults to empty string
     $paymentMethodFilter = $_GET['payment_method'] ?? ''; // Gets payment_method filter, defaults to empty string
     $dateRangeFilter = $_GET['date_range'] ?? ''; // Gets date_range filter, defaults to empty string
     $amountRangeFilter = $_GET['amount_range'] ?? ''; // Gets amount_range filter, defaults to empty string
@@ -61,11 +60,7 @@ if (!$myconn) { // Checks if $myconn is null or false
         $balanceRangeFilter = ''; // Resets balance range filter
     }
 
-    // Validates payment type filter
-    $validPaymentTypes = ['principal', 'interest', 'penalty']; // Defines valid payment types
-    if (!empty($paymentTypeFilter) && !in_array($paymentTypeFilter, $validPaymentTypes)) { // Checks if payment type is invalid
-        $paymentTypeFilter = ''; // Resets invalid payment type filter
-    }
+    // Validates payment method filter
     if (!empty($paymentMethodFilter)) { // Checks if payment method filter is set
         $paymentMethodFilter = mysqli_real_escape_string($myconn, $paymentMethodFilter); // Escapes payment method for SQL safety
     }
@@ -89,10 +84,6 @@ if (!$myconn) { // Checks if $myconn is null or false
         -- to prevent showing payments with payment_type unpaid (this is default in the database when a lender approves request)
     AND payments.payment_type != 'unpaid'"; // Base query joins tables and excludes unpaid payments
 
-    // Applies payment type filter
-    if (!empty($paymentTypeFilter)) { // Checks if payment type filter is set
-        $paymentsQuery .= " AND payments.payment_type = '$paymentTypeFilter'"; // Adds payment type condition
-    }
 
     // Applies payment method filter
     if (!empty($paymentMethodFilter)) { // Checks if payment method filter is set
@@ -154,7 +145,7 @@ if (!$myconn) { // Checks if $myconn is null or false
     }
 
     // Fetches available payment methods for filter options
-    $paymentMethodsQuery = "SELECT DISTINCT payment_method FROM payments WHERE lender_id = '$lender_id'"; // Query to get unique payment methods
+    $paymentMethodsQuery = "SELECT DISTINCT payment_method FROM payments WHERE lender_id = '$lender_id' "; // Query to get unique payment methods
     $paymentMethodsResult = mysqli_query($myconn, $paymentMethodsQuery); // Executes the query
     if (!$paymentMethodsResult) { // Checks if query execution failed
         error_log("Payment methods query failed: " . mysqli_error($myconn)); // Logs error to server log

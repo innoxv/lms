@@ -203,7 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_submit'])) { 
                 }
             }
 
-            // Modified validation: Allow payment up to remaining balance if it exceeds installment balance
+            // Allow payment up to remaining balance if it exceeds installment balance
             if ($amount > $currentInstallmentBalance && $currentInstallmentBalance > 0 && $amount > $currentRemainingBalance) {
                 $_SESSION['payment_message'] = "Payment amount cannot exceed remaining balance of KES " . number_format($currentRemainingBalance, 2);
                 $_SESSION['payment_message_type'] = 'error';
